@@ -1,0 +1,48 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# React / Node
+spanr-mechanic/node_modules/
+spanr-mechanic/.env
+spanr-mechanic/dist/
+spanr-mechanic/build/
+spanr-mechanic/.vite/
+
+# Flutter
+spanr_app/.dart_tool/
+spanr_app/.flutter-plugins
+spanr_app/.flutter-plugins-dependencies
+spanr_app/.packages
+spanr_app/.pub-cache/
+spanr_app/.pub/
+spanr_app/build/
+spanr_app/.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.nyc_output/
+
+# Production
+*.local
+
+# Misc
+.cache/
+tmp/
+temp/
+

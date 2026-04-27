@@ -1,0 +1,39 @@
+---
+alwaysApply: true
+---
+we are building a mechanic booking platform "SPANR" where multiple companies and mechanics can enroll and users can book them for service, repairs,etc.
+this project has two folders
+ - spanr_app -> flutter app for users to book mechanic
+ - spanr-mechanic -> react app for mechanic dashboard
+
+**Module File Structure Convention**
+Maintain the following structure for each module:
+
+```
+spanr_app/
+  sql/
+    module.sql                       // SQL scripts related to the module
+
+spanr-mechanic/
+  src/
+    module/
+      module.service.ts              // Business logic and service functions
+      module.type.ts                 // TypeScript types and interfaces
+      module.hook.ts                 // Custom React hooks
+      module_component.service.tsx  // UI-related services or components
+    pages/
+      module.tsx                     // Page-level component or entry point
+
+  sql/
+    module.sql                       // SQL scripts related to the module
+```
+
+> ✅ **Always follow this file structure when creating or updating modules.**
+
+---
+supabase for backend
+don't create any sample data.   
+---
+always break down to simple components
+check if any existing code can be resused like utils, etc
+write only code. no long explanation of what you did, affirmations, key changes, etc. write only code and keep it short.
