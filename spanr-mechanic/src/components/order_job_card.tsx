@@ -143,7 +143,7 @@ export const OrderJobCard: React.FC<OrderJobCardProps> = ({ orderId, order }) =>
       const saved = await ordersService.getJobCardData(orderId);
       setData(prev => ({
         ...prev,
-        vehicle_type: inferredVehicleType,
+        // vehicle_type: inferredVehicleType,
         ...(saved as Partial<JobCardData>),
         // only override vehicle_type from saved if explicitly set
         vehicle_type: (saved as Partial<JobCardData>)?.vehicle_type || inferredVehicleType,
