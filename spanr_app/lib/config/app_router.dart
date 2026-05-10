@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import '../auth/auth_provider.dart';
 import '../auth/screens/login_screen.dart';
 import '../auth/screens/signup_screen.dart';
@@ -14,6 +13,7 @@ import '../mechanics/screens/mechanic_detail_screen.dart';
 import '../vehicles/models/vehicle_model.dart';
 import '../vehicles/screens/add_vehicle_screen.dart';
 import '../booking/select_vehicle_screen.dart';
+import '../booking/select_vehicle_photos_screen.dart';
 import '../booking/checkout_screen.dart';
 import '../booking/orders_screen.dart';
 import '../booking/order_details_screen.dart';
@@ -22,11 +22,11 @@ import '../booking/payment_processing_screen.dart';
 import '../booking/order_model.dart';
 
 class AppRouter {
-  static GoRouter createRouter() {
+  static GoRouter createRouter(AuthProvider authProvider) {
     return GoRouter(
       initialLocation: '/splash',
+      refreshListenable: authProvider,
       redirect: (context, state) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
         final isAuthenticated = authProvider.isAuthenticated;
         final isLoading = authProvider.isLoading;
 
@@ -101,6 +101,16 @@ class AppRouter {
           builder: (context, state) {
             final company = state.extra as MechanicCompany;
             return SelectVehicleScreen(company: company);
+          },
+        ),
+        GoRoute(
+          path: '/select-vehicle-photos',
+          builder: (context, state) {
+            final data = state.extra as Map<String, dynamic>;
+            return SelectVehiclePhotosScreen(
+              company: data['company'] as MechanicCompany,
+              vehicle: data['vehicle'] as VehicleModel,
+            );
           },
         ),
         GoRoute(

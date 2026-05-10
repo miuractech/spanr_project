@@ -35,11 +35,11 @@ export default function ProfilePage() {
 
   return (
     <Container size="md" py={60}>
-      <Title mb={48} size={32}>
+      <Title mb={48} size={32} c="#1C1C1C">
         Profile
       </Title>
 
-      <Paper shadow="sm" p={32} radius="md" style={{ backgroundColor: '#FFFFFF' }}>
+      <Paper shadow="sm" p={32} radius="lg" style={{ border: '1px solid #E0E0E0' }}>
         <Stack gap={32}>
           <Group>
             <Avatar size={80} radius="xl" color="orange">

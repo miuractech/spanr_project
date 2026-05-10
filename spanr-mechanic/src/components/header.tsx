@@ -25,32 +25,55 @@ export const Header = () => {
 
   return (
     <>
-      <Group justify="space-between" h="100%" px="md" style={{ borderBottom: '1px solid #E0E0E0' }}>
-        <Group>
+      <Group
+        justify="space-between"
+        h="100%"
+        px="lg"
+        style={{
+          backgroundColor: '#FFFFFF',
+          borderBottom: '1px solid #E0E0E0',
+        }}
+      >
+        <Group gap="sm">
           {company?.logo && (
-            <img src={company.logo} alt={company.company_name} style={{ height: 40 }} />
+            <img
+              src={company.logo}
+              alt={company.company_name}
+              style={{ height: 36, borderRadius: 8 }}
+            />
           )}
-          <Text size="xl" fw={700} c="#FF6B35">
+          <Text size="lg" fw={700} c="#1C1C1C">
             {company?.company_name || 'SPANR'}
           </Text>
         </Group>
 
-        <Menu shadow="md" width={200}>
+        <Menu shadow="md" width={200} radius="md">
           <Menu.Target>
-            <UnstyledButton>
+            <UnstyledButton
+              style={{
+                padding: '6px 12px',
+                borderRadius: 12,
+                transition: 'background-color 0.15s',
+              }}
+            >
               <Group gap="xs">
-                <Avatar color="orange" radius="xl">
+                <Avatar
+                  color="orange"
+                  radius="xl"
+                  size="sm"
+                  style={{ border: '2px solid #FFF3E0' }}
+                >
                   {user?.name?.[0]?.toUpperCase() || 'U'}
                 </Avatar>
                 <div>
-                  <Text size="sm" fw={500}>
+                  <Text size="sm" fw={600} c="#1C1C1C">
                     {user?.name}
                   </Text>
-                  <Text size="xs" c="dimmed">
+                  <Text size="xs" c="#696969">
                     {user?.email}
                   </Text>
                 </div>
-                <IconChevronDown size={16} />
+                <IconChevronDown size={14} color="#696969" />
               </Group>
             </UnstyledButton>
           </Menu.Target>
@@ -81,12 +104,13 @@ export const Header = () => {
         closeOnClickOutside={!isLoggingOut}
         closeOnEscape={!isLoggingOut}
       >
-        <Text size="sm" mb={24}>
+        <Text size="sm" mb={24} c="#696969">
           Are you sure you want to logout?
         </Text>
         <Group justify="flex-end" gap={12}>
           <Button
             variant="subtle"
+            color="gray"
             onClick={() => setLogoutModalOpen(false)}
             disabled={isLoggingOut}
           >
@@ -104,4 +128,3 @@ export const Header = () => {
     </>
   );
 };
-

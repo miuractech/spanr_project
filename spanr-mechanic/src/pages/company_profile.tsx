@@ -109,7 +109,7 @@ export default function CompanyProfilePage() {
 
   return (
     <Container size="lg" py={60}>
-      <Title mb={48} size={32}>Company Profile</Title>
+      <Title mb={48} size={32} c="#1C1C1C">Company Profile</Title>
 
       {updateError && (
         <Alert icon={<IconAlertCircle size={16} />} color="red" mb={32}>

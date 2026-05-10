@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:postgrest/postgrest.dart';
 import 'package:uuid/uuid.dart';
 import '../config/supabase_config.dart';
 import 'models/vehicle_model.dart';
@@ -7,16 +8,45 @@ class VehiclesService {
   final _client = SupabaseConfig.client;
   final _uuid = const Uuid();
 
+  bool _isMissingColumnError(Object error, String columnName) {
+    if (error is! PostgrestException) return false;
+    final message = error.message.toString();
+    final details = error.details?.toString() ?? '';
+    final hint = error.hint?.toString() ?? '';
+    return error.code == '42703' &&
+        (message.contains(columnName) ||
+            details.contains(columnName) ||
+            hint.contains(columnName));
+  }
+
+  Map<String, dynamic> _withoutUnsupportedVehicleColumns(
+    Map<String, dynamic> data,
+  ) {
+    final cleaned = Map<String, dynamic>.from(data);
+    cleaned.remove('is_primary');
+    return cleaned;
+  }
+
   Future<List<VehicleModel>> getVehiclesByUser(String authUserId) async {
     try {
       // authUserId is the user's id directly (no lookup needed)
       // Order by primary first, then by created_at
-      final vehicles = await _client
-          .from('vehicles')
-          .select('*')
-          .eq('user_id', authUserId)
-          .order('is_primary', ascending: false)
-          .order('created_at', ascending: false);
+      List<dynamic> vehicles;
+      try {
+        vehicles = await _client
+            .from('vehicles')
+            .select('*')
+            .eq('user_id', authUserId)
+            .order('is_primary', ascending: false)
+            .order('created_at', ascending: false);
+      } catch (e) {
+        if (!_isMissingColumnError(e, 'is_primary')) rethrow;
+        vehicles = await _client
+            .from('vehicles')
+            .select('*')
+            .eq('user_id', authUserId)
+            .order('created_at', ascending: false);
+      }
 
       final vehicleList = <VehicleModel>[];
       
@@ -44,11 +74,21 @@ class VehiclesService {
       // userId is the auth user id directly
       final vehicleData = vehicle.toJson();
 
-      final response = await _client
-          .from('vehicles')
-          .insert(vehicleData)
-          .select()
-          .single();
+      Map<String, dynamic> response;
+      try {
+        response = await _client
+            .from('vehicles')
+            .insert(vehicleData)
+            .select()
+            .single();
+      } catch (e) {
+        if (!_isMissingColumnError(e, 'is_primary')) rethrow;
+        response = await _client
+            .from('vehicles')
+            .insert(_withoutUnsupportedVehicleColumns(vehicleData))
+            .select()
+            .single();
+      }
 
       return VehicleModel.fromJson(response);
     } catch (e) {
@@ -59,12 +99,23 @@ class VehiclesService {
   Future<VehicleModel> updateVehicle(
       String vehicleId, Map<String, dynamic> updates) async {
     try {
-      final response = await _client
-          .from('vehicles')
-          .update(updates)
-          .eq('id', vehicleId)
-          .select()
-          .single();
+      Map<String, dynamic> response;
+      try {
+        response = await _client
+            .from('vehicles')
+            .update(updates)
+            .eq('id', vehicleId)
+            .select()
+            .single();
+      } catch (e) {
+        if (!_isMissingColumnError(e, 'is_primary')) rethrow;
+        response = await _client
+            .from('vehicles')
+            .update(_withoutUnsupportedVehicleColumns(updates))
+            .eq('id', vehicleId)
+            .select()
+            .single();
+      }
 
       // Fetch images for this vehicle
       final images = await _client

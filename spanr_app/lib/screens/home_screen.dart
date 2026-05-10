@@ -12,6 +12,19 @@ import '../vehicles/screens/vehicles_screen.dart';
 import '../booking/orders_screen.dart';
 import 'location_permission_screen.dart';
 
+const _orange = Color(0xFFFC8019);
+const _bg = Color(0xFFF2F2F2);
+const _heading = Color(0xFF1C1C1C);
+const _body = Color(0xFF696969);
+
+final _cardShadow = [
+  BoxShadow(
+    color: Colors.black.withOpacity(0.06),
+    blurRadius: 12,
+    offset: const Offset(0, 3),
+  ),
+];
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -31,36 +44,47 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
     return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        backgroundColor: Colors.white,
-        indicatorColor: primary.withValues(alpha: 0.1),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: primary),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long, color: primary),
-            label: 'Orders',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.directions_car_outlined),
-            selectedIcon: Icon(Icons.directions_car, color: primary),
-            label: 'Vehicles',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person, color: primary),
-            label: 'Profile',
-          ),
-        ],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Color(0xFFE8E8E8), width: 0.5)),
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) => setState(() => _currentIndex = index),
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
+          indicatorColor: _orange.withOpacity(0.1),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          height: 64,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined, color: _body),
+              selectedIcon: Icon(Icons.home, color: _orange),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.receipt_long_outlined, color: _body),
+              selectedIcon: Icon(Icons.receipt_long, color: _orange),
+              label: 'Orders',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.directions_car_outlined, color: _body),
+              selectedIcon: Icon(Icons.directions_car, color: _orange),
+              label: 'Vehicles',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline, color: _body),
+              selectedIcon: Icon(Icons.person, color: _orange),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -81,6 +105,7 @@ class _HomePageState extends State<_HomePage> {
 
   bool _isLocationEnabled = false;
   bool _isCheckingLocation = true;
+  bool _isInitialLoading = true;
   bool _skipLocationPermission = false;
   String? _lastSelectedAddressId;
 
@@ -125,6 +150,8 @@ class _HomePageState extends State<_HomePage> {
     } else {
       await _loadAddressesOnly();
     }
+
+    if (mounted) setState(() => _isInitialLoading = false);
   }
 
   Future<void> _loadAndSetNearestAddress() async {
@@ -138,27 +165,34 @@ class _HomePageState extends State<_HomePage> {
     if (position == null) return;
 
     await addressProvider.loadAddresses(authProvider.user!.id);
-    await addressProvider.findAndSetNearestAddress(
-      authProvider.user!.id,
-      position.latitude,
-      position.longitude,
-    );
 
+    if (addressProvider.selectedAddress == null) {
+      await addressProvider.findAndSetNearestAddress(
+        authProvider.user!.id,
+        position.latitude,
+        position.longitude,
+      );
+    }
+
+    final selected = addressProvider.selectedAddress;
     mechanicsProvider.loadNearbyMechanics(
-      latitude: position.latitude,
-      longitude: position.longitude,
+      latitude: selected?.latitude ?? position.latitude,
+      longitude: selected?.longitude ?? position.longitude,
       refresh: true,
     );
   }
 
-  Future<void> _loadAddressesOnly() async {
+  Future<void> _loadAddressesOnly({bool preserveSelection = false}) async {
     final authProvider = context.read<AuthProvider>();
     final addressProvider = context.read<AddressesProvider>();
     final mechanicsProvider = context.read<MechanicsProvider>();
 
     if (authProvider.user?.id == null) return;
 
-    await addressProvider.loadAddresses(authProvider.user!.id);
+    await addressProvider.loadAddresses(
+      authProvider.user!.id,
+      preserveSelection: preserveSelection,
+    );
 
     final selectedAddress = addressProvider.selectedAddress;
     if (selectedAddress != null) {
@@ -170,24 +204,39 @@ class _HomePageState extends State<_HomePage> {
     }
   }
 
+  Future<void> _handleRefresh() async {
+    final addressProvider = context.read<AddressesProvider>();
+    final selectedAddress = addressProvider.selectedAddress;
+    if (selectedAddress != null) {
+      final mechanicsProvider = context.read<MechanicsProvider>();
+      await mechanicsProvider.loadNearbyMechanics(
+        latitude: selectedAddress.latitude,
+        longitude: selectedAddress.longitude,
+        refresh: true,
+      );
+    } else {
+      await _loadAddressesOnly(preserveSelection: true);
+    }
+  }
+
   void _handleSkipLocation() {
     setState(() => _skipLocationPermission = true);
     _loadAddressesOnly();
   }
 
-  String _getGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  }
+  static const _serviceCategories = [
+    ('General Service', Icons.build_outlined, Color(0xFFE3F2FD)),
+    ('AC Repair', Icons.ac_unit, Color(0xFFE8F5E9)),
+    ('Denting', Icons.car_crash_outlined, Color(0xFFFFF3E0)),
+    ('Painting', Icons.format_paint_outlined, Color(0xFFF3E5F5)),
+    ('Battery', Icons.battery_charging_full, Color(0xFFFFEBEE)),
+    ('Tyre', Icons.tire_repair, Color(0xFFE0F7FA)),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().user;
     final addressProvider = context.watch<AddressesProvider>();
     final mechanicsProvider = context.watch<MechanicsProvider>();
-    final primary = Theme.of(context).colorScheme.primary;
 
     final currentAddressId = addressProvider.selectedAddress?.id;
     if (currentAddressId != _lastSelectedAddressId && currentAddressId != null) {
@@ -211,78 +260,37 @@ class _HomePageState extends State<_HomePage> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: _isCheckingLocation
-          ? Center(child: CircularProgressIndicator(color: primary))
-          : SafeArea(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 46,
-                            height: 46,
-                            decoration: BoxDecoration(
-                              color: primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                user?.name[0].toUpperCase() ?? 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _getGreeting(),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[500],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  user?.name.split(' ').first ?? 'User',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1A1A1A),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.notifications_outlined),
-                            onPressed: () {},
-                            style: IconButton.styleFrom(
-                              backgroundColor: const Color(0xFFF3F4F6),
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+    final showLoading = _isCheckingLocation || _isInitialLoading;
 
-                    // Address Selector
+    return Scaffold(
+      backgroundColor: _bg,
+      body: showLoading
+          ? SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(color: _orange),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading...',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : SafeArea(
+              child: RefreshIndicator(
+                color: _orange,
+                onRefresh: _handleRefresh,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                    // Location bar
                     Container(
                       color: Colors.white,
                       child: AddressSelector(
@@ -290,115 +298,169 @@ class _HomePageState extends State<_HomePage> {
                         onAddressManage: () async {
                           await context.push('/addresses');
                           if (mounted) {
-                            final authProvider = context.read<AuthProvider>();
-                            await addressProvider.loadAddresses(authProvider.user!.id);
+                            await _loadAddressesOnly(preserveSelection: true);
                           }
                         },
                       ),
                     ),
 
-                    const SizedBox(height: 12),
-
                     if (!_isLocationEnabled && addressProvider.selectedAddress == null)
                       Container(
-                        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                        padding: const EdgeInsets.all(14),
+                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.orange.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.orange.shade200),
+                          color: const Color(0xFFFFF3E0),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFFE0B2)),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                            Icon(Icons.info_outline,
+                                color: Colors.orange.shade700, size: 18),
                             const SizedBox(width: 10),
-                            Expanded(
+                            const Expanded(
                               child: Text(
                                 'Add or select an address to find nearby mechanics',
-                                style: TextStyle(
-                                  color: Colors.orange.shade900,
-                                  fontSize: 13,
-                                ),
+                                style: TextStyle(color: Color(0xFFE65100), fontSize: 12),
                               ),
                             ),
                           ],
                         ),
                       ),
 
-                    // Search Section
+                    const SizedBox(height: 12),
+
+                    // Search bar
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Find Mechanics',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A1A),
-                            ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: _cardShadow,
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search for mechanics, services...',
+                            prefixIcon: const Icon(Icons.search,
+                                color: _body, size: 22),
+                            border: InputBorder.none,
+                            contentPadding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                            hintStyle:
+                                const TextStyle(color: _body, fontSize: 14),
                           ),
-                          const SizedBox(height: 12),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.grey.shade200),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                          onChanged: (value) {
+                            if (_debounce?.isActive ?? false) _debounce!.cancel();
+                            _debounce =
+                                Timer(const Duration(milliseconds: 500), () {
+                              mechanicsProvider.searchMechanics(value);
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Service categories
+                    SizedBox(
+                      height: 96,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _serviceCategories.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 16),
+                        itemBuilder: (_, i) {
+                          final (label, icon, bg) = _serviceCategories[i];
+                          return SizedBox(
+                            width: 72,
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    color: bg,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(icon, color: _heading, size: 24),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  label,
+                                  style: const TextStyle(
+                                      fontSize: 11,
+                                      color: _heading,
+                                      fontWeight: FontWeight.w500),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
-                            child: TextField(
-                              controller: _searchController,
-                              decoration: InputDecoration(
-                                hintText: 'Search by mechanic name...',
-                                prefixIcon: Icon(Icons.search, color: Colors.grey[400], size: 22),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                              ),
-                              onChanged: (value) {
-                                if (_debounce?.isActive ?? false) _debounce!.cancel();
-                                _debounce = Timer(const Duration(milliseconds: 500), () {
-                                  mechanicsProvider.searchMechanics(value);
-                                });
-                              },
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Section header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Nearby Mechanics',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: _heading,
                             ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Based on your location',
+                            style: TextStyle(fontSize: 13, color: _body),
                           ),
                         ],
                       ),
                     ),
 
-                    // Mechanics List
+                    const SizedBox(height: 12),
+
+                    // Mechanics list
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (mechanicsProvider.mechanics.isEmpty && !mechanicsProvider.isLoading)
+                          if (mechanicsProvider.mechanics.isEmpty &&
+                              !mechanicsProvider.isLoading)
                             _buildEmptyState()
                           else
                             ...mechanicsProvider.mechanics.map(
                               (mechanic) => MechanicCard(
                                 mechanic: mechanic,
-                                onTap: () => context.push('/mechanic/${mechanic.id}', extra: mechanic),
+                                onTap: () => context.push(
+                                    '/mechanic/${mechanic.id}',
+                                    extra: mechanic),
                               ),
                             ),
 
                           if (mechanicsProvider.isLoading)
-                            Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(24),
-                                child: CircularProgressIndicator(color: primary),
+                            const Padding(
+                              padding: EdgeInsets.all(24),
+                              child: Center(
+                                child:
+                                    CircularProgressIndicator(color: _orange),
                               ),
                             ),
 
-                          if (!mechanicsProvider.hasMore && mechanicsProvider.mechanics.isNotEmpty)
+                          if (!mechanicsProvider.hasMore &&
+                              mechanicsProvider.mechanics.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 24),
                               child: Center(
@@ -424,7 +486,9 @@ class _HomePageState extends State<_HomePage> {
                                     const SizedBox(height: 4),
                                     Text(
                                       'All mechanics within 7km shown',
-                                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                                      style: TextStyle(
+                                          color: Colors.grey[500],
+                                          fontSize: 12),
                                     ),
                                   ],
                                 ),
@@ -436,6 +500,7 @@ class _HomePageState extends State<_HomePage> {
                       ),
                     ),
                   ],
+                ),
                 ),
               ),
             ),
@@ -538,10 +603,9 @@ class _ProfilePageState extends State<_ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
-    final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: _bg,
       body: Stack(
         children: [
           CustomScrollView(
@@ -556,11 +620,11 @@ class _ProfilePageState extends State<_ProfilePage> {
                         width: 86,
                         height: 86,
                         decoration: BoxDecoration(
-                          color: primary,
+                          color: _orange,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: primary.withValues(alpha: 0.3),
+                              color: _orange.withOpacity(0.3),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -583,30 +647,31 @@ class _ProfilePageState extends State<_ProfilePage> {
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: _heading,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         user?.email ?? '',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                        style: const TextStyle(fontSize: 14, color: _body),
                       ),
                       const SizedBox(height: 16),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: primary.withValues(alpha: 0.08),
+                          color: _orange.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.verified_user, size: 14, color: primary),
-                            const SizedBox(width: 6),
+                            Icon(Icons.verified_user, size: 14, color: _orange),
+                            SizedBox(width: 6),
                             Text(
                               'Verified Customer',
                               style: TextStyle(
-                                color: primary,
+                                color: _orange,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -618,7 +683,6 @@ class _ProfilePageState extends State<_ProfilePage> {
                   ),
                 ),
               ),
-
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -631,36 +695,36 @@ class _ProfilePageState extends State<_ProfilePage> {
                       _buildMenuGroup([
                         _MenuItemData(
                           icon: Icons.person_outline,
-                          color: primary,
+                          color: _orange,
                           title: 'Edit Profile',
                           onTap: _isLoggingOut ? null : () {},
                         ),
                         _MenuItemData(
                           icon: Icons.location_on_outlined,
-                          color: Colors.orange,
+                          color: _orange,
                           title: 'My Addresses',
-                          onTap: _isLoggingOut ? null : () => context.push('/addresses'),
+                          onTap: _isLoggingOut
+                              ? null
+                              : () => context.push('/addresses'),
                         ),
                         _MenuItemData(
                           icon: Icons.notifications_outlined,
-                          color: Colors.purple,
+                          color: _orange,
                           title: 'Notifications',
                           onTap: _isLoggingOut ? null : () {},
                         ),
                       ]),
-
                       const SizedBox(height: 20),
                       _buildSectionLabel('Support'),
                       const SizedBox(height: 8),
                       _buildMenuGroup([
                         _MenuItemData(
                           icon: Icons.help_outline,
-                          color: Colors.teal,
+                          color: _orange,
                           title: 'Help & Support',
                           onTap: _isLoggingOut ? null : () {},
                         ),
                       ]),
-
                       const SizedBox(height: 20),
                       _buildMenuGroup([
                         _MenuItemData(
@@ -671,12 +735,12 @@ class _ProfilePageState extends State<_ProfilePage> {
                           isDestructive: true,
                         ),
                       ]),
-
                       const SizedBox(height: 24),
                       Center(
                         child: Text(
                           'SPANR v1.0.0',
-                          style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                          style:
+                              TextStyle(color: Colors.grey[400], fontSize: 12),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -686,10 +750,9 @@ class _ProfilePageState extends State<_ProfilePage> {
               ),
             ],
           ),
-
           if (_isLoggingOut)
             Container(
-              color: Colors.black.withValues(alpha: 0.4),
+              color: Colors.black.withOpacity(0.4),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(24),
@@ -697,12 +760,13 @@ class _ProfilePageState extends State<_ProfilePage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Column(
+                  child: const Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(color: primary),
-                      const SizedBox(height: 16),
-                      const Text('Logging out...', style: TextStyle(fontSize: 16)),
+                      CircularProgressIndicator(color: _orange),
+                      SizedBox(height: 16),
+                      Text('Logging out...',
+                          style: TextStyle(fontSize: 16)),
                     ],
                   ),
                 ),
@@ -733,7 +797,7 @@ class _ProfilePageState extends State<_ProfilePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: _cardShadow,
       ),
       child: Column(
         children: items.asMap().entries.map((entry) {
@@ -752,25 +816,34 @@ class _ProfilePageState extends State<_ProfilePage> {
   }
 
   Widget _buildMenuItem(_MenuItemData item) {
-    final textColor = item.isDestructive ? Colors.red.shade600 : const Color(0xFF1A1A1A);
+    final textColor =
+        item.isDestructive ? Colors.red.shade600 : _heading;
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       leading: Container(
         width: 36,
         height: 36,
         decoration: BoxDecoration(
           color: item.isDestructive
-              ? Colors.red.withValues(alpha: 0.1)
-              : item.color.withValues(alpha: 0.1),
+              ? Colors.red.withOpacity(0.1)
+              : item.color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(item.icon, color: item.isDestructive ? Colors.red.shade600 : item.color, size: 18),
+        child: Icon(item.icon,
+            color:
+                item.isDestructive ? Colors.red.shade600 : item.color,
+            size: 18),
       ),
       title: Text(
         item.title,
-        style: TextStyle(color: textColor, fontSize: 15, fontWeight: FontWeight.w500),
+        style: TextStyle(
+            color: textColor,
+            fontSize: 15,
+            fontWeight: FontWeight.w500),
       ),
-      trailing: Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
+      trailing:
+          Icon(Icons.chevron_right, color: Colors.grey[400], size: 20),
       onTap: item.onTap,
     );
   }

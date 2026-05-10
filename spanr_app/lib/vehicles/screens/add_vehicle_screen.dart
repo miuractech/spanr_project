@@ -7,7 +7,40 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/vehicle_model.dart';
 import '../vehicles_provider.dart';
 import '../../auth/auth_provider.dart';
-import '../../core/theme/app_theme.dart';
+const _kOrange = Color(0xFFFC8019);
+const _kHeading = Color(0xFF1C1C1C);
+const _kBody = Color(0xFF696969);
+const _kBg = Color(0xFFF2F2F2);
+
+InputDecoration _fieldDecoration(String hint) {
+  return InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: Color(0xFFAAAAAA), fontSize: 15),
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.grey.shade300),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: BorderSide(color: Colors.grey.shade300),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: _kOrange, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Colors.redAccent),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(10),
+      borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
+    ),
+  );
+}
 
 class AddVehicleScreen extends StatefulWidget {
   final VehicleModel? vehicle;
@@ -26,7 +59,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   final _makeController = TextEditingController();
   final _colorController = TextEditingController();
   final _imagePicker = ImagePicker();
-  
+
   bool _isLoading = false;
   bool _isUploadingImage = false;
   bool _isIndianLicensed = true;
@@ -64,26 +97,41 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   Future<void> _showImageSourceActionSheet() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Take Photo'),
-              onTap: () => Navigator.of(context).pop(ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Choose from Gallery'),
-              onTap: () => Navigator.of(context).pop(ImageSource.gallery),
-            ),
-            ListTile(
-              leading: const Icon(Icons.cancel),
-              title: const Text('Cancel'),
-              onTap: () => Navigator.of(context).pop(),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: _kOrange),
+                title: const Text('Take Photo'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: _kOrange),
+                title: const Text('Choose from Gallery'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.cancel_outlined, color: _kBody),
+                title: const Text('Cancel'),
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -147,19 +195,23 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$permissionName Permission Required'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('$permissionName Permission Required',
+            style: const TextStyle(color: _kHeading, fontWeight: FontWeight.w700)),
         content: Text(
           '$permissionName permission is required to add vehicle photos. '
           'Would you like to open settings to enable it?',
+          style: const TextStyle(color: _kBody),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: _kBody)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Open Settings'),
+            child: const Text('Open Settings',
+                style: TextStyle(color: _kOrange, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -173,16 +225,20 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Image'),
-        content: const Text('Are you sure you want to delete this image?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Image',
+            style: TextStyle(color: _kHeading, fontWeight: FontWeight.w700)),
+        content: const Text('Are you sure you want to delete this image?',
+            style: TextStyle(color: _kBody)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: _kBody)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: const Text('Delete',
+                style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -258,7 +314,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
         vehicleId = newVehicle.id;
       }
 
-      // Upload new images
       for (final imageFile in _newImages) {
         await context.read<VehiclesProvider>().uploadImage(vehicleId, imageFile);
       }
@@ -282,54 +337,39 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     final isEdit = widget.vehicle != null;
 
     return Scaffold(
-      backgroundColor: AppTheme.white,
+      backgroundColor: _kBg,
       appBar: AppBar(
-        backgroundColor: AppTheme.white,
+        backgroundColor: Colors.white,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppTheme.darkGrey),
+          icon: const Icon(Icons.arrow_back, color: _kHeading),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
+        title: const Text(
           'Vehicle Details',
-          style: const TextStyle(
-            color: AppTheme.darkGrey,
+          style: TextStyle(
+            color: _kHeading,
             fontSize: 18,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.grey.shade200),
+        ),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            // Registration Plate
-            Text(
-              'Registration Plate',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.darkGrey,
-              ),
-            ),
+            _buildLabel('Registration Plate'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _licensePlateController,
-              decoration: InputDecoration(
-                hintText: 'RJ 45 9855',
-                filled: true,
-                fillColor: Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-              ),
+              decoration: _fieldDecoration('RJ 45 9855'),
               textCapitalization: TextCapitalization.characters,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -339,8 +379,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
               },
             ),
             const SizedBox(height: 12),
-            
-            // Indian Licensed Checkbox
+
             Row(
               children: [
                 SizedBox(
@@ -349,278 +388,111 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                   child: Checkbox(
                     value: _isIndianLicensed,
                     onChanged: (value) {
-                      setState(() {
-                        _isIndianLicensed = value ?? true;
-                      });
+                      setState(() => _isIndianLicensed = value ?? true);
                     },
+                    activeColor: _kOrange,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
+                const Text(
                   'i have a indian licensed vehicle',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: _kBody),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            
-            // Vehicle Type Selection
-            Text(
-              'Vehicle Type',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.darkGrey,
-              ),
-            ),
+
+            _buildLabel('Vehicle Type'),
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _vehicleType = 'car'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _vehicleType == 'car'
-                            ? AppTheme.primaryBlack
-                            : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: _vehicleType == 'car'
-                              ? AppTheme.primaryBlack
-                              : Colors.grey[300]!,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Car',
-                          style: TextStyle(
-                            color: _vehicleType == 'car'
-                                ? Colors.white
-                                : AppTheme.darkGrey,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                Expanded(child: _buildTypeButton('car', 'Car', Icons.directions_car)),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _vehicleType = 'bike'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _vehicleType == 'bike'
-                            ? AppTheme.primaryBlack
-                            : Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: _vehicleType == 'bike'
-                              ? AppTheme.primaryBlack
-                              : Colors.grey[300]!,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          'Bike',
-                          style: TextStyle(
-                            color: _vehicleType == 'bike'
-                                ? Colors.white
-                                : AppTheme.darkGrey,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                Expanded(child: _buildTypeButton('bike', 'Bike', Icons.two_wheeler)),
               ],
             ),
             const SizedBox(height: 24),
-            
-            // Name your vehicle
-            Text(
-              'Name your vehicle',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.darkGrey,
-              ),
-            ),
+
+            _buildLabel('Name your vehicle'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _nameController,
-              decoration: InputDecoration(
-                hintText: 'Tata',
-                filled: true,
-                fillColor: Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-              ),
+              decoration: _fieldDecoration('Tata'),
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 20),
-            
-            // Model
-            Text(
-              'Model',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.darkGrey,
-              ),
-            ),
+
+            _buildLabel('Model'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _modelController,
-              decoration: InputDecoration(
-                hintText: '2020',
-                filled: true,
-                fillColor: Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-              ),
+              decoration: _fieldDecoration('2020'),
               textCapitalization: TextCapitalization.words,
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter the model';
-                }
+                if (value == null || value.isEmpty) return 'Please enter the model';
                 return null;
               },
             ),
             const SizedBox(height: 20),
-            
-            // Make
-            Text(
-              'Make',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.darkGrey,
-              ),
-            ),
+
+            _buildLabel('Make'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _makeController,
-              decoration: InputDecoration(
-                hintText: 'Nexon',
-                filled: true,
-                fillColor: Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-              ),
+              decoration: _fieldDecoration('Nexon'),
               textCapitalization: TextCapitalization.words,
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter the make';
-                }
+                if (value == null || value.isEmpty) return 'Please enter the make';
                 return null;
               },
             ),
             const SizedBox(height: 20),
-            
-            // Color
-            Text(
-              'Color',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.darkGrey,
-              ),
-            ),
+
+            _buildLabel('Color'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _colorController,
-              decoration: InputDecoration(
-                hintText: 'White',
-                filled: true,
-                fillColor: Colors.grey[50],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-              ),
+              decoration: _fieldDecoration('White'),
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 24),
-            
-            // Make Primary Vehicle Toggle
+
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'Make Primary Vehicle',
                     style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey[700],
+                      fontSize: 15,
+                      color: _kHeading,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   Switch(
                     value: _isPrimary,
-                    onChanged: (value) {
-                      setState(() {
-                        _isPrimary = value;
-                      });
-                    },
-                    activeColor: AppTheme.primaryBlack,
+                    onChanged: (value) => setState(() => _isPrimary = value),
+                    activeColor: _kOrange,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            
-            // Images Section
+
             if (widget.vehicle?.images.isNotEmpty == true ||
                 _newImages.isNotEmpty) ...[
-              Text(
-                'Vehicle Images',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.darkGrey,
-                ),
-              ),
+              _buildLabel('Vehicle Images'),
               const SizedBox(height: 8),
-              
-              // Existing Images
+
               if (widget.vehicle?.images.isNotEmpty == true)
                 SizedBox(
                   height: 100,
@@ -631,11 +503,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       final imageUrl = widget.vehicle!.images[index];
                       return Container(
                         width: 100,
-                        margin: const EdgeInsets.only(right: 8),
+                        margin: const EdgeInsets.only(right: 10),
                         child: Stack(
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(10),
                               child: CachedNetworkImage(
                                 imageUrl: imageUrl,
                                 fit: BoxFit.cover,
@@ -650,15 +522,17 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                                 onTap: () => _deleteExistingImage(imageUrl),
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: Colors.white,
                                     shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.15),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
                                   ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: Colors.red,
-                                  ),
+                                  child: const Icon(Icons.close, size: 14, color: Colors.redAccent),
                                 ),
                               ),
                             ),
@@ -668,8 +542,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                     },
                   ),
                 ),
-              
-              // New Images
+
               if (_newImages.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
@@ -681,11 +554,11 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                       itemBuilder: (context, index) {
                         return Container(
                           width: 100,
-                          margin: const EdgeInsets.only(right: 8),
+                          margin: const EdgeInsets.only(right: 10),
                           child: Stack(
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                                 child: Image.file(
                                   _newImages[index],
                                   fit: BoxFit.cover,
@@ -698,21 +571,21 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                                 right: 4,
                                 child: InkWell(
                                   onTap: () {
-                                    setState(() {
-                                      _newImages.removeAt(index);
-                                    });
+                                    setState(() => _newImages.removeAt(index));
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(
+                                    decoration: BoxDecoration(
                                       color: Colors.white,
                                       shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.15),
+                                          blurRadius: 4,
+                                        ),
+                                      ],
                                     ),
-                                    child: const Icon(
-                                      Icons.close,
-                                      size: 16,
-                                      color: Colors.red,
-                                    ),
+                                    child: const Icon(Icons.close, size: 14, color: Colors.redAccent),
                                   ),
                                 ),
                               ),
@@ -725,48 +598,96 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 ),
               const SizedBox(height: 12),
             ],
-            
-            // Add Photo Button
-            OutlinedButton.icon(
-              onPressed: _isUploadingImage ? null : _showImageSourceActionSheet,
-              icon: const Icon(Icons.add_a_photo),
-              label: const Text('Add Photo'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                side: BorderSide(color: Colors.grey[300]!),
+
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isUploadingImage ? null : _showImageSourceActionSheet,
+                icon: const Icon(Icons.add_a_photo, size: 18, color: _kOrange),
+                label: const Text('Add Photo',
+                    style: TextStyle(color: _kOrange, fontWeight: FontWeight.w600)),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  side: BorderSide(color: _kOrange.withValues(alpha: 0.5)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 32),
-            
-            // Add Button
+
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 52,
               child: ElevatedButton(
                 onPressed: _isLoading || _isUploadingImage ? null : _saveVehicle,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlack,
+                  backgroundColor: _kOrange,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: _kOrange.withValues(alpha: 0.5),
+                  disabledForegroundColor: Colors.white70,
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 child: _isLoading
                     ? const SizedBox(
                         height: 20,
                         width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                       )
                     : Text(
                         isEdit ? 'Update' : 'Add',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                       ),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: _kHeading,
+      ),
+    );
+  }
+
+  Widget _buildTypeButton(String type, String label, IconData icon) {
+    final selected = _vehicleType == type;
+    return InkWell(
+      onTap: () => setState(() => _vehicleType = type),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: selected ? _kOrange : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? _kOrange : Colors.grey.shade300,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: selected ? Colors.white : _kBody),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : _kHeading,
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
               ),
             ),
           ],

@@ -13,6 +13,10 @@ class MechanicsService {
     int offset = 0,
     String? searchQuery,
   }) async {
+    // Bounding box pre-filter to reduce data from server
+    final latDelta = radiusKm / 111.0;
+    final lonDelta = radiusKm / (111.0 * math.cos(latitude * math.pi / 180.0));
+
     var query = _supabase
         .from('mechanic_companies')
         .select('''
@@ -25,10 +29,11 @@ class MechanicsService {
             rating
           )
         ''')
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
+        .gte('latitude', latitude - latDelta)
+        .lte('latitude', latitude + latDelta)
+        .gte('longitude', longitude - lonDelta)
+        .lte('longitude', longitude + lonDelta);
     
-    // Add search filter if query is provided
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       query = query.ilike('company_name', '%${searchQuery.trim()}%');
     }

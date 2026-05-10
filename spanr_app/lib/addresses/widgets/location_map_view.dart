@@ -21,6 +21,8 @@ class _LocationMapViewState extends State<LocationMapView> {
   GoogleMapController? _mapController;
   late LatLng _currentPosition;
   Set<Marker> _markers = {};
+  bool _isMapLoaded = false;
+  bool _showMapErrorHint = false;
 
   @override
   void initState() {
@@ -38,8 +40,10 @@ class _LocationMapViewState extends State<LocationMapView> {
     if (widget.latitude != oldWidget.latitude ||
         widget.longitude != oldWidget.longitude) {
       if (widget.latitude != null && widget.longitude != null) {
-        _currentPosition = LatLng(widget.latitude!, widget.longitude!);
-        _updateMarker();
+        setState(() {
+          _currentPosition = LatLng(widget.latitude!, widget.longitude!);
+          _updateMarker();
+        });
         _mapController?.animateCamera(
           CameraUpdate.newLatLng(_currentPosition),
         );
@@ -48,24 +52,23 @@ class _LocationMapViewState extends State<LocationMapView> {
   }
 
   void _updateMarker() {
-    setState(() {
-      _markers = {
-        Marker(
-          markerId: const MarkerId('selected_location'),
-          position: _currentPosition,
-          draggable: true,
-          onDragEnd: (newPosition) {
-            setState(() {
-              _currentPosition = newPosition;
-            });
-            widget.onLocationChanged(
-              newPosition.latitude,
-              newPosition.longitude,
-            );
-          },
-        ),
-      };
-    });
+    _markers = {
+      Marker(
+        markerId: const MarkerId('selected_location'),
+        position: _currentPosition,
+        draggable: true,
+        onDragEnd: (newPosition) {
+          setState(() {
+            _currentPosition = newPosition;
+            _updateMarker();
+          });
+          widget.onLocationChanged(
+            newPosition.latitude,
+            newPosition.longitude,
+          );
+        },
+      ),
+    };
   }
 
   void _onMapTap(LatLng position) {
@@ -78,6 +81,14 @@ class _LocationMapViewState extends State<LocationMapView> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isMapLoaded && !_showMapErrorHint) {
+      Future.delayed(const Duration(seconds: 8), () {
+        if (mounted && !_isMapLoaded) {
+          setState(() => _showMapErrorHint = true);
+        }
+      });
+    }
+
     return Container(
       height: 300,
       decoration: BoxDecoration(
@@ -85,20 +96,51 @@ class _LocationMapViewState extends State<LocationMapView> {
         border: Border.all(color: Colors.grey.shade300),
       ),
       clipBehavior: Clip.antiAlias,
-      child: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: _currentPosition,
-          zoom: 15,
-        ),
-        onMapCreated: (controller) {
-          _mapController = controller;
-        },
-        onTap: _onMapTap,
-        markers: _markers,
-        myLocationButtonEnabled: true,
-        myLocationEnabled: true,
-        zoomControlsEnabled: true,
-        mapToolbarEnabled: false,
+      child: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: _currentPosition,
+              zoom: 15,
+            ),
+            onMapCreated: (controller) {
+              _mapController = controller;
+            },
+            onCameraIdle: () {
+              if (_isMapLoaded) return;
+              if (mounted) {
+                setState(() {
+                  _isMapLoaded = true;
+                  _showMapErrorHint = false;
+                });
+              }
+            },
+            onTap: _onMapTap,
+            markers: _markers,
+            myLocationButtonEnabled: true,
+            myLocationEnabled: true,
+            zoomControlsEnabled: true,
+            mapToolbarEnabled: false,
+          ),
+          if (_showMapErrorHint)
+            Positioned(
+              left: 10,
+              right: 10,
+              top: 10,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.75),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Map failed to load. Check Android Maps API key restrictions.',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

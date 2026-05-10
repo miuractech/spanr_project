@@ -12,19 +12,18 @@ interface PlanCardProps {
 export const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete, onView }) => {
   return (
     <Card 
-      withBorder 
-      shadow="sm" 
+      shadow="xs" 
       padding="lg" 
-      radius="md"
+      radius="lg"
       style={{ 
         cursor: 'pointer',
-        backgroundColor: '#FFFFFF',
         border: '1px solid #E0E0E0',
+        transition: 'box-shadow 0.15s ease',
       }}
     >
       <div onClick={() => onView(plan.id)}>
         <Group justify="space-between" mb="xs">
-          <Text fw={600} size="lg">{plan.name}</Text>
+          <Text fw={600} size="lg" c="#1C1C1C">{plan.name}</Text>
           <Group gap="xs" onClick={(e) => e.stopPropagation()}>
             <ActionIcon variant="light" color="orange" onClick={() => onEdit(plan)}>
               <IconEdit size={16} />
@@ -37,7 +36,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete, onVi
 
         <Stack gap="xs">
           {plan.services && (
-            <Text size="sm" c="dimmed">
+            <Text size="sm" c="#696969">
               Service: {plan.services.name}
             </Text>
           )}
@@ -56,19 +55,19 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete, onVi
             )}
           </Group>
 
-          <Group gap="md">
+          <Group gap="md" pt={4} style={{ borderTop: '1px solid #F2F2F2' }}>
             <Group gap={5}>
-              <IconClock size={16} />
-              <Text size="sm">{plan.duration} min</Text>
+              <IconClock size={16} color="#696969" />
+              <Text size="sm" c="#696969">{plan.duration} min</Text>
             </Group>
             <Group gap={5}>
-              <IconCoin size={16} />
-              <Text size="sm">₹{plan.base_price}</Text>
+              <IconCoin size={16} color="#FC8019" />
+              <Text size="sm" fw={600} c="#FC8019">₹{plan.base_price}</Text>
             </Group>
           </Group>
 
           {plan.warranty && (
-            <Text size="xs" c="dimmed">
+            <Text size="xs" c="#696969">
               Warranty: {plan.warranty}
             </Text>
           )}
@@ -77,4 +76,3 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete, onVi
     </Card>
   );
 };
-

@@ -1,12 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../addresses_provider.dart';
 import '../models/address.dart';
 import '../../auth/auth_provider.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/places_service.dart';
+
+const _kOrange = Color(0xFFFC8019);
+const _kHeading = Color(0xFF1C1C1C);
+const _kBody = Color(0xFF696969);
+const _kBg = Color(0xFFF2F2F2);
 
 class AddressesListScreen extends StatefulWidget {
   const AddressesListScreen({super.key});
@@ -74,20 +81,49 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
   Future<void> _useCurrentLocation() async {
     setState(() => _isLoadingLocation = true);
     try {
-      final hasPermission =
-          await _locationService.isLocationPermissionGranted();
+      final hasPermission = await _locationService.isLocationPermissionGranted();
       if (!hasPermission) {
-        final granted = await _locationService.requestLocationPermission();
-        if (!granted) {
+        final status = await Permission.location.request();
+        if (status.isPermanentlyDenied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Location permission permanently denied'),
+                action: SnackBarAction(
+                  label: 'Settings',
+                  textColor: _kOrange,
+                  onPressed: () => _locationService.openLocationSettings(),
+                ),
+              ),
+            );
+          }
+          return;
+        }
+        if (!status.isGranted) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text('Location permission denied'),
                 action: SnackBarAction(
                   label: 'Settings',
+                  textColor: _kOrange,
                   onPressed: () => _locationService.openLocationSettings(),
                 ),
               ),
+            );
+          }
+          return;
+        }
+      }
+
+      final serviceEnabled = await _locationService.isLocationEnabled();
+      if (!serviceEnabled) {
+        await Geolocator.openLocationSettings();
+        final nowEnabled = await _locationService.isLocationEnabled();
+        if (!nowEnabled) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please turn on location service (GPS)')),
             );
           }
           return;
@@ -167,52 +203,75 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
     final isTyping = _searchController.text.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: _kBg,
       appBar: AppBar(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: Colors.white,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back, color: _kHeading),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Add Your Location',
           style: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
+            color: _kHeading,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
           ),
         ),
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: Colors.grey.shade200),
+        ),
       ),
       body: Column(
         children: [
           _buildSearchBar(isTyping),
           if (_isSearching)
             const Padding(
-              padding: EdgeInsets.all(24),
-              child: CircularProgressIndicator(),
+              padding: EdgeInsets.all(32),
+              child: CircularProgressIndicator(color: _kOrange, strokeWidth: 2.5),
             )
           else if (isTyping && _suggestions.isNotEmpty)
             Expanded(child: _buildSuggestions())
           else if (isTyping && !_isSearching)
             Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                'No results found',
-                style: TextStyle(color: Colors.grey[500], fontSize: 15),
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                children: [
+                  Icon(Icons.search_off, size: 40, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No results found',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 15),
+                  ),
+                ],
               ),
             )
           else
             Expanded(
               child: addressProvider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(child: CircularProgressIndicator(color: _kOrange, strokeWidth: 2.5))
                   : ListView(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       children: [
                         _buildCurrentLocationOption(),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
+                        if (addressProvider.addresses.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              'SAVED ADDRESSES',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.grey[500],
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
                         ...addressProvider.addresses
                             .map((address) => _AddressListItem(
                                   address: address,
@@ -221,8 +280,7 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
                                     Navigator.of(context).pop();
                                   },
                                   onEdit: () async {
-                                    final result =
-                                        await context.push<bool>(
+                                    final result = await context.push<bool>(
                                       '/addresses/edit',
                                       extra: address,
                                     );
@@ -238,8 +296,7 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
                                     }
                                   },
                                 )),
-                        if (addressProvider.addresses.isEmpty)
-                          _buildEmptyState(),
+                        if (addressProvider.addresses.isEmpty) _buildEmptyState(),
                       ],
                     ),
             ),
@@ -251,44 +308,48 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
 
   Widget _buildSearchBar(bool isTyping) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Icon(Icons.search, color: Colors.grey[500], size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search for area, street name...',
-                hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-            ),
+      child: TextField(
+        controller: _searchController,
+        cursorColor: _kOrange,
+        decoration: InputDecoration(
+          hintText: 'Search for area, street name...',
+          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
+          prefixIcon: Icon(Icons.search, color: Colors.grey[400], size: 22),
+          suffixIcon: isTyping
+              ? GestureDetector(
+                  onTap: () {
+                    _searchController.clear();
+                    FocusScope.of(context).unfocus();
+                  },
+                  child: Icon(Icons.close, color: Colors.grey[400], size: 20),
+                )
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
           ),
-          if (isTyping)
-            GestureDetector(
-              onTap: () {
-                _searchController.clear();
-                FocusScope.of(context).unfocus();
-              },
-              child: Icon(Icons.close, color: Colors.grey[500], size: 20),
-            ),
-        ],
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: _kOrange, width: 1.5),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        ),
       ),
     );
   }
@@ -302,25 +363,23 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
       itemBuilder: (context, index) {
         final p = _suggestions[index];
         return ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           leading: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
+              color: _kOrange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.location_on_outlined,
-                size: 20, color: Colors.grey),
+            child: const Icon(Icons.location_on_outlined, size: 20, color: _kOrange),
           ),
           title: Text(
             p.mainText,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: _kHeading),
           ),
           subtitle: p.secondaryText.isNotEmpty
               ? Text(
                   p.secondaryText,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  style: const TextStyle(fontSize: 13, color: _kBody),
                 )
               : null,
           onTap: () => _onSuggestionTapped(p),
@@ -332,20 +391,38 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
   Widget _buildCurrentLocationOption() {
     return InkWell(
       onTap: _isLoadingLocation ? null : _useCurrentLocation,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: Row(
           children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: _isLoadingLocation
-                  ? CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.red[600])
-                  : Icon(Icons.gps_fixed, color: Colors.red[600], size: 24),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _kOrange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: _isLoadingLocation
+                    ? const CircularProgressIndicator(
+                        strokeWidth: 2, color: _kOrange)
+                    : const Icon(Icons.gps_fixed, color: _kOrange, size: 22),
+              ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -354,16 +431,18 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.red,
+                    color: _kOrange,
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 3),
                 Text(
                   'Using GPS',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(fontSize: 13, color: _kBody),
                 ),
               ],
             ),
+            const Spacer(),
+            const Icon(Icons.chevron_right, color: _kOrange, size: 24),
           ],
         ),
       ),
@@ -375,12 +454,13 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
       padding: const EdgeInsets.all(20),
       child: TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: Text(
+        child: const Text(
           'Skip',
           style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[400],
-              fontWeight: FontWeight.w500),
+            fontSize: 15,
+            color: _kBody,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -388,12 +468,27 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
 
   Widget _buildEmptyState() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 40),
+      padding: const EdgeInsets.symmetric(vertical: 48),
       child: Center(
-        child: Text(
-          'No saved addresses\nSearch or use current location to add one',
-          style: TextStyle(fontSize: 15, color: Colors.grey[500]),
-          textAlign: TextAlign.center,
+        child: Column(
+          children: [
+            Icon(Icons.location_off_outlined, size: 48, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            Text(
+              'No saved addresses',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[500],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Search or use current location to add one',
+              style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
@@ -403,18 +498,22 @@ class _AddressesListScreenState extends State<AddressesListScreen> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Address'),
-        content:
-            const Text('Are you sure you want to delete this address?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Address',
+            style: TextStyle(color: _kHeading, fontWeight: FontWeight.w700)),
+        content: const Text(
+          'Are you sure you want to delete this address?',
+          style: TextStyle(color: _kBody),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: _kBody)),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -438,8 +537,7 @@ class _AddressListItem extends StatelessWidget {
   IconData _getIconForLabel(String label) {
     final l = label.toLowerCase();
     if (l.contains('home')) return Icons.home_outlined;
-    if (l.contains('office') || l.contains('work'))
-      return Icons.business_outlined;
+    if (l.contains('office') || l.contains('work')) return Icons.business_outlined;
     return Icons.location_on_outlined;
   }
 
@@ -448,19 +546,34 @@ class _AddressListItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       onLongPress: () => _showOptionsBottomSheet(context),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Colors.grey[200]!, width: 1),
-          ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(_getIconForLabel(address.label),
-                color: Colors.grey[700], size: 24),
-            const SizedBox(width: 16),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _kBg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(_getIconForLabel(address.label),
+                  color: _kBody, size: 22),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,15 +581,19 @@ class _AddressListItem extends StatelessWidget {
                   Text(
                     address.label,
                     style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: _kHeading,
+                    ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     address.fullAddress,
-                    style: TextStyle(
-                        fontSize: 14, color: Colors.grey[600], height: 1.4),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: _kBody,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
@@ -493,12 +610,21 @@ class _AddressListItem extends StatelessWidget {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             ListTile(
-              leading: const Icon(Icons.edit_outlined),
+              leading: const Icon(Icons.edit_outlined, color: _kOrange),
               title: const Text('Edit Address'),
               onTap: () {
                 Navigator.pop(context);
@@ -506,10 +632,9 @@ class _AddressListItem extends StatelessWidget {
               },
             ),
             ListTile(
-              leading:
-                  const Icon(Icons.delete_outline, color: Colors.red),
+              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
               title: const Text('Delete Address',
-                  style: TextStyle(color: Colors.red)),
+                  style: TextStyle(color: Colors.redAccent)),
               onTap: () {
                 Navigator.pop(context);
                 onDelete();

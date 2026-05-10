@@ -34,13 +34,13 @@ export default function PlanDetailPage() {
         leftSection={<IconArrowLeft size={16} />}
         variant="subtle"
         color="orange"
-        onClick={() => navigate('/plans')}
+        onClick={() => navigate('/services')}
         mb="xl"
       >
         Back to Plans
       </Button>
 
-      <Paper withBorder shadow="sm" p="xl" radius="md" style={{ backgroundColor: '#FFFFFF' }}>
+      <Paper shadow="sm" p="xl" radius="lg" style={{ border: '1px solid #E0E0E0' }}>
         <Stack gap="xl">
           <div>
             <Title mb="xs">{planDetails.name}</Title>

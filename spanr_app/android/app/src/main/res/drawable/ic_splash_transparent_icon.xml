@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  SplashScreen API requires windowSplashScreenAnimatedIcon to be drawable.
+  Effectively blank so Flutter draws the branded splash (circles + text).
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <size
+                android:width="96dp"
+                android:height="96dp" />
+            <solid android:color="@android:color/white" />
+        </shape>
+    </item>
+</layer-list>

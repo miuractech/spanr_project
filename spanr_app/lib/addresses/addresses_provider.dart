@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models/address.dart';
 import 'addresses_service.dart';
+
+const _kSelectedAddressKey = 'selected_address_id';
 
 class AddressesProvider extends ChangeNotifier {
   final AddressesService _service = AddressesService();
@@ -16,20 +19,40 @@ class AddressesProvider extends ChangeNotifier {
   String? get error => _error;
   bool get hasAddresses => _addresses.isNotEmpty;
 
-  Future<void> loadAddresses(String userId) async {
+  Future<void> loadAddresses(String userId, {bool preserveSelection = false}) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       _addresses = await _service.getAddresses(userId);
-      
-      // Set default address as selected
-      final defaultAddr = _addresses.where((a) => a.isDefault).firstOrNull;
-      if (defaultAddr != null) {
-        _selectedAddress = defaultAddr;
-      } else if (_addresses.isNotEmpty) {
-        _selectedAddress = _addresses.first;
+
+      if (preserveSelection && _selectedAddress != null) {
+        final stillExists = _addresses.firstWhere(
+          (a) => a.id == _selectedAddress!.id,
+          orElse: () => _addresses.first,
+        );
+        _selectedAddress = stillExists;
+      } else {
+        final savedId = await _getSavedAddressId();
+        final savedAddr = savedId != null
+            ? _addresses.where((a) => a.id == savedId).firstOrNull
+            : null;
+
+        if (savedAddr != null) {
+          _selectedAddress = savedAddr;
+        } else {
+          final defaultAddr = _addresses.where((a) => a.isDefault).firstOrNull;
+          if (defaultAddr != null) {
+            _selectedAddress = defaultAddr;
+          } else if (_addresses.isNotEmpty && _selectedAddress == null) {
+            _selectedAddress = _addresses.first;
+          }
+        }
+      }
+
+      if (_selectedAddress != null) {
+        await _saveAddressId(_selectedAddress!.id!);
       }
     } catch (e) {
       _error = e.toString();
@@ -155,6 +178,7 @@ class AddressesProvider extends ChangeNotifier {
 
   void selectAddress(Address address) {
     _selectedAddress = address;
+    if (address.id != null) _saveAddressId(address.id!);
     notifyListeners();
   }
 
@@ -189,7 +213,23 @@ class AddressesProvider extends ChangeNotifier {
     _selectedAddress = null;
     _error = null;
     _isLoading = false;
+    _clearSavedAddressId();
     notifyListeners();
+  }
+
+  Future<String?> _getSavedAddressId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kSelectedAddressKey);
+  }
+
+  Future<void> _saveAddressId(String id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kSelectedAddressKey, id);
+  }
+
+  Future<void> _clearSavedAddressId() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_kSelectedAddressKey);
   }
 }
 

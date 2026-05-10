@@ -5,6 +5,7 @@ import 'config/supabase_config.dart';
 import 'config/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/app_providers.dart';
+import 'auth/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,10 +23,11 @@ class MyApp extends StatelessWidget {
       providers: AppProviders.providers,
       child: Builder(
         builder: (context) {
+          final authProvider = context.read<AuthProvider>();
           return MaterialApp.router(
             title: 'SPANR',
             theme: AppTheme.lightTheme,
-            routerConfig: AppRouter.createRouter(),
+            routerConfig: AppRouter.createRouter(authProvider),
             debugShowCheckedModeBanner: false,
           );
         },

@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../models/mechanic_company.dart';
 import '../../core/theme/app_theme.dart';
 
+const _kRatingGreen = Color(0xFF267E3E);
+const _kHeadingColor = Color(0xFF1C1C1C);
+const _kBodyColor = Color(0xFF696969);
+
 class MechanicCard extends StatelessWidget {
   final MechanicCompany mechanic;
   final VoidCallback? onTap;
@@ -17,156 +21,145 @@ class MechanicCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.cardGrey,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: onTap,
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Circular profile image
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: AppTheme.backgroundGrey,
-                      shape: BoxShape.circle,
-                    ),
-                    child: mechanic.logo != null
-                        ? ClipOval(
-                            child: Image.network(
-                              mechanic.logo!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  _buildPlaceholder(context),
-                            ),
-                          )
-                        : _buildPlaceholder(context),
-                  ),
-                  const SizedBox(width: 16),
-                  
-                  // Company details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          mechanic.companyName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18,
-                            color: AppTheme.darkGrey,
-                            letterSpacing: -0.3,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        // Rating and Distance
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.star,
-                              size: 16,
-                              color: mechanic.rating != null && mechanic.rating! > 0
-                                  ? Colors.amber
-                                  : AppTheme.mediumGrey,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              mechanic.displayRating,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppTheme.darkGrey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            if (mechanic.distanceKm != null) ...[
-                              const SizedBox(width: 12),
-                              Icon(
-                                Icons.location_on,
-                                size: 14,
-                                color: AppTheme.mediumGrey,
-                              ),
-                              const SizedBox(width: 2),
-                              Text(
-                                mechanic.displayDistance,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.mediumGrey,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              
-              // Address
-              Row(
-                children: [
-                  Icon(
-                    Icons.location_on_outlined,
-                    size: 16,
-                    color: AppTheme.mediumGrey,
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      '${mechanic.addressLine1}, ${mechanic.city}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.mediumGrey,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // TOP: Logo + Name + Rating + Distance
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF2F2F2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      child: mechanic.brandImageUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                mechanic.brandImageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildPlaceholder(),
+                              ),
+                            )
+                          : _buildPlaceholder(),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              
-              // Contact info
-              Row(
-                children: [
-                  Icon(
-                    Icons.phone_outlined,
-                    size: 16,
-                    color: AppTheme.mediumGrey,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    mechanic.phone,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.mediumGrey,
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            mechanic.companyName,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: _kHeadingColor,
+                              height: 1.25,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              _buildRatingBadge(),
+                              if (mechanic.distanceKm != null) ...[
+                                const SizedBox(width: 10),
+                                _buildDistanceBadge(),
+                              ],
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildPlaceholder(BuildContext context) {
-    return Icon(
-      Icons.person,
-      size: 30,
-      color: AppTheme.lightGrey,
+  Widget _buildRatingBadge() {
+    final hasRating = mechanic.rating != null && mechanic.rating! > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: hasRating ? _kRatingGreen : AppTheme.mediumGrey,
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star, size: 12, color: Colors.white),
+          const SizedBox(width: 3),
+          Text(
+            mechanic.displayRating,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              height: 1.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDistanceBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.near_me, size: 11, color: _kBodyColor),
+          const SizedBox(width: 3),
+          Text(
+            mechanic.displayDistance,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: _kBodyColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return const Center(
+      child: Icon(Icons.build_rounded, size: 26, color: Color(0xFFBDBDBD)),
     );
   }
 }
-

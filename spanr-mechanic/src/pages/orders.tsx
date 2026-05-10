@@ -23,6 +23,16 @@ import { useOrders, useOrderStats } from '../orders/orders.hook';
 import { OrderCard } from '../components/order_card';
 import type { OrderStatus, OrderFilters } from '../orders/orders.types';
 
+const statConfig = [
+  { key: 'total', label: 'Total', color: '#FC8019' },
+  { key: 'created', label: 'Created', color: '#696969' },
+  { key: 'accepted', label: 'Accepted', color: '#1976D2' },
+  { key: 'inProgress', label: 'In Progress', color: '#FC8019' },
+  { key: 'readyForDelivery', label: 'Ready', color: '#7B1FA2' },
+  { key: 'completed', label: 'Completed', color: '#267E3E' },
+  { key: 'dispute', label: 'Dispute', color: '#D32F2F' },
+] as const;
+
 export default function OrdersPage() {
   const navigate = useNavigate();
   const { company } = useCompany();
@@ -54,7 +64,7 @@ export default function OrdersPage() {
   };
 
   const handleFilterChange = () => {
-    setPage(1); // Reset to first page when filters change
+    setPage(1);
   };
 
   if (error) return <Alert color="red">{error}</Alert>;
@@ -62,37 +72,22 @@ export default function OrdersPage() {
 
   return (
     <Container size="xl" my={40}>
-      <Title mb="xl">Orders Management</Title>
+      <Title mb="xl" c="#1C1C1C">Orders Management</Title>
 
       <SimpleGrid cols={{ base: 2, sm: 4, md: 7 }} mb="xl">
-        <Paper withBorder p="md" radius="md" style={{ backgroundColor: '#FFFFFF' }}>
-          <Text size="sm" c="dimmed" tt="uppercase" fw={600}>Total</Text>
-          <Text size="xl" fw={700} c="orange">{stats.total}</Text>
-        </Paper>
-        <Paper withBorder p="md" radius="md" style={{ backgroundColor: '#FFFFFF' }}>
-          <Text size="sm" c="dimmed" tt="uppercase" fw={600}>Created</Text>
-          <Text size="xl" fw={700} c="gray">{stats.created}</Text>
-        </Paper>
-        <Paper withBorder p="md" radius="md" style={{ backgroundColor: '#FFFFFF' }}>
-          <Text size="sm" c="dimmed" tt="uppercase" fw={600}>Accepted</Text>
-          <Text size="xl" fw={700} c="orange">{stats.accepted}</Text>
-        </Paper>
-        <Paper withBorder p="md" radius="md" style={{ backgroundColor: '#FFFFFF' }}>
-          <Text size="sm" c="dimmed" tt="uppercase" fw={600}>In Progress</Text>
-          <Text size="xl" fw={700} c="orange">{stats.inProgress}</Text>
-        </Paper>
-        <Paper withBorder p="md" radius="md" style={{ backgroundColor: '#FFFFFF' }}>
-          <Text size="sm" c="dimmed" tt="uppercase" fw={600}>Ready</Text>
-          <Text size="xl" fw={700} c="orange">{stats.readyForDelivery}</Text>
-        </Paper>
-        <Paper withBorder p="md" radius="md" style={{ backgroundColor: '#FFFFFF' }}>
-          <Text size="sm" c="dimmed" tt="uppercase" fw={600}>Completed</Text>
-          <Text size="xl" fw={700} c="green">{stats.completed}</Text>
-        </Paper>
-        <Paper withBorder p="md" radius="md" style={{ backgroundColor: '#FFFFFF' }}>
-          <Text size="sm" c="dimmed" tt="uppercase" fw={600}>Dispute</Text>
-          <Text size="xl" fw={700} c="orange">{stats.dispute}</Text>
-        </Paper>
+        {statConfig.map((s) => (
+          <Paper
+            key={s.key}
+            p="md"
+            radius="lg"
+            style={{ border: '1px solid #E0E0E0' }}
+          >
+            <Text size="xs" c="#696969" tt="uppercase" fw={600}>{s.label}</Text>
+            <Text size="xl" fw={700} style={{ color: s.color }}>
+              {stats[s.key as keyof typeof stats]}
+            </Text>
+          </Paper>
+        ))}
       </SimpleGrid>
 
       <Stack gap="md" mb="xl">
@@ -144,10 +139,10 @@ export default function OrdersPage() {
 
       {loading ? (
         <Center h={200}>
-          <Loader />
+          <Loader color="orange" />
         </Center>
       ) : orders.length === 0 ? (
-        <Alert icon={<IconAlertCircle size={16} />} color="blue">
+        <Alert icon={<IconAlertCircle size={16} />} color="blue" radius="md">
           <Text>No orders found.</Text>
         </Alert>
       ) : (
@@ -164,11 +159,12 @@ export default function OrdersPage() {
                 total={totalPages}
                 value={page}
                 onChange={setPage}
+                color="orange"
               />
             </Center>
           )}
 
-          <Text size="sm" c="dimmed" ta="center">
+          <Text size="sm" c="#696969" ta="center">
             Showing {orders.length} of {total} orders
           </Text>
         </Stack>
@@ -176,4 +172,3 @@ export default function OrdersPage() {
     </Container>
   );
 }
-

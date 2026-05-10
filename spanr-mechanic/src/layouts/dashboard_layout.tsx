@@ -9,6 +9,11 @@ export const DashboardLayout = () => {
       header={{ height: 60 }}
       navbar={{ width: 250, breakpoint: 'sm' }}
       padding="md"
+      styles={{
+        main: {
+          backgroundColor: '#F2F2F2',
+        },
+      }}
     >
       <AppShell.Header>
         <Header />
@@ -24,4 +29,3 @@ export const DashboardLayout = () => {
     </AppShell>
   );
 };
-

@@ -1,10 +1,9 @@
 import { NavLink } from 'react-router-dom';
-import { Stack } from '@mantine/core';
+import { Stack, Text } from '@mantine/core';
 import {
   IconDashboard,
   IconBuilding,
   IconTools,
-  IconClipboardList,
   IconShoppingCart,
   IconUsers,
   IconUser,
@@ -21,7 +20,15 @@ const links = [
 
 export const Sidebar = () => {
   return (
-    <Stack gap="xs" p="md">
+    <Stack
+      gap={4}
+      p="md"
+      style={{
+        height: '100%',
+        backgroundColor: '#FFFFFF',
+        borderRight: '1px solid #E0E0E0',
+      }}
+    >
       {links.map((link) => {
         const Icon = link.icon;
         return (
@@ -32,21 +39,23 @@ export const Sidebar = () => {
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              padding: '12px 16px',
-              borderRadius: '8px',
+              padding: '10px 14px',
+              borderRadius: '12px',
               textDecoration: 'none',
-              color: isActive ? '#FFFFFF' : '#495057',
-              backgroundColor: isActive ? '#FF6B35' : 'transparent',
-              fontWeight: isActive ? 600 : 400,
-              transition: 'all 0.2s',
+              color: isActive ? '#FC8019' : '#696969',
+              backgroundColor: isActive ? '#FFF3E0' : 'transparent',
+              fontWeight: isActive ? 600 : 500,
+              fontSize: '14px',
+              transition: 'all 0.15s ease',
             })}
           >
-            <Icon size={20} />
-            <span>{link.label}</span>
+            <Icon size={20} stroke={1.8} />
+            <Text size="sm" fw="inherit" style={{ color: 'inherit' }}>
+              {link.label}
+            </Text>
           </NavLink>
         );
       })}
     </Stack>
   );
 };
-

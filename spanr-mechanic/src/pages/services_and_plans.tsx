@@ -228,7 +228,7 @@ export default function ServicesAndPlansPage() {
       <LoadingOverlay visible={actionLoading} />
 
       <Group justify="space-between" mb="xl">
-        <Title>Services & Plans</Title>
+        <Title c="#1C1C1C">Services & Plans</Title>
         <Button 
           leftSection={<IconPlus size={16} />} 
           onClick={() => setServiceFormOpened(true)}

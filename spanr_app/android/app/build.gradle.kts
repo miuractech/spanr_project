@@ -48,4 +48,5 @@ flutter {
 
 dependencies {
     implementation("com.google.android.play:core:1.10.3")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }

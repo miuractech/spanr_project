@@ -78,7 +78,7 @@ export default function StaffPage() {
   return (
     <Container size="xl" my={40}>
       <Group justify="space-between" mb="xl">
-        <Title>Staff Members</Title>
+        <Title c="#1C1C1C">Staff Members</Title>
         <Button leftSection={<IconPlus size={16} />} onClick={() => setFormOpened(true)} color="orange">
           Add Staff
         </Button>

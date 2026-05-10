@@ -51,19 +51,27 @@ class OrderService {
       final fileName = '${orderId}_before_${DateTime.now().millisecondsSinceEpoch}_$i.$fileExt';
       final filePath = 'order_images/before/$fileName';
 
-      // Upload to Supabase Storage
-      await _supabase.storage.from('orders').upload(
-            filePath,
-            file,
-            fileOptions: const FileOptions(
-              cacheControl: '3600',
-              upsert: false,
-            ),
-          );
+      try {
+        // Upload to Supabase Storage
+        await _supabase.storage.from('orders').upload(
+              filePath,
+              file,
+              fileOptions: const FileOptions(
+                cacheControl: '3600',
+                upsert: false,
+              ),
+            );
 
-      // Get public URL
-      final publicUrl = _supabase.storage.from('orders').getPublicUrl(filePath);
-      uploadedUrls.add(publicUrl);
+        // Get public URL
+        final publicUrl = _supabase.storage.from('orders').getPublicUrl(filePath);
+        uploadedUrls.add(publicUrl);
+      } catch (e) {
+        if (_isRlsViolationError(e)) {
+          // Do not block checkout when photo bucket policies are stricter.
+          continue;
+        }
+        rethrow;
+      }
     }
 
     return uploadedUrls;
@@ -74,6 +82,8 @@ class OrderService {
     String orderId,
     List<String> imageUrls,
   ) async {
+    if (imageUrls.isEmpty) return;
+
     final records = imageUrls
         .map((url) => {
               'order_id': orderId,
@@ -81,7 +91,22 @@ class OrderService {
             })
         .toList();
 
-    await _supabase.from('order_before_images').insert(records);
+    try {
+      await _supabase.from('order_before_images').insert(records);
+    } catch (e) {
+      if (_isRlsViolationError(e)) {
+        // Payment/order creation should still continue.
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  bool _isRlsViolationError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('row-level security') ||
+        message.contains('violates row-level security policy') ||
+        message.contains('unauthorized');
   }
 
   // Create order in database
@@ -131,16 +156,20 @@ class OrderService {
           'razorpay_signature': razorpaySignature,
         })
         .eq('id', paymentId)
+        .eq('status', PaymentStatus.unpaid.dbValue)
         .select()
-        .single();
+        .maybeSingle();
 
-    return PaymentModel.fromJson(response);
+    if (response != null) {
+      return PaymentModel.fromJson(response);
+    }
+    return getPaymentById(paymentId);
   }
 
   // Poll payment status until it's resolved (paid or failed)
   Future<PaymentModel> waitForPaymentResolution({
     required String paymentId,
-    int maxAttempts = 30,
+    int maxAttempts = 45,
     Duration pollInterval = const Duration(seconds: 2),
   }) async {
     for (int i = 0; i < maxAttempts; i++) {
@@ -172,18 +201,10 @@ class OrderService {
   }
 
   // Request payment-related permissions
-  Future<bool> _requestPaymentPermissions() async {
-    // Request phone state permission for Android (optional but recommended by Razorpay)
-    if (Platform.isAndroid) {
-      final phonePermission = await Permission.phone.request();
-      // Continue even if denied as it's optional
-      if (phonePermission.isPermanentlyDenied) {
-        await openAppSettings();
-      }
-    }
-    
-    // On iOS, Bluetooth permissions are requested automatically by the system when needed
-    return true;
+  Future<void> _requestPaymentPermissions() async {
+    if (!Platform.isAndroid) return;
+    // Optional for Razorpay; do not await settings — blocks checkout indefinitely.
+    await Permission.phone.request();
   }
 
   // Open Razorpay payment gateway
@@ -195,11 +216,17 @@ class OrderService {
     required String phone,
     required String description,
   }) async {
-    // Request necessary permissions
     await _requestPaymentPermissions();
-    
+
+    final keyId = SupabaseConfig.razorpayKeyId.trim();
+    if (keyId.isEmpty) {
+      throw Exception(
+        'RAZORPAY_KEY_ID is missing. Add it to spanr_app/.env and rebuild.',
+      );
+    }
+
     var options = {
-      'key': SupabaseConfig.razorpayKeyId,
+      'key': keyId,
       'amount': (amount * 100).toInt(), // amount in paise
       'currency': 'INR',
       'name': 'SPANR',
@@ -328,11 +355,26 @@ class OrderService {
       },
     );
 
-    if (response.data == null || response.data['id'] == null) {
-      throw Exception('Failed to create Razorpay order');
+    final status = response.status;
+    final data = response.data;
+
+    if (status != 200) {
+      String msg = 'HTTP $status';
+      if (data is Map && data['error'] != null) {
+        msg = '${data['error']}';
+      } else if (data != null) {
+        msg = data.toString();
+      }
+      throw Exception(
+        'Could not start payment ($msg). Deploy create-razorpay-order and set RAZORPAY secrets on Supabase.',
+      );
     }
 
-    return response.data['id'] as String;
+    if (data is! Map || data['id'] == null) {
+      throw Exception('Invalid Razorpay response from server');
+    }
+
+    return data['id'] as String;
   }
 
   // Complete order flow: create order, upload images, create payment, initiate Razorpay

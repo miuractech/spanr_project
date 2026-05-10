@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../models/mechanic_company.dart';
 import '../models/service_model.dart';
 import '../models/plan_model.dart';
@@ -9,6 +8,12 @@ import '../services_plans_service.dart';
 import '../widgets/plan_card.dart';
 import '../../cart/cart_provider.dart';
 import '../../core/services/location_service.dart';
+
+const _kPrimaryOrange = Color(0xFFFC8019);
+const _kRatingGreen = Color(0xFF267E3E);
+const _kBg = Color(0xFFF2F2F2);
+const _kHeading = Color(0xFF1C1C1C);
+const _kBody = Color(0xFF696969);
 
 class MechanicDetailScreen extends StatefulWidget {
   final MechanicCompany company;
@@ -25,12 +30,14 @@ class MechanicDetailScreen extends StatefulWidget {
 class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
   final ServicesPlanService _service = ServicesPlanService();
   final LocationService _locationService = LocationService();
-  
+
   List<ServiceModel> _services = [];
   Map<String, List<PlanModel>> _servicePlans = {};
   bool _isLoading = true;
   String? _error;
   MechanicCompany? _companyWithDistance;
+  int _currentImagePage = 0;
+  final Set<String> _expandedServices = {};
 
   @override
   void initState() {
@@ -45,10 +52,8 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
     });
 
     try {
-      // Load services for this company
       final services = await _service.getServicesByCompany(widget.company.id);
-      
-      // Load plans for each service
+
       final Map<String, List<PlanModel>> servicePlans = {};
       for (final service in services) {
         final plans = await _service.getPlansByService(service.id);
@@ -57,7 +62,6 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
         }
       }
 
-      // Calculate distance if location is available
       MechanicCompany? companyWithDistance = widget.company;
       if (widget.company.latitude != null && widget.company.longitude != null) {
         final position = await _locationService.getCurrentPosition();
@@ -72,10 +76,19 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
         }
       }
 
+      if (!mounted) return;
+
+      // Auto-expand all services that have plans
+      final expanded = <String>{};
+      for (final s in services) {
+        if (servicePlans.containsKey(s.id)) expanded.add(s.id);
+      }
+
       setState(() {
         _services = services;
         _servicePlans = servicePlans;
         _companyWithDistance = companyWithDistance;
+        _expandedServices.addAll(expanded);
         _isLoading = false;
       });
     } catch (e) {
@@ -86,35 +99,9 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
     }
   }
 
-  Future<void> _makePhoneCall(String phoneNumber) async {
-    final uri = Uri.parse('tel:$phoneNumber');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not launch phone dialer')),
-        );
-      }
-    }
-  }
-
-  Future<void> _openEmail(String email) async {
-    final uri = Uri.parse('mailto:$email');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not launch email app')),
-        );
-      }
-    }
-  }
-
   void _proceedToVehicleSelection() {
     final cartProvider = context.read<CartProvider>();
-    
+
     if (cartProvider.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please add at least one plan to cart')),
@@ -131,416 +118,519 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
     final company = _companyWithDistance ?? widget.company;
 
     return Scaffold(
+      backgroundColor: _kBg,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(color: _kPrimaryOrange))
           : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                      const SizedBox(height: 16),
-                      Text('Error: $_error'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadData,
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                )
-              : CustomScrollView(
-                  slivers: [
-                    // App Bar with Images
-                    SliverAppBar(
-                      expandedHeight: 250,
-                      pinned: true,
-                      flexibleSpace: FlexibleSpaceBar(
-                        background: company.images != null && company.images!.isNotEmpty
-                            ? PageView.builder(
-                                itemCount: company.images!.length,
-                                itemBuilder: (context, index) {
-                                  return Image.network(
-                                    company.images![index],
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Container(
-                                        color: Colors.grey[300],
-                                        child: const Icon(
-                                          Icons.image_not_supported,
-                                          size: 64,
-                                          color: Colors.grey,
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                              )
-                            : Container(
-                                color: Colors.grey[300],
-                                child: const Icon(
-                                  Icons.business,
-                                  size: 80,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                      ),
-                    ),
-
-                    // Content
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Company Header
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    if (company.logo != null)
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Image.network(
-                                          company.logo!,
-                                          width: 60,
-                                          height: 60,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Container(
-                                              width: 60,
-                                              height: 60,
-                                              color: Colors.grey[300],
-                                              child: const Icon(Icons.business),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            company.companyName,
-                                            style: const TextStyle(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF424242),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          if (company.distanceKm != null)
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.location_on,
-                                                  size: 16,
-                                                  color: Colors.grey[600],
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  company.displayDistance,
-                                                  style: TextStyle(
-                                                    color: Colors.grey[600],
-                                                    fontSize: 14,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                
-                                const SizedBox(height: 16),
-                                
-                                // Ratings
-                                if (company.rating != null && company.ratingsCount != null)
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.amber.shade50,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: Colors.amber.shade200),
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                          children: [
-                                            _buildRatingItem(
-                                              'Overall',
-                                              company.rating!,
-                                              Icons.star,
-                                            ),
-                                            _buildRatingItem(
-                                              'Quality',
-                                              company.quality ?? 0,
-                                              Icons.verified,
-                                            ),
-                                            _buildRatingItem(
-                                              'Timeliness',
-                                              company.timeliness ?? 0,
-                                              Icons.access_time,
-                                            ),
-                                            _buildRatingItem(
-                                              'Professional',
-                                              company.professionalism ?? 0,
-                                              Icons.business_center,
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          '${company.ratingsCount} ratings',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                
-                                const SizedBox(height: 16),
-                                
-                                // Contact Info
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () => _makePhoneCall(company.phone),
-                                        icon: const Icon(Icons.phone),
-                                        label: const Text('Call'),
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: () => _openEmail(company.email),
-                                        icon: const Icon(Icons.email),
-                                        label: const Text('Email'),
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(vertical: 12),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                
-                                const SizedBox(height: 16),
-                                const Divider(),
-                                const SizedBox(height: 8),
-                                
-                                // Address
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(
-                                      Icons.location_on_outlined,
-                                      size: 20,
-                                      color: Colors.grey[600],
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        company.fullAddress,
-                                        style: TextStyle(
-                                          color: Colors.grey[700],
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
+              ? _buildError()
+              : Stack(
+                  children: [
+                    CustomScrollView(
+                      slivers: [
+                        _buildSliverAppBar(company),
+                        SliverToBoxAdapter(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildCompanyHeader(company),
+                              _buildDividerThick(),
+                              _buildServicesSection(cartProvider, company),
+                              const SizedBox(height: 100),
+                            ],
                           ),
-                          
-                          const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
-                          
-                          // Services & Plans
-                          Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Services & Plans',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF424242),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                
-                                if (_services.isEmpty)
-                                  const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(32),
-                                      child: Text(
-                                        'No services available',
-                                        style: TextStyle(color: Colors.grey),
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  ..._services.map((service) {
-                                    final plans = _servicePlans[service.id] ?? [];
-                                    if (plans.isEmpty) return const SizedBox.shrink();
-                                    
-                                    return Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            if (service.iconUrl != null)
-                                              Image.network(
-                                                service.iconUrl!,
-                                                width: 24,
-                                                height: 24,
-                                                errorBuilder: (context, error, stackTrace) {
-                                                  return const Icon(
-                                                    Icons.build,
-                                                    size: 24,
-                                                  );
-                                                },
-                                              )
-                                            else
-                                              const Icon(Icons.build, size: 24),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                service.name,
-                                                style: const TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(0xFF424242),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        
-                                        if (service.description != null) ...[
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            service.description!,
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                        ],
-                                        
-                                        const SizedBox(height: 12),
-                                        
-                                        ...plans.map((plan) {
-                                          final isInCart = cartProvider.isPlanInCart(plan.id);
-                                          return PlanCard(
-                                            plan: plan,
-                                            serviceName: service.name,
-                                            images: company.images,
-                                            isInCart: isInCart,
-                                            onAddToCart: () {
-                                              cartProvider.addPlan(
-                                                plan,
-                                                service.name,
-                                                company.id,
-                                                company.companyName,
-                                              );
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('${plan.name} added to cart'),
-                                                  duration: const Duration(seconds: 2),
-                                                  backgroundColor: Colors.green,
-                                                ),
-                                              );
-                                            },
-                                            onRemoveFromCart: () {
-                                              cartProvider.removePlan(plan.id);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('${plan.name} removed from cart'),
-                                                  duration: const Duration(seconds: 1),
-                                                ),
-                                              );
-                                            },
-                                          );
-                                        }).toList(),
-                                        
-                                        const SizedBox(height: 24),
-                                      ],
-                                    );
-                                  }).toList(),
-                              ],
-                            ),
-                          ),
-                          
-                          // Bottom padding for floating button
-                          const SizedBox(height: 80),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
+                    if (!cartProvider.isEmpty)
+                      _buildFloatingCartButton(cartProvider),
                   ],
                 ),
-      
-      // Floating Cart Button
-      floatingActionButton: cartProvider.isEmpty
-          ? null
-          : Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: FloatingActionButton.extended(
-                onPressed: _proceedToVehicleSelection,
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                icon: Badge(
-                  label: Text('${cartProvider.itemCount}'),
-                  child: const Icon(Icons.shopping_cart),
-                ),
-                label: Text(
-                  'Continue • ₹${cartProvider.total.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 
+  // --------------- Error ---------------
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+          const SizedBox(height: 16),
+          Text('Error: $_error',
+              style: const TextStyle(color: _kBody, fontSize: 14)),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadData,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kPrimaryOrange,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --------------- SliverAppBar with carousel ---------------
+  Widget _buildSliverAppBar(MechanicCompany company) {
+    final hasImages = company.images != null && company.images!.isNotEmpty;
+    final imageCount = hasImages ? company.images!.length : 0;
+
+    return SliverAppBar(
+      expandedHeight: 260,
+      pinned: true,
+      backgroundColor: Colors.white,
+      foregroundColor: _kHeading,
+      leading: _circleBackButton(),
+      flexibleSpace: FlexibleSpaceBar(
+        background: hasImages
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  PageView.builder(
+                    itemCount: imageCount,
+                    onPageChanged: (i) =>
+                        setState(() => _currentImagePage = i),
+                    itemBuilder: (context, index) {
+                      return Image.network(
+                        company.images![index],
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            _companyHeroBrandFallback(company),
+                      );
+                    },
+                  ),
+                  // Page indicator
+                  if (imageCount > 1)
+                    Positioned(
+                      bottom: 12,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${_currentImagePage + 1}/$imageCount',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
+                ],
+              )
+            : _companyHeroBrandFallback(company),
+      ),
+    );
+  }
+
+  Widget _companyHeroBrandFallback(MechanicCompany company) {
+    final url = company.logo;
+    return Container(
+      color: const Color(0xFFE0E0E0),
+      alignment: Alignment.center,
+      child: url != null
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.business,
+                  size: 80,
+                  color: Colors.grey,
+                ),
+              ),
+            )
+          : const Icon(Icons.business, size: 80, color: Colors.grey),
+    );
+  }
+
+  Widget _circleBackButton() {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: CircleAvatar(
+        backgroundColor: Colors.white,
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back, color: _kHeading, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
+  // --------------- Company Header ---------------
+  Widget _buildCompanyHeader(MechanicCompany company) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Name row
+          Text(
+            company.companyName,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: _kHeading,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Rating badge + distance
+          Row(
+            children: [
+              _ratingBadge(company),
+              if (company.distanceKm != null) ...[
+                const SizedBox(width: 12),
+                Icon(Icons.near_me, size: 14, color: _kBody),
+                const SizedBox(width: 4),
+                Text(company.displayDistance,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        color: _kBody,
+                        fontWeight: FontWeight.w500)),
+              ],
+            ],
+          ),
+
+          // Detailed rating breakdown
+          if (company.rating != null && company.ratingsCount != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: _kBg,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildRatingItem(
+                          'Overall', company.rating!, Icons.star),
+                      _buildRatingItem(
+                          'Quality', company.quality ?? 0, Icons.verified),
+                      _buildRatingItem('Timeliness', company.timeliness ?? 0,
+                          Icons.access_time),
+                      _buildRatingItem('Professional',
+                          company.professionalism ?? 0, Icons.business_center),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${company.ratingsCount} ratings',
+                    style:
+                        const TextStyle(color: _kBody, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _ratingBadge(MechanicCompany company) {
+    final hasRating = company.rating != null && company.rating! > 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: hasRating ? _kRatingGreen : Colors.grey,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star, size: 14, color: Colors.white),
+          const SizedBox(width: 4),
+          Text(
+            company.displayRating,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --------------- Thick Divider ---------------
+  Widget _buildDividerThick() {
+    return const SizedBox(height: 8, child: ColoredBox(color: _kBg));
+  }
+
+  // --------------- Services & Plans ---------------
+  Widget _buildServicesSection(
+      CartProvider cartProvider, MechanicCompany company) {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // "Menu" style header
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: _kPrimaryOrange,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                'Services & Plans',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: _kHeading,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          if (_services.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 40),
+              child: Center(
+                child: Text('No services available',
+                    style: TextStyle(color: _kBody, fontSize: 14)),
+              ),
+            )
+          else
+            ..._services.map((service) {
+              final plans = _servicePlans[service.id] ?? [];
+              if (plans.isEmpty) return const SizedBox.shrink();
+              final isExpanded = _expandedServices.contains(service.id);
+
+              return Column(
+                children: [
+                  // Category header – tappable
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        if (isExpanded) {
+                          _expandedServices.remove(service.id);
+                        } else {
+                          _expandedServices.add(service.id);
+                        }
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        children: [
+                          if (service.iconUrl != null)
+                            Image.network(
+                              service.iconUrl!,
+                              width: 20,
+                              height: 20,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                  Icons.build_outlined,
+                                  size: 20,
+                                  color: _kHeading),
+                            )
+                          else
+                            const Icon(Icons.build_outlined,
+                                size: 20, color: _kHeading),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              service.name,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: _kHeading,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '${plans.length} ${plans.length == 1 ? 'plan' : 'plans'}',
+                            style: const TextStyle(
+                                fontSize: 11, color: _kBody),
+                          ),
+                          const SizedBox(width: 4),
+                          AnimatedRotation(
+                            turns: isExpanded ? 0.5 : 0,
+                            duration: const Duration(milliseconds: 200),
+                            child: const Icon(Icons.keyboard_arrow_down,
+                                size: 20, color: _kBody),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  if (service.description != null && isExpanded)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8, left: 30),
+                      child: Text(
+                        service.description!,
+                        style:
+                            const TextStyle(color: _kBody, fontSize: 12),
+                      ),
+                    ),
+
+                  // Plans
+                  if (isExpanded)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 30, bottom: 8),
+                      child: Column(
+                        children: plans.map((plan) {
+                          final isInCart = cartProvider.isPlanInCart(plan.id);
+                          return PlanCard(
+                            plan: plan,
+                            serviceName: service.name,
+                            images: company.images,
+                            isInCart: isInCart,
+                            onAddToCart: () {
+                              cartProvider.addPlan(
+                                plan,
+                                service.name,
+                                company.id,
+                                company.companyName,
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${plan.name} added to cart'),
+                                  duration: const Duration(seconds: 2),
+                                  backgroundColor: _kRatingGreen,
+                                  behavior: SnackBarBehavior.floating,
+                                  margin: EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    MediaQuery.of(context).padding.bottom + 86,
+                                  ),
+                                ),
+                              );
+                            },
+                            onRemoveFromCart: () {
+                              cartProvider.removePlan(plan.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content:
+                                      Text('${plan.name} removed from cart'),
+                                  duration: const Duration(seconds: 1),
+                                  behavior: SnackBarBehavior.floating,
+                                  margin: EdgeInsets.fromLTRB(
+                                    16,
+                                    0,
+                                    16,
+                                    MediaQuery.of(context).padding.bottom + 86,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ),
+
+                  const Divider(height: 1, color: Color(0xFFF0F0F0)),
+                ],
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  // --------------- Floating Cart Button ---------------
+  Widget _buildFloatingCartButton(CartProvider cartProvider) {
+    return Positioned(
+      left: 16,
+      right: 16,
+      bottom: MediaQuery.of(context).padding.bottom + 12,
+      child: GestureDetector(
+        onTap: _proceedToVehicleSelection,
+        child: Container(
+          height: 56,
+          decoration: BoxDecoration(
+            color: _kPrimaryOrange,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: _kPrimaryOrange.withOpacity(0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              // Item count badge
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '${cartProvider.itemCount} ${cartProvider.itemCount == 1 ? 'ITEM' : 'ITEMS'}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                'Continue  •  ₹${cartProvider.total.toStringAsFixed(0)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.arrow_forward_rounded,
+                  color: Colors.white, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --------------- Rating Item (kept from original) ---------------
   Widget _buildRatingItem(String label, double rating, IconData icon) {
     return Column(
       children: [
-        Icon(icon, size: 20, color: Colors.amber.shade700),
+        Icon(icon, size: 20, color: _kPrimaryOrange),
         const SizedBox(height: 4),
         Text(
           rating.toStringAsFixed(1),
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.amber.shade900,
-            fontSize: 16,
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            color: _kHeading,
+            fontSize: 15,
           ),
         ),
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey[600],
-          ),
+          style: const TextStyle(fontSize: 11, color: _kBody),
         ),
       ],
     );
   }
 }
-

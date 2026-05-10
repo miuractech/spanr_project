@@ -3,6 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'order_model.dart';
 
+const _kOrange = Color(0xFFFC8019);
+const _kGreen = Color(0xFF267E3E);
+const _kHeading = Color(0xFF1C1C1C);
+const _kBody = Color(0xFF696969);
+const _kBg = Color(0xFFF2F2F2);
+
 class OrderConfirmationScreen extends StatelessWidget {
   final OrderModel order;
   final PaymentModel payment;
@@ -15,15 +21,15 @@ class OrderConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: _kBg,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        title: const Text('Order Confirmed'),
+        elevation: 0,
+        title: const Text('Order Confirmed',
+            style: TextStyle(color: _kHeading, fontWeight: FontWeight.w700, fontSize: 18)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -38,35 +44,41 @@ class OrderConfirmationScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Column(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.12),
+                      color: _kGreen.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.check_circle_rounded,
-                        color: Colors.green, size: 72),
+                        color: _kGreen, size: 72),
                   ),
                   const SizedBox(height: 20),
                   const Text(
                     'Order Placed Successfully!',
                     style: TextStyle(
                       fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
+                      fontWeight: FontWeight.w800,
+                      color: _kHeading,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32),
                     child: Text(
                       'Your booking is confirmed. The mechanic will contact you shortly.',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 14, height: 1.5),
+                      style: TextStyle(color: _kBody, fontSize: 14, height: 1.5),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -74,17 +86,16 @@ class OrderConfirmationScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
+                      color: _kBg,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: Text(
                       'Order #${order.id.substring(0, 8).toUpperCase()}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
                         letterSpacing: 1,
-                        color: primary,
+                        color: _kOrange,
                       ),
                     ),
                   ),
@@ -98,21 +109,20 @@ class OrderConfirmationScreen extends StatelessWidget {
             _InfoCard(
               icon: Icons.receipt_long_outlined,
               title: 'Booking Details',
-              primary: primary,
               child: Column(
                 children: [
                   _Row(
                     label: 'Order Date',
                     value: DateFormat('MMM dd, yyyy • hh:mm a').format(order.orderDate),
                   ),
-                  _Divider(),
+                  const _Divider(),
                   _Row(
                     label: 'Scheduled Service',
                     value: DateFormat('MMM dd, yyyy • hh:mm a')
                         .format(order.scheduledServiceDate),
-                    valueColor: primary,
+                    valueColor: _kOrange,
                   ),
-                  _Divider(),
+                  const _Divider(),
                   _Row(label: 'Service Location', value: order.serviceAddress),
                 ],
               ),
@@ -124,44 +134,43 @@ class OrderConfirmationScreen extends StatelessWidget {
             _InfoCard(
               icon: Icons.payments_outlined,
               title: 'Payment',
-              primary: primary,
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Total Amount',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                      const Text('Total Amount',
+                          style: TextStyle(color: _kBody, fontSize: 13)),
                       Text(
                         '₹${payment.amount.toStringAsFixed(2)}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: primary,
+                          fontWeight: FontWeight.w800,
+                          color: _kOrange,
                         ),
                       ),
                     ],
                   ),
-                  _Divider(),
+                  const _Divider(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Status',
-                          style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                      const Text('Status',
+                          style: TextStyle(color: _kBody, fontSize: 13)),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
-                          color: Colors.green.withValues(alpha: 0.1),
+                          color: _kGreen.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.check_circle, size: 14, color: Colors.green),
+                          children: [
+                            Icon(Icons.check_circle, size: 14, color: _kGreen),
                             SizedBox(width: 5),
                             Text('Paid',
                                 style: TextStyle(
-                                    color: Colors.green,
+                                    color: _kGreen,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 13)),
                           ],
@@ -170,7 +179,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                     ],
                   ),
                   if (payment.paidAt != null) ...[
-                    _Divider(),
+                    const _Divider(),
                     _Row(
                       label: 'Paid At',
                       value: DateFormat('MMM dd, yyyy • hh:mm a').format(payment.paidAt!),
@@ -186,19 +195,20 @@ class OrderConfirmationScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: const Color(0xFFFFF4E6),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.shade100),
+                border: Border.all(color: _kOrange.withOpacity(0.2)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue.shade700, size: 18),
+                  Icon(Icons.info_outline, color: _kOrange, size: 18),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'The mechanic will call you to confirm the service appointment before arrival.',
-                      style: TextStyle(color: Colors.blue.shade900, fontSize: 13, height: 1.4),
+                      style: TextStyle(
+                          color: _kOrange.withOpacity(0.9), fontSize: 13, height: 1.4),
                     ),
                   ),
                 ],
@@ -215,12 +225,13 @@ class OrderConfirmationScreen extends StatelessWidget {
                     onPressed: () => context.go('/orders'),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size(0, 52),
-                      side: BorderSide(color: primary),
-                      foregroundColor: primary,
+                      side: const BorderSide(color: _kOrange, width: 1.5),
+                      foregroundColor: _kOrange,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(28)),
                     ),
-                    child: const Text('All Orders'),
+                    child: const Text('All Orders',
+                        style: TextStyle(fontWeight: FontWeight.w600)),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -229,12 +240,14 @@ class OrderConfirmationScreen extends StatelessWidget {
                     onPressed: () => context.push('/orders/${order.id}'),
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size(0, 52),
-                      backgroundColor: primary,
+                      backgroundColor: _kOrange,
                       foregroundColor: Colors.white,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(28)),
                     ),
-                    child: const Text('View Details'),
+                    child: const Text('View Details',
+                        style: TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -244,7 +257,8 @@ class OrderConfirmationScreen extends StatelessWidget {
 
             TextButton(
               onPressed: () => context.go('/home'),
-              child: Text('Back to Home', style: TextStyle(color: Colors.grey[600])),
+              child: const Text('Back to Home',
+                  style: TextStyle(color: _kBody, fontWeight: FontWeight.w500)),
             ),
 
             const SizedBox(height: 8),
@@ -258,13 +272,11 @@ class OrderConfirmationScreen extends StatelessWidget {
 class _InfoCard extends StatelessWidget {
   final IconData icon;
   final String title;
-  final Color primary;
   final Widget child;
 
   const _InfoCard({
     required this.icon,
     required this.title,
-    required this.primary,
     required this.child,
   });
 
@@ -275,7 +287,13 @@ class _InfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,17 +305,17 @@ class _InfoCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: primary.withValues(alpha: 0.1),
+                    color: _kOrange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: primary, size: 16),
+                  child: Icon(icon, color: _kOrange, size: 16),
                 ),
                 const SizedBox(width: 10),
                 Text(title,
                     style: const TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A))),
+                        fontWeight: FontWeight.w700,
+                        color: _kHeading)),
               ],
             ),
           ),
@@ -323,7 +341,7 @@ class _Row extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+            style: const TextStyle(color: _kBody, fontSize: 13)),
         const SizedBox(width: 16),
         Flexible(
           child: Text(
@@ -331,7 +349,7 @@ class _Row extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w500,
               fontSize: 13,
-              color: valueColor ?? const Color(0xFF1A1A1A),
+              color: valueColor ?? _kHeading,
             ),
             textAlign: TextAlign.right,
           ),
@@ -342,6 +360,8 @@ class _Row extends StatelessWidget {
 }
 
 class _Divider extends StatelessWidget {
+  const _Divider();
+
   @override
   Widget build(BuildContext context) {
     return Padding(

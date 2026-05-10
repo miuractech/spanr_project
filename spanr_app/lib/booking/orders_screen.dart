@@ -6,6 +6,11 @@ import '../auth/auth_provider.dart';
 import 'order_provider.dart';
 import 'order_types.dart';
 
+const _kOrange = Color(0xFFFC8019);
+const _kBg = Color(0xFFF2F2F2);
+const _kHeading = Color(0xFF1C1C1C);
+const _kBody = Color(0xFF696969);
+
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
 
@@ -69,17 +74,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
   @override
   Widget build(BuildContext context) {
     final orderProvider = context.watch<OrderProvider>();
-    final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: _kBg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
               child: Row(
                 children: [
                   const Expanded(
@@ -87,18 +92,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       'My Orders',
                       style: TextStyle(
                         fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                        fontWeight: FontWeight.w800,
+                        color: _kHeading,
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh_outlined),
-                    onPressed: _loadOrders,
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFFF3F4F6),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                  Material(
+                    color: _kBg,
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: _loadOrders,
+                      child: const Padding(
+                        padding: EdgeInsets.all(9),
+                        child: Icon(Icons.refresh_rounded, size: 22, color: _kHeading),
+                      ),
                     ),
                   ),
                 ],
@@ -108,8 +116,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadOrders,
-                color: primary,
-                child: _buildBody(context, orderProvider, primary),
+                color: _kOrange,
+                child: _buildBody(context, orderProvider),
               ),
             ),
           ],
@@ -118,34 +126,55 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  Widget _buildBody(
-      BuildContext context, OrderProvider orderProvider, Color primary) {
+  Widget _buildBody(BuildContext context, OrderProvider orderProvider) {
     if (orderProvider.isLoading) {
-      return Center(child: CircularProgressIndicator(color: primary));
+      return const Center(
+        child: CircularProgressIndicator(color: _kOrange, strokeWidth: 3),
+      );
     }
 
     if (orderProvider.error != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                  color: Colors.red.shade50, shape: BoxShape.circle),
-              child: Icon(Icons.error_outline, size: 40, color: Colors.red.shade400),
-            ),
-            const SizedBox(height: 16),
-            Text('Something went wrong',
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF424242))),
-            const SizedBox(height: 6),
-            Text(orderProvider.error!,
-                style: TextStyle(color: Colors.grey[500], fontSize: 13),
-                textAlign: TextAlign.center),
-            const SizedBox(height: 20),
-            ElevatedButton(onPressed: _loadOrders, child: const Text('Retry')),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.error_outline_rounded, size: 40, color: Colors.red.shade400),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Something went wrong',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: _kHeading),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                orderProvider.error!,
+                style: const TextStyle(color: _kBody, fontSize: 13),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _loadOrders,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kOrange,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size(0, 44),
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -156,25 +185,37 @@ class _OrdersScreenState extends State<OrdersScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: primary.withValues(alpha: 0.06),
+                color: _kOrange.withOpacity(0.08),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.receipt_long_outlined, size: 48, color: primary),
+              child: const Icon(Icons.receipt_long_outlined, size: 48, color: _kOrange),
             ),
             const SizedBox(height: 20),
-            const Text('No orders yet',
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+            const Text(
+              'No orders yet',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _kHeading),
+            ),
             const SizedBox(height: 6),
-            Text('Your bookings will appear here',
-                style: TextStyle(color: Colors.grey[500], fontSize: 14)),
-            const SizedBox(height: 24),
+            const Text(
+              'Your bookings will appear here',
+              style: TextStyle(color: _kBody, fontSize: 14),
+            ),
+            const SizedBox(height: 28),
             ElevatedButton.icon(
               onPressed: () => context.go('/home'),
-              icon: const Icon(Icons.search, size: 18),
+              icon: const Icon(Icons.search_rounded, size: 18),
               label: const Text('Browse Mechanics'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kOrange,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                minimumSize: const Size(0, 48),
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+              ),
             ),
           ],
         ),
@@ -198,41 +239,56 @@ class _OrdersScreenState extends State<OrdersScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade100),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
             child: Column(
               children: [
-                // Status bar at the top
+                // Status color bar
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  height: 4,
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.06),
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
+                    color: statusColor,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                   ),
+                ),
+
+                // Status row
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                   child: Row(
                     children: [
-                      Icon(_statusIcon(order.status), size: 16, color: statusColor),
-                      const SizedBox(width: 6),
-                      Text(
-                        order.status.displayName,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_statusIcon(order.status), size: 14, color: statusColor),
+                            const SizedBox(width: 5),
+                            Text(
+                              order.status.displayName,
+                              style: TextStyle(
+                                color: statusColor,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const Spacer(),
                       Text(
                         '#${order.id.substring(0, 8).toUpperCase()}',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        style: TextStyle(color: Colors.grey[400], fontSize: 11, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
@@ -253,28 +309,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 Text(
                                   '${vehicle?.make ?? 'Vehicle'} ${vehicle?.model ?? ''}',
                                   style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1A1A1A),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: _kHeading,
                                   ),
                                 ),
-                                const SizedBox(height: 3),
+                                const SizedBox(height: 4),
                                 if (vehicle?.licensePlate != null)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                                     decoration: BoxDecoration(
-                                      border: Border.all(
-                                          color: Colors.grey.shade300, width: 1.5),
+                                      border: Border.all(color: const Color(0xFFBBBBBB), width: 1.5),
                                       borderRadius: BorderRadius.circular(5),
                                     ),
                                     child: Text(
                                       vehicle!.licensePlate,
                                       style: const TextStyle(
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w700,
                                         letterSpacing: 1.2,
-                                        color: Color(0xFF424242),
+                                        color: _kHeading,
                                       ),
                                     ),
                                   ),
@@ -287,15 +341,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               children: [
                                 Text(
                                   '₹${orderWithDetails.payment?.amount.toStringAsFixed(0) ?? plan.totalPrice.toStringAsFixed(0)}',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: primary,
+                                    fontWeight: FontWeight.w800,
+                                    color: _kOrange,
                                   ),
                                 ),
-                                Text('Total',
-                                    style: TextStyle(
-                                        color: Colors.grey[500], fontSize: 11)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Total',
+                                  style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                ),
                               ],
                             ),
                         ],
@@ -304,28 +360,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       if (plan != null) ...[
                         const SizedBox(height: 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF8F9FA),
-                            borderRadius: BorderRadius.circular(8),
+                            color: _kBg,
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.build_outlined,
-                                  size: 14, color: Colors.grey[500]),
-                              const SizedBox(width: 6),
+                              const Icon(Icons.build_outlined, size: 14, color: _kBody),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   plan.name,
                                   style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: Color(0xFF424242)),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: _kHeading,
+                                  ),
                                 ),
                               ),
-                              Icon(Icons.chevron_right,
-                                  size: 16, color: Colors.grey[400]),
+                              Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey[400]),
                             ],
                           ),
                         ),
@@ -349,7 +403,6 @@ class _VehicleThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
     final icon = vehicle?.vehicleType == 'bike'
         ? Icons.two_wheeler
         : Icons.directions_car;
@@ -359,29 +412,29 @@ class _VehicleThumb extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: CachedNetworkImage(
           imageUrl: vehicle!.images.first as String,
-          width: 60,
-          height: 60,
+          width: 56,
+          height: 56,
           fit: BoxFit.cover,
-          placeholder: (_, __) => _iconBox(icon, primary),
-          errorWidget: (_, __, ___) => _iconBox(icon, primary),
+          placeholder: (_, __) => _iconBox(icon),
+          errorWidget: (_, __, ___) => _iconBox(icon),
         ),
       );
     }
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
-      child: _iconBox(icon, primary),
+      child: _iconBox(icon),
     );
   }
 
-  Widget _iconBox(IconData icon, Color primary) {
+  Widget _iconBox(IconData icon) {
     return Container(
-      width: 60,
-      height: 60,
+      width: 56,
+      height: 56,
       decoration: BoxDecoration(
-        color: primary.withValues(alpha: 0.08),
+        color: _kOrange.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, size: 30, color: primary),
+      child: Icon(icon, size: 28, color: _kOrange),
     );
   }
 }

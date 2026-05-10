@@ -6,6 +6,7 @@ import {
   Text,
   Stack,
   Group,
+  ThemeIcon,
 } from '@mantine/core';
 import { IconShoppingCart, IconUsers, IconTools, IconClipboardList } from '@tabler/icons-react';
 import { useCompany } from '../company/company.hook';
@@ -26,47 +27,63 @@ export default function DashboardPage() {
       title: 'Total Orders',
       value: orderStats.total,
       icon: IconShoppingCart,
-      color: 'orange',
+      bg: '#FFF3E0',
+      iconColor: '#FC8019',
     },
     {
       title: 'Active Services',
       value: services.length,
       icon: IconTools,
-      color: 'orange',
+      bg: '#E8F5E9',
+      iconColor: '#267E3E',
     },
     {
       title: 'Service Plans',
       value: plans.length,
       icon: IconClipboardList,
-      color: 'orange',
+      bg: '#E3F2FD',
+      iconColor: '#1976D2',
     },
     {
       title: 'Staff Members',
       value: staff.filter(s => s.enabled).length,
       icon: IconUsers,
-      color: 'orange',
+      bg: '#F3E5F5',
+      iconColor: '#7B1FA2',
     },
   ];
 
   return (
     <Container size="xl" my={40}>
-      <Title mb="xl">Dashboard</Title>
+      <Title mb="xl" c="#1C1C1C">Dashboard</Title>
 
       <SimpleGrid cols={{ base: 1, sm: 2, md: 4 }} mb="xl">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Paper key={stat.title} withBorder p="md" radius="md">
-              <Group justify="space-between">
-                <Stack gap={0}>
-                  <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+            <Paper
+              key={stat.title}
+              p="lg"
+              radius="lg"
+              style={{ border: '1px solid #E0E0E0' }}
+            >
+              <Group justify="space-between" align="flex-start">
+                <Stack gap={4}>
+                  <Text size="xs" c="#696969" tt="uppercase" fw={600}>
                     {stat.title}
                   </Text>
-                  <Text size="xl" fw={700}>
+                  <Text size="xl" fw={700} c="#1C1C1C">
                     {stat.value}
                   </Text>
                 </Stack>
-                <Icon size={32} color={`var(--mantine-color-${stat.color}-6)`} />
+                <ThemeIcon
+                  size={44}
+                  radius="lg"
+                  variant="light"
+                  style={{ backgroundColor: stat.bg, color: stat.iconColor }}
+                >
+                  <Icon size={22} />
+                </ThemeIcon>
               </Group>
             </Paper>
           );
@@ -74,33 +91,28 @@ export default function DashboardPage() {
       </SimpleGrid>
 
       <SimpleGrid cols={{ base: 1, md: 2 }}>
-        <Paper withBorder p="md">
-          <Title order={3} mb="md">Order Status</Title>
-          <Stack gap="xs">
-            <Group justify="space-between">
-              <Text>Pending</Text>
-              <Text fw={500}>{orderStats.pending}</Text>
-            </Group>
-            <Group justify="space-between">
-              <Text>Confirmed</Text>
-              <Text fw={500}>{orderStats.confirmed}</Text>
-            </Group>
-            <Group justify="space-between">
-              <Text>In Progress</Text>
-              <Text fw={500}>{orderStats.inProgress}</Text>
-            </Group>
-            <Group justify="space-between">
-              <Text>Completed</Text>
-              <Text fw={500}>{orderStats.completed}</Text>
-            </Group>
+        <Paper p="lg" radius="lg" style={{ border: '1px solid #E0E0E0' }}>
+          <Title order={3} mb="md" c="#1C1C1C">Order Status</Title>
+          <Stack gap="sm">
+            {[
+              { label: 'Pending', value: orderStats.pending, color: '#696969' },
+              { label: 'Confirmed', value: orderStats.confirmed, color: '#FC8019' },
+              { label: 'In Progress', value: orderStats.inProgress, color: '#1976D2' },
+              { label: 'Completed', value: orderStats.completed, color: '#267E3E' },
+            ].map((item) => (
+              <Group key={item.label} justify="space-between">
+                <Text size="sm" c="#696969">{item.label}</Text>
+                <Text fw={600} c={item.color}>{item.value}</Text>
+              </Group>
+            ))}
           </Stack>
         </Paper>
 
-        <Paper withBorder p="md">
-          <Title order={3} mb="md">Quick Stats</Title>
+        <Paper p="lg" radius="lg" style={{ border: '1px solid #E0E0E0' }}>
+          <Title order={3} mb="md" c="#1C1C1C">Quick Stats</Title>
           <Stack gap="xs">
-            <Text>Welcome to your SPANR dashboard!</Text>
-            <Text size="sm" c="dimmed">
+            <Text c="#1C1C1C">Welcome to your SPANR dashboard!</Text>
+            <Text size="sm" c="#696969">
               Manage your mechanic business from here.
             </Text>
           </Stack>
@@ -109,4 +121,3 @@ export default function DashboardPage() {
     </Container>
   );
 }
-

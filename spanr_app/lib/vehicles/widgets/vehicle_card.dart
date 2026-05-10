@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/vehicle_model.dart';
 
+const _kOrange = Color(0xFFFC8019);
+const _kHeading = Color(0xFF1C1C1C);
+const _kBody = Color(0xFF696969);
+
 class VehicleCard extends StatelessWidget {
   final VehicleModel vehicle;
   final VoidCallback? onEdit;
@@ -18,25 +22,24 @@ class VehicleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
     return Dismissible(
       key: Key(vehicle.id),
       direction: DismissDirection.endToStart,
       background: Container(
         margin: const EdgeInsets.only(bottom: 14),
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 24),
+        padding: const EdgeInsets.only(right: 28),
         decoration: BoxDecoration(
-          color: Colors.red,
+          color: Colors.red.shade500,
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.delete_outline, color: Colors.white, size: 26),
+            Icon(Icons.delete_outline_rounded, color: Colors.white, size: 26),
             SizedBox(height: 4),
-            Text('Delete', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+            Text('Delete',
+                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
           ],
         ),
       ),
@@ -45,12 +48,14 @@ class VehicleCard extends StatelessWidget {
           context: context,
           builder: (context) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text('Delete Vehicle'),
-            content: const Text('Are you sure you want to delete this vehicle?'),
+            title: const Text('Delete Vehicle',
+                style: TextStyle(fontWeight: FontWeight.w700, color: _kHeading)),
+            content: const Text('Are you sure you want to delete this vehicle?',
+                style: TextStyle(color: _kBody)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
+                child: const Text('Cancel', style: TextStyle(color: _kBody)),
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
@@ -69,12 +74,11 @@ class VehicleCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -82,10 +86,9 @@ class VehicleCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                // Thumbnail
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: vehicle.images.isNotEmpty
@@ -94,10 +97,10 @@ class VehicleCard extends StatelessWidget {
                           width: 68,
                           height: 68,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => _iconBox(primary, vehicle.vehicleType),
-                          errorWidget: (_, __, ___) => _iconBox(primary, vehicle.vehicleType),
+                          placeholder: (_, __) => _iconBox(vehicle.vehicleType),
+                          errorWidget: (_, __, ___) => _iconBox(vehicle.vehicleType),
                         )
-                      : _iconBox(primary, vehicle.vehicleType),
+                      : _iconBox(vehicle.vehicleType),
                 ),
 
                 const SizedBox(width: 14),
@@ -113,25 +116,25 @@ class VehicleCard extends StatelessWidget {
                               '${vehicle.name ?? vehicle.make} ${vehicle.model}',
                               style: const TextStyle(
                                 fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1A1A1A),
+                                fontWeight: FontWeight.w700,
+                                color: _kHeading,
                               ),
                             ),
                           ),
                           if (vehicle.isPrimary)
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: primary.withValues(alpha: 0.1),
+                                color: _kOrange.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text(
+                              child: const Text(
                                 'Primary',
                                 style: TextStyle(
-                                    color: primary,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700),
+                                  color: _kOrange,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                         ],
@@ -139,15 +142,13 @@ class VehicleCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${vehicle.year} • ${vehicle.vehicleType == 'bike' ? 'Bike' : 'Car'}',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                        style: const TextStyle(color: _kBody, fontSize: 12),
                       ),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          border: Border.all(
-                              color: Colors.grey.shade400, width: 1.5),
+                          border: Border.all(color: const Color(0xFFBBBBBB), width: 1.5),
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
@@ -156,7 +157,7 @@ class VehicleCard extends StatelessWidget {
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.2,
-                            color: Color(0xFF1A1A1A),
+                            color: _kHeading,
                           ),
                         ),
                       ),
@@ -169,12 +170,12 @@ class VehicleCard extends StatelessWidget {
                   children: [
                     _ActionButton(
                       icon: Icons.edit_outlined,
-                      color: primary,
+                      color: _kOrange,
                       onTap: onEdit,
                     ),
                     const SizedBox(height: 8),
                     _ActionButton(
-                      icon: Icons.delete_outline,
+                      icon: Icons.delete_outline_rounded,
                       color: Colors.red,
                       onTap: onDelete,
                     ),
@@ -188,18 +189,18 @@ class VehicleCard extends StatelessWidget {
     );
   }
 
-  Widget _iconBox(Color primary, String type) {
+  Widget _iconBox(String type) {
     return Container(
       width: 68,
       height: 68,
       decoration: BoxDecoration(
-        color: primary.withValues(alpha: 0.08),
+        color: _kOrange.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(
         type == 'bike' ? Icons.two_wheeler : Icons.directions_car,
         size: 32,
-        color: primary,
+        color: _kOrange,
       ),
     );
   }
@@ -221,12 +222,12 @@ class _ActionButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(7),
+        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(8),
+          color: color.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, size: 17, color: color),
+        child: Icon(icon, size: 18, color: color),
       ),
     );
   }

@@ -33,11 +33,13 @@
     "dayjs": "^1.11.18",
     "embla-carousel": "^8.5.2",
     "embla-carousel-react": "^8.5.2",
+    "g": "^2.0.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.4",
     "recharts": "^3.2.1",
     "tailwindcss": "^4.1.14",
+    "yarn": "^1.22.22",
     "yup": "^1.7.1"
   },
   "devDependencies": {

@@ -75,12 +75,11 @@ export default function OnboardingPage() {
   };
 
   return (
-    <Box style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
-      {/* Header */}
+    <Box style={{ minHeight: '100vh', backgroundColor: '#F2F2F2' }}>
       <Box
         style={{
-          backgroundColor: '#fff',
-          borderBottom: '1px solid #e9ecef',
+          backgroundColor: '#FFFFFF',
+          borderBottom: '1px solid #E0E0E0',
           position: 'sticky',
           top: 0,
           zIndex: 100,
@@ -89,8 +88,8 @@ export default function OnboardingPage() {
         <Container size="lg" py="sm">
           <Group justify="space-between" align="center">
             <Group gap="xs">
-              <IconTool size={22} color="#FF6B35" />
-              <Text fw={700} size="lg" c="#FF6B35">
+              <IconTool size={22} color="#FC8019" />
+              <Text fw={700} size="lg" c="#1C1C1C">
                 SPANR
               </Text>
             </Group>
@@ -99,7 +98,7 @@ export default function OnboardingPage() {
               <Avatar size="sm" color="orange" radius="xl">
                 <IconUser size={14} />
               </Avatar>
-              <Text size="sm" c="dimmed">
+              <Text size="sm" c="#696969">
                 {user?.email}
               </Text>
               <Divider orientation="vertical" />
@@ -117,25 +116,25 @@ export default function OnboardingPage() {
         </Container>
       </Box>
 
-      {/* Content */}
       <Container size={780} py={48}>
         <Stack gap="xs" mb={32} align="center">
-          <Title order={2} ta="center">
+          <Title order={2} ta="center" c="#1C1C1C">
             Set up your business profile
           </Title>
-          <Text c="dimmed" size="sm" ta="center" maw={480}>
+          <Text c="#696969" size="sm" ta="center" maw={480}>
             Fill in your company details to get started. You can update everything
             later from your dashboard.
           </Text>
         </Stack>
 
-        <Paper withBorder shadow="sm" p={40} radius="md" bg="white">
+        <Paper shadow="sm" p={40} radius="lg" style={{ border: '1px solid #E0E0E0' }}>
           {error && (
             <Alert
               icon={<IconAlertCircle size={16} />}
               color="red"
               mb="xl"
               variant="light"
+              radius="md"
             >
               {error}
             </Alert>

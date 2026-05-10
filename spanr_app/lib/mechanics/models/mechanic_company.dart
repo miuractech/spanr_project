@@ -121,6 +121,11 @@ class MechanicCompany {
     }
     return '${distanceKm!.toStringAsFixed(1)}km away';
   }
+
+  /// Logo if set; otherwise first company image (for avatars / hero fallback).
+  String? get brandImageUrl =>
+      logo ??
+      (images != null && images!.isNotEmpty ? images!.first : null);
   
   MechanicCompany copyWith({
     double? distanceKm,

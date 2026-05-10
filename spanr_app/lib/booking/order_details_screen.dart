@@ -5,6 +5,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'order_provider.dart';
 import 'order_types.dart';
 
+const _kOrange = Color(0xFFFC8019);
+const _kHeading = Color(0xFF1C1C1C);
+const _kBody = Color(0xFF696969);
+const _kBg = Color(0xFFF2F2F2);
+
 class OrderDetailsScreen extends StatefulWidget {
   final String orderId;
 
@@ -76,24 +81,27 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     final order = orderProvider.currentOrder;
     final payment = orderProvider.currentPayment;
     final history = orderProvider.currentOrderHistory;
-    final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: _kBg,
       appBar: AppBar(
-        title: const Text('Order Details'),
+        title: const Text('Order Details',
+            style: TextStyle(color: _kHeading, fontWeight: FontWeight.w700, fontSize: 18)),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: _kHeading),
       ),
       body: orderProvider.isLoading
-          ? Center(child: CircularProgressIndicator(color: primary))
+          ? const Center(child: CircularProgressIndicator(color: _kOrange))
           : orderProvider.error != null
               ? _buildError(orderProvider.error!)
               : order == null
-                  ? const Center(child: Text('Order not found'))
+                  ? const Center(
+                      child: Text('Order not found', style: TextStyle(color: _kBody)))
                   : RefreshIndicator(
                       onRefresh: _loadOrderDetails,
-                      color: primary,
+                      color: _kOrange,
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(16),
                         child: Column(
@@ -103,17 +111,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: _statusColor(order.status).withValues(alpha: 0.08),
+                                color: _statusColor(order.status).withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                    color: _statusColor(order.status).withValues(alpha: 0.2)),
+                                    color: _statusColor(order.status).withOpacity(0.2)),
                               ),
                               child: Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: _statusColor(order.status).withValues(alpha: 0.15),
+                                      color: _statusColor(order.status).withOpacity(0.15),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
@@ -131,15 +139,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                           order.status.displayName,
                                           style: TextStyle(
                                             fontSize: 18,
-                                            fontWeight: FontWeight.bold,
+                                            fontWeight: FontWeight.w800,
                                             color: _statusColor(order.status),
                                           ),
                                         ),
                                         const SizedBox(height: 3),
                                         Text(
                                           'Order #${order.id.substring(0, 8).toUpperCase()}',
-                                          style: TextStyle(
-                                              color: Colors.grey[600], fontSize: 13),
+                                          style: const TextStyle(color: _kBody, fontSize: 13),
                                         ),
                                       ],
                                     ),
@@ -153,7 +160,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             // Timeline
                             if (history.isNotEmpty) ...[
                               _buildDetailCard(
-                                context,
                                 icon: Icons.timeline,
                                 title: 'Order Timeline',
                                 child: Column(
@@ -172,7 +178,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                                 height: 30,
                                                 decoration: BoxDecoration(
                                                   color: _statusColor(item.status)
-                                                      .withValues(alpha: 0.15),
+                                                      .withOpacity(0.15),
                                                   shape: BoxShape.circle,
                                                   border: Border.all(
                                                     color: _statusColor(item.status),
@@ -208,13 +214,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                                     style: const TextStyle(
                                                       fontWeight: FontWeight.w600,
                                                       fontSize: 14,
-                                                      color: Color(0xFF1A1A1A),
+                                                      color: _kHeading,
                                                     ),
                                                   ),
                                                   if (item.notes != null)
                                                     Text(item.notes!,
-                                                        style: TextStyle(
-                                                            color: Colors.grey[600],
+                                                        style: const TextStyle(
+                                                            color: _kBody,
                                                             fontSize: 13)),
                                                   const SizedBox(height: 2),
                                                   Text(
@@ -239,13 +245,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                             // Service Details
                             _buildDetailCard(
-                              context,
                               icon: Icons.build_outlined,
                               title: 'Service Details',
                               child: Column(
                                 children: [
                                   _detailRow(
-                                    context,
                                     Icons.calendar_today_outlined,
                                     'Scheduled Date',
                                     DateFormat('MMM dd, yyyy • hh:mm a')
@@ -253,7 +257,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                   ),
                                   _divider(),
                                   _detailRow(
-                                    context,
                                     Icons.location_on_outlined,
                                     'Service Location',
                                     order.serviceAddress,
@@ -261,7 +264,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                   if (order.specialInstructions != null) ...[
                                     _divider(),
                                     _detailRow(
-                                      context,
                                       Icons.note_outlined,
                                       'Special Instructions',
                                       order.specialInstructions!,
@@ -275,18 +277,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                             // Contact Details
                             _buildDetailCard(
-                              context,
                               icon: Icons.person_outline,
                               title: 'Contact Details',
                               child: Column(
                                 children: [
-                                  _detailRow(context, Icons.person_outline,
+                                  _detailRow(Icons.person_outline,
                                       'Name', order.contactName),
                                   _divider(),
-                                  _detailRow(context, Icons.phone_outlined,
+                                  _detailRow(Icons.phone_outlined,
                                       'Phone', order.contactPhone),
                                   _divider(),
-                                  _detailRow(context, Icons.email_outlined,
+                                  _detailRow(Icons.email_outlined,
                                       'Email', order.contactEmail),
                                 ],
                               ),
@@ -297,7 +298,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             // Payment Details
                             if (payment != null) ...[
                               _buildDetailCard(
-                                context,
                                 icon: Icons.payments_outlined,
                                 title: 'Payment Details',
                                 child: Column(
@@ -306,16 +306,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text('Amount',
+                                        const Text('Amount',
                                             style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 13)),
+                                                color: _kBody, fontSize: 13)),
                                         Text(
                                           '₹${payment.amount.toStringAsFixed(2)}',
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: primary,
+                                            fontWeight: FontWeight.w800,
+                                            color: _kOrange,
                                           ),
                                         ),
                                       ],
@@ -325,18 +324,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text('Status',
+                                        const Text('Status',
                                             style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 13)),
+                                                color: _kBody, fontSize: 13)),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 12, vertical: 5),
                                           decoration: BoxDecoration(
                                             color: payment.status ==
                                                     PaymentStatus.paid
-                                                ? Colors.green.withValues(alpha: 0.1)
-                                                : Colors.orange.withValues(alpha: 0.1),
+                                                ? const Color(0xFF267E3E).withOpacity(0.1)
+                                                : _kOrange.withOpacity(0.1),
                                             borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Row(
@@ -349,8 +347,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                                 size: 14,
                                                 color: payment.status ==
                                                         PaymentStatus.paid
-                                                    ? Colors.green
-                                                    : Colors.orange,
+                                                    ? const Color(0xFF267E3E)
+                                                    : _kOrange,
                                               ),
                                               const SizedBox(width: 5),
                                               Text(
@@ -360,8 +358,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                                 style: TextStyle(
                                                   color: payment.status ==
                                                           PaymentStatus.paid
-                                                      ? Colors.green
-                                                      : Colors.orange,
+                                                      ? const Color(0xFF267E3E)
+                                                      : _kOrange,
                                                   fontWeight: FontWeight.w600,
                                                   fontSize: 13,
                                                 ),
@@ -377,15 +375,14 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Text('Paid At',
+                                          const Text('Paid At',
                                               style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 13)),
+                                                  color: _kBody, fontSize: 13)),
                                           Text(
                                             DateFormat('MMM dd, yyyy • hh:mm a')
                                                 .format(payment.paidAt!),
-                                            style: TextStyle(
-                                                color: Colors.grey[700],
+                                            style: const TextStyle(
+                                                color: _kHeading,
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w500),
                                           ),
@@ -401,7 +398,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             // Before Photos
                             if (_beforeImages.isNotEmpty) ...[
                               _buildDetailCard(
-                                context,
                                 icon: Icons.photo_library_outlined,
                                 title: 'Before Service Photos',
                                 child: _imageStrip(_beforeImages),
@@ -412,7 +408,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                             // After Photos
                             if (_afterImages.isNotEmpty) ...[
                               _buildDetailCard(
-                                context,
                                 icon: Icons.photo_library_outlined,
                                 title: 'After Service Photos',
                                 child: _imageStrip(_afterImages),
@@ -429,10 +424,10 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                 label: const Text('Cancel Order'),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.red,
-                                  side: const BorderSide(color: Colors.red),
+                                  side: const BorderSide(color: Colors.red, width: 1.5),
                                   minimumSize: const Size(double.infinity, 52),
                                   shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
+                                      borderRadius: BorderRadius.circular(28)),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -450,11 +445,13 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Cancel Order'),
-        content: const Text('Are you sure you want to cancel this order?'),
+        title: const Text('Cancel Order', style: TextStyle(color: _kHeading)),
+        content: const Text('Are you sure you want to cancel this order?',
+            style: TextStyle(color: _kBody)),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(context).pop(false),
+              style: TextButton.styleFrom(foregroundColor: _kBody),
               child: const Text('No')),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -483,28 +480,41 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         children: [
           Icon(Icons.error_outline, size: 56, color: Colors.grey[400]),
           const SizedBox(height: 16),
-          Text('Error: $error', textAlign: TextAlign.center),
+          Text('Error: $error',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: _kBody)),
           const SizedBox(height: 16),
           ElevatedButton(
-              onPressed: _loadOrderDetails, child: const Text('Retry')),
+            onPressed: _loadOrderDetails,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kOrange,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            ),
+            child: const Text('Retry'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDetailCard(
-    BuildContext context, {
+  Widget _buildDetailCard({
     required IconData icon,
     required String title,
     required Widget child,
   }) {
-    final primary = Theme.of(context).colorScheme.primary;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -516,18 +526,18 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: primary.withValues(alpha: 0.1),
+                    color: _kOrange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: primary, size: 16),
+                  child: Icon(icon, color: _kOrange, size: 16),
                 ),
                 const SizedBox(width: 10),
                 Text(
                   title,
                   style: const TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
+                    fontWeight: FontWeight.w700,
+                    color: _kHeading,
                   ),
                 ),
               ],
@@ -540,25 +550,24 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 
-  Widget _detailRow(
-      BuildContext context, IconData icon, String label, String value) {
+  Widget _detailRow(IconData icon, String label, String value) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 16, color: Colors.grey[500]),
+        Icon(icon, size: 16, color: _kOrange),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  style: const TextStyle(color: _kBody, fontSize: 11)),
               const SizedBox(height: 3),
               Text(value,
                   style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
-                      color: Color(0xFF1A1A1A))),
+                      color: _kHeading)),
             ],
           ),
         ),
@@ -580,17 +589,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         itemBuilder: (context, index) => Padding(
           padding: const EdgeInsets.only(right: 8),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
             child: CachedNetworkImage(
               imageUrl: images[index],
               width: 100,
               height: 100,
               fit: BoxFit.cover,
               placeholder: (_, __) =>
-                  Container(color: Colors.grey[200], width: 100, height: 100),
+                  Container(color: _kBg, width: 100, height: 100),
               errorWidget: (_, __, ___) =>
-                  Container(color: Colors.grey[200], width: 100, height: 100,
-                    child: const Icon(Icons.image_not_supported, color: Colors.grey)),
+                  Container(color: _kBg, width: 100, height: 100,
+                    child: const Icon(Icons.image_not_supported, color: _kBody)),
             ),
           ),
         ),

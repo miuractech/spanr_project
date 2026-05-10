@@ -11,12 +11,10 @@ interface ServiceCardProps {
 export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onEdit, onDelete }) => {
   return (
     <Card 
-      withBorder 
-      shadow="sm" 
+      shadow="xs" 
       padding="lg"
-      radius="md"
+      radius="lg"
       style={{ 
-        backgroundColor: '#FFFFFF',
         border: '1px solid #E0E0E0',
       }}
     >
@@ -26,7 +24,7 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onEdit, onDel
             <Image src={service.icon_url} alt={service.name} h={40} w={40} fit="contain" />
           )}
           <div>
-            <Text fw={600}>{service.name}</Text>
+            <Text fw={600} c="#1C1C1C">{service.name}</Text>
             <Badge size="sm" variant="light" color="orange">
               {service.category}
             </Badge>
@@ -44,4 +42,3 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({ service, onEdit, onDel
     </Card>
   );
 };
-

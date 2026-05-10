@@ -11,7 +11,8 @@ import {
   Text,
   Stack,
   Alert,
-  Loader
+  Loader,
+  Box,
 } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 
@@ -32,7 +33,7 @@ export default function LoginPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Loader size="lg" />
+        <Loader size="lg" color="orange" />
       </div>
     );
   }
@@ -44,7 +45,6 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      // Navigation will happen via useEffect
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to login';
       setError(message);
@@ -53,53 +53,75 @@ export default function LoginPage() {
   };
 
   return (
-    <Container size={420} my={100}>
-      <Title ta="center" mb="md" c="#FF6B35">
-        Welcome to SPANR
-      </Title>
-      <Text c="dimmed" size="sm" ta="center" mb={30}>
-        Mechanic Dashboard
-      </Text>
-
-      <Paper withBorder shadow="md" p={30} radius="md" style={{ backgroundColor: '#FFFFFF' }}>
-        <form onSubmit={handleSubmit}>
-          <Stack>
-            {error && (
-              <Alert icon={<IconAlertCircle size={16} />} color="red">
-                {error}
-              </Alert>
-            )}
-
-            <TextInput
-              label="Email"
-              placeholder="your@email.com"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-
-            <PasswordInput
-              label="Password"
-              placeholder="Your password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-
-            <Button type="submit" fullWidth loading={submitting} color="orange">
-              Sign in
-            </Button>
-
-            <Text ta="center" size="sm">
-              Don't have an account?{' '}
-              <Link to="/signup" style={{ fontWeight: 600, color: '#FF6B35', textDecoration: 'none' }}>
-                Sign up
-              </Link>
+    <Box
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F2F2F2',
+      }}
+    >
+      <Container size={420}>
+        <Stack align="center" mb={32}>
+          <Title
+            ta="center"
+            style={{
+              fontSize: 28,
+              fontWeight: 800,
+              color: '#1C1C1C',
+              letterSpacing: -0.5,
+            }}
+          >
+            Welcome to{' '}
+            <Text component="span" c="#FC8019" inherit>
+              SPANR
             </Text>
-          </Stack>
-        </form>
-      </Paper>
-    </Container>
+          </Title>
+          <Text c="#696969" size="sm" ta="center">
+            Mechanic Dashboard
+          </Text>
+        </Stack>
+
+        <Paper shadow="sm" p={32} radius="lg" style={{ border: '1px solid #E0E0E0' }}>
+          <form onSubmit={handleSubmit}>
+            <Stack>
+              {error && (
+                <Alert icon={<IconAlertCircle size={16} />} color="red" radius="md">
+                  {error}
+                </Alert>
+              )}
+
+              <TextInput
+                label="Email"
+                placeholder="your@email.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+
+              <PasswordInput
+                label="Password"
+                placeholder="Your password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+
+              <Button type="submit" fullWidth loading={submitting} color="orange" size="md">
+                Sign in
+              </Button>
+
+              <Text ta="center" size="sm" c="#696969">
+                Don't have an account?{' '}
+                <Link to="/signup" style={{ fontWeight: 600, color: '#FC8019', textDecoration: 'none' }}>
+                  Sign up
+                </Link>
+              </Text>
+            </Stack>
+          </form>
+        </Paper>
+      </Container>
+    </Box>
   );
 }
-

@@ -16,63 +16,74 @@ class AddressSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final addressProvider = context.watch<AddressesProvider>();
     final selectedAddress = addressProvider.selectedAddress;
+    const orange = Color(0xFFFC8019);
 
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: InkWell(
-        onTap: onAddressManage,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(
-                locationEnabled
-                    ? Icons.location_on
-                    : Icons.location_off,
-                color: locationEnabled
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.grey,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      locationEnabled
-                          ? 'Deliver to'
-                          : 'Location Disabled',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
+    return GestureDetector(
+      onTap: onAddressManage,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(
+          children: [
+            Icon(
+              Icons.location_on,
+              color: locationEnabled ? orange : Colors.grey,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (selectedAddress != null) ...[
+                    Row(
+                      children: [
+                        Text(
+                          selectedAddress.label.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1C1C1C),
                           ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.keyboard_arrow_down,
+                            size: 18, color: Color(0xFF1C1C1C)),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    if (selectedAddress != null)
-                      Text(
-                        '${selectedAddress.label} - ${selectedAddress.addressLine1}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      )
-                    else
-                      Text(
-                        'Select an address',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.grey[600],
-                            ),
+                    const SizedBox(height: 1),
+                    Text(
+                      selectedAddress.addressLine1,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF696969),
                       ),
-                  ],
-                ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ] else
+                    Row(
+                      children: [
+                        Text(
+                          'Select your location',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.keyboard_arrow_down,
+                            size: 18, color: Colors.grey[500]),
+                      ],
+                    ),
+                ],
               ),
-              const Icon(Icons.arrow_drop_down),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
-

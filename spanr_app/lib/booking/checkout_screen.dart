@@ -10,6 +10,19 @@ import '../addresses/addresses_provider.dart';
 import 'order_provider.dart';
 import 'order_model.dart';
 
+const _kOrange = Color(0xFFFC8019);
+const _kHeading = Color(0xFF1C1C1C);
+const _kBody = Color(0xFF696969);
+const _kBg = Color(0xFFF2F2F2);
+
+/// Same order as [SelectVehiclePhotosScreen] checkout payload.
+const List<String> kBeforeServicePhotoLabels = [
+  'Left side',
+  'Right side',
+  'Front side',
+  'Back side',
+];
+
 class CheckoutScreen extends StatefulWidget {
   final MechanicCompany company;
   final VehicleModel vehicle;
@@ -30,6 +43,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
   final _specialInstructionsController = TextEditingController();
   DateTime _scheduledDate = DateTime.now().add(const Duration(days: 1));
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<OrderProvider>().setCheckoutRouteExtra({
+        'company': widget.company,
+        'vehicle': widget.vehicle,
+        'beforeImages': widget.beforeImages,
+      });
+    });
+  }
 
   @override
   void dispose() {
@@ -134,7 +160,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       request: request,
       beforeImages: widget.beforeImages,
       onPaymentInitiated: () {
-        if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
           final order = orderProvider.currentOrder!;
           final payment = orderProvider.currentPayment!;
           context.push(
@@ -145,10 +172,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               'status': 'processing',
             },
           );
-        }
+        });
       },
       onPaymentSuccess: (order, payment) {
-        if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
           cartProvider.clear();
           context.go(
             '/order-confirmation',
@@ -157,10 +185,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               'payment': payment,
             },
           );
-        }
+        });
       },
       onPaymentError: (order, payment, error) {
-        if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
           context.go(
             '/payment-processing',
             extra: {
@@ -169,9 +198,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               'status': 'failed',
             },
           );
-        }
+        });
       },
     );
+
+    if (!mounted) return;
+    final paymentSetupError = orderProvider.error;
+    if (paymentSetupError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(paymentSetupError),
+          duration: const Duration(seconds: 8),
+        ),
+      );
+      orderProvider.clearError();
+    }
   }
 
   String _formatDate(DateTime dt) {
@@ -190,14 +231,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cartProvider = context.watch<CartProvider>();
     final orderProvider = context.watch<OrderProvider>();
     final addressProvider = context.watch<AddressesProvider>();
-    final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: _kBg,
       appBar: AppBar(
-        title: const Text('Checkout'),
+        title: const Text('Checkout',
+            style: TextStyle(color: _kHeading, fontWeight: FontWeight.w700, fontSize: 18)),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: _kHeading),
       ),
       body: Form(
         key: _formKey,
@@ -214,10 +257,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       child: Row(
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: widget.company.logo != null
+                            borderRadius: BorderRadius.circular(12),
+                            child: widget.company.brandImageUrl != null
                                 ? Image.network(
-                                    widget.company.logo!,
+                                    widget.company.brandImageUrl!,
                                     width: 52,
                                     height: 52,
                                     fit: BoxFit.cover,
@@ -232,17 +275,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               children: [
                                 Text(
                                   widget.company.companyName,
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 15,
+                                    color: _kHeading,
+                                  ),
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
                                   widget.company.fullAddress,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(color: Colors.grey[600]),
+                                  style: const TextStyle(color: _kBody, fontSize: 13),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -261,7 +303,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       trailing: addressProvider.selectedAddress != null
                           ? TextButton(
                               onPressed: () async => await context.push('/addresses'),
-                              child: Text('Change', style: TextStyle(color: primary)),
+                              child: const Text('Change',
+                                  style: TextStyle(color: _kOrange, fontWeight: FontWeight.w600)),
                             )
                           : null,
                       child: addressProvider.selectedAddress != null
@@ -270,10 +313,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: primary.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
+                                    color: _kOrange.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Icon(Icons.home_outlined, color: primary, size: 22),
+                                  child: const Icon(Icons.home_outlined, color: _kOrange, size: 22),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -282,17 +325,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     children: [
                                       Text(
                                         addressProvider.selectedAddress!.label,
-                                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          color: _kHeading,
+                                        ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         addressProvider.selectedAddress!.fullAddress,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(color: Colors.grey[600]),
+                                        style: const TextStyle(color: _kBody, fontSize: 13),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -316,10 +358,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              color: _kOrange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.directions_car, color: primary, size: 22),
+                            child: const Icon(Icons.directions_car, color: _kOrange, size: 22),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -328,17 +370,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               children: [
                                 Text(
                                   '${widget.vehicle.make} ${widget.vehicle.model}',
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    color: _kHeading,
+                                  ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
                                   '${widget.vehicle.year} • ${widget.vehicle.licensePlate}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(color: Colors.grey[600]),
+                                  style: const TextStyle(color: _kBody, fontSize: 13),
                                 ),
                               ],
                             ),
@@ -354,24 +395,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       title: 'Scheduled Date & Time',
                       trailing: TextButton(
                         onPressed: _selectScheduledDate,
-                        child: Text('Change', style: TextStyle(color: primary)),
+                        child: const Text('Change',
+                            style: TextStyle(color: _kOrange, fontWeight: FontWeight.w600)),
                       ),
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(10),
+                              color: _kOrange.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.event_available, color: primary, size: 22),
+                            child: const Icon(Icons.event_available, color: _kOrange, size: 22),
                           ),
                           const SizedBox(width: 12),
                           Text(
                             _formatDate(_scheduledDate),
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: _kHeading,
+                            ),
                           ),
                         ],
                       ),
@@ -388,9 +432,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.grey.shade200),
+                              color: _kBg,
+                              borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
@@ -400,17 +443,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                     children: [
                                       Text(
                                         item.plan.name,
-                                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 14,
+                                          color: _kHeading,
+                                        ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         item.serviceName,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(color: Colors.grey[600]),
+                                        style: const TextStyle(color: _kBody, fontSize: 13),
                                       ),
                                     ],
                                   ),
@@ -420,17 +462,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   children: [
                                     Text(
                                       '₹${item.subtotal.toStringAsFixed(0)}',
-                                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: primary,
-                                          ),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 15,
+                                        color: _kOrange,
+                                      ),
                                     ),
                                     Text(
                                       '+ ₹${item.taxAmount.toStringAsFixed(0)} tax',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(color: Colors.grey[500]),
+                                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
                                     ),
                                   ],
                                 ),
@@ -447,21 +487,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       icon: Icons.photo_library_outlined,
                       title: 'Before Service Photos (${widget.beforeImages.length})',
                       child: SizedBox(
-                        height: 90,
+                        height: 120,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: widget.beforeImages.length,
                           itemBuilder: (context, index) {
+                            final label = index < kBeforeServicePhotoLabels.length
+                                ? kBeforeServicePhotoLabels[index]
+                                : 'Photo ${index + 1}';
                             return Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.file(
-                                  widget.beforeImages[index],
-                                  width: 90,
-                                  height: 90,
-                                  fit: BoxFit.cover,
-                                ),
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.file(
+                                      widget.beforeImages[index],
+                                      width: 82,
+                                      height: 82,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  SizedBox(
+                                    width: 82,
+                                    child: Text(
+                                      label,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: _kBody,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
                           },
@@ -479,10 +543,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         maxLines: 3,
                         decoration: InputDecoration(
                           hintText: 'Any specific requirements or notes...',
+                          hintStyle: const TextStyle(color: _kBody, fontSize: 14),
                           filled: true,
-                          fillColor: const Color(0xFFF3F4F6),
+                          fillColor: _kBg,
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                           contentPadding: const EdgeInsets.all(14),
@@ -492,11 +557,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                     const SizedBox(height: 12),
 
+                    // Price Details
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 12,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: Column(
                         children: [
@@ -507,22 +579,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(7),
                                   decoration: BoxDecoration(
-                                    color: primary.withValues(alpha: 0.1),
+                                    color: _kOrange.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Icon(Icons.calculate_outlined, color: primary, size: 18),
+                                  child: const Icon(Icons.calculate_outlined,
+                                      color: _kOrange, size: 18),
                                 ),
                                 const SizedBox(width: 10),
-                                Text(
+                                const Text(
                                   'Price Details',
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    color: _kHeading,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          const Divider(height: 1),
+                          Divider(height: 1, color: Colors.grey.shade100),
                           Padding(
                             padding: const EdgeInsets.all(16),
                             child: Column(
@@ -535,7 +610,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 _PriceRow(
                                   label: 'Tax',
                                   value: '₹${cartProvider.taxAmount.toStringAsFixed(2)}',
-                                  valueColor: Colors.orange.shade700,
+                                  valueColor: _kBody,
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -544,18 +619,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
+                                    const Text(
                                       'Total Amount',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                        color: _kHeading,
+                                      ),
                                     ),
                                     Text(
                                       '₹${cartProvider.total.toStringAsFixed(2)}',
-                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: primary,
-                                          ),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 20,
+                                        color: _kOrange,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -578,7 +656,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: Colors.black.withOpacity(0.08),
                     blurRadius: 12,
                     offset: const Offset(0, -2),
                   ),
@@ -594,16 +672,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               'Total Payable',
-                              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                              style: TextStyle(color: _kBody, fontSize: 13),
                             ),
                             Text(
                               '₹${cartProvider.total.toStringAsFixed(2)}',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: primary,
-                                  ),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 20,
+                                color: _kOrange,
+                              ),
                             ),
                           ],
                         ),
@@ -612,11 +691,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           child: ElevatedButton(
                             onPressed: orderProvider.isLoading ? null : _placeOrder,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: primary,
+                              backgroundColor: _kOrange,
                               foregroundColor: Colors.white,
+                              disabledBackgroundColor: _kOrange.withOpacity(0.5),
                               minimumSize: const Size(0, 52),
+                              elevation: 0,
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
+                                  borderRadius: BorderRadius.circular(28)),
                             ),
                             child: orderProvider.isLoading
                                 ? const SizedBox(
@@ -630,7 +711,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 : const Text(
                                     'Pay Now',
                                     style: TextStyle(
-                                        fontSize: 16, fontWeight: FontWeight.w600),
+                                        fontSize: 16, fontWeight: FontWeight.w700),
                                   ),
                           ),
                         ),
@@ -652,10 +733,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       width: 52,
       height: 52,
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(10),
+        color: _kBg,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: Colors.grey[400], size: 26),
+      child: Icon(icon, color: _kBody, size: 26),
     );
   }
 }
@@ -675,12 +756,17 @@ class _CheckoutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -692,25 +778,27 @@ class _CheckoutCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: primary.withValues(alpha: 0.1),
+                    color: _kOrange.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(icon, color: primary, size: 18),
+                  child: Icon(icon, color: _kOrange, size: 18),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     title,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      color: _kHeading,
+                    ),
                   ),
                 ),
                 if (trailing != null) trailing!,
               ],
             ),
           ),
-          const Divider(height: 1),
+          Divider(height: 1, color: Colors.grey.shade100),
           Padding(
             padding: const EdgeInsets.all(16),
             child: child,
@@ -730,25 +818,25 @@ class _AddAddressPrompt extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.orange.shade50,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.orange.shade200),
+          color: _kOrange.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _kOrange.withOpacity(0.25)),
         ),
         child: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700, size: 20),
+            Icon(Icons.warning_amber_rounded, color: _kOrange, size: 20),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 'No address selected. Tap to add one.',
-                style: TextStyle(color: Colors.orange.shade900, fontSize: 13),
+                style: TextStyle(color: _kOrange.withOpacity(0.9), fontSize: 13),
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.orange.shade700),
+            const Icon(Icons.chevron_right, color: _kOrange),
           ],
         ),
       ),
@@ -770,14 +858,15 @@ class _PriceRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
+          style: const TextStyle(color: _kBody, fontSize: 14),
         ),
         Text(
           value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: valueColor,
-              ),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: valueColor ?? _kHeading,
+          ),
         ),
       ],
     );

@@ -14,6 +14,7 @@ class OrderProvider extends ChangeNotifier {
   String? _error;
   OrderModel? _currentOrder;
   PaymentModel? _currentPayment;
+  Map<String, dynamic>? _checkoutRouteExtra;
 
   List<OrderWithDetails> get orders => _orders;
   List<OrderHistoryModel> get currentOrderHistory => _currentOrderHistory;
@@ -21,6 +22,11 @@ class OrderProvider extends ChangeNotifier {
   String? get error => _error;
   OrderModel? get currentOrder => _currentOrder;
   PaymentModel? get currentPayment => _currentPayment;
+  Map<String, dynamic>? get checkoutRouteExtra => _checkoutRouteExtra;
+
+  void setCheckoutRouteExtra(Map<String, dynamic> extra) {
+    _checkoutRouteExtra = extra;
+  }
 
   @override
   void dispose() {
@@ -103,11 +109,16 @@ class OrderProvider extends ChangeNotifier {
             // Only update to processing if payment is still unpaid
             // (webhook might have already marked it as paid/failed)
             if (currentPayment.status == PaymentStatus.unpaid) {
-              currentPayment = await _orderService.updatePaymentProcessing(
-                paymentId: _currentPayment!.id,
-                razorpayPaymentId: response.paymentId ?? '',
-                razorpaySignature: response.signature ?? '',
-              );
+              try {
+                currentPayment = await _orderService.updatePaymentProcessing(
+                  paymentId: _currentPayment!.id,
+                  razorpayPaymentId: response.paymentId ?? '',
+                  razorpaySignature: response.signature ?? '',
+                );
+              } catch (_) {
+                currentPayment =
+                    await _orderService.getPaymentById(_currentPayment!.id);
+              }
             }
 
             // If already paid or failed, use that status immediately
@@ -178,18 +189,25 @@ class OrderProvider extends ChangeNotifier {
       _currentPayment = result['payment'] as PaymentModel;
       final razorpayOrderId = result['razorpay_order_id'] as String;
 
-      // Open Razorpay
-      await _orderService.openRazorpay(
-        razorpayOrderId: razorpayOrderId,
-        amount: request.amount,
-        name: request.contactName,
-        email: request.contactEmail,
-        phone: request.contactPhone,
-        description: 'Order payment for ${_currentOrder!.id}',
-      );
-
       _isLoading = false;
       notifyListeners();
+
+      try {
+        await _orderService.openRazorpay(
+          razorpayOrderId: razorpayOrderId,
+          amount: request.amount,
+          name: request.contactName,
+          email: request.contactEmail,
+          phone: request.contactPhone,
+          description: 'Order payment for ${_currentOrder!.id}',
+        );
+      } catch (e) {
+        _error = e.toString();
+        notifyListeners();
+        if (_currentOrder != null && _currentPayment != null) {
+          onPaymentError(_currentOrder!, _currentPayment!, _error!);
+        }
+      }
     } catch (e) {
       _error = e.toString();
       _isLoading = false;

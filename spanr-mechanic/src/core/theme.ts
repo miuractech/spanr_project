@@ -5,34 +5,34 @@ export const theme: MantineThemeOverride = createTheme({
   primaryColor: 'orange',
   colors: {
     orange: [
-      '#FFF5EC',
-      '#FFE8D6',
-      '#FFD4BA',
-      '#FFC09E',
-      '#FFAC82',
-      '#FF6B35',
-      '#E65A2B',
-      '#CC4922',
-      '#B33818',
-      '#99270F',
+      '#FFF3E0',
+      '#FFE5C0',
+      '#FFD7A0',
+      '#FFC880',
+      '#FFB960',
+      '#FFAA40',
+      '#FC8019',
+      '#E06E0A',
+      '#C05D00',
+      '#9A4B00',
     ],
-    cream: [
-      '#FFFBF7',
-      '#FFF5EC',
-      '#FFEFD9',
-      '#FFE9C6',
-      '#FFE3B3',
-      '#FFDDA0',
-      '#E6C690',
-      '#CCAF80',
-      '#B39870',
-      '#998160',
+    green: [
+      '#E8F5E9',
+      '#C8E6C9',
+      '#A5D6A7',
+      '#81C784',
+      '#66BB6A',
+      '#4CAF50',
+      '#267E3E',
+      '#1B5E2F',
+      '#134A23',
+      '#0C3618',
     ],
   },
-  defaultRadius: 'md',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+  defaultRadius: 'lg',
+  fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   headings: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     fontWeight: '700',
   },
   components: {
@@ -49,8 +49,8 @@ export const theme: MantineThemeOverride = createTheme({
     },
     Paper: {
       defaultProps: {
-        radius: 'md',
-        shadow: 'sm',
+        radius: 'lg',
+        shadow: 'xs',
       },
       styles: {
         root: {
@@ -60,23 +60,22 @@ export const theme: MantineThemeOverride = createTheme({
     },
     Card: {
       defaultProps: {
-        radius: 'md',
-        shadow: 'sm',
+        radius: 'lg',
+        shadow: 'xs',
       },
       styles: {
         root: {
           backgroundColor: '#FFFFFF',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          transition: 'box-shadow 0.2s ease',
           '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
           },
         },
       },
     },
     Button: {
       defaultProps: {
-        radius: 'md',
+        radius: 'xl',
       },
       styles: {
         root: {
@@ -90,10 +89,24 @@ export const theme: MantineThemeOverride = createTheme({
       },
       styles: {
         input: {
-          backgroundColor: '#F8F8F8',
-          border: '1px solid #E0E0E0',
+          backgroundColor: '#FFFFFF',
+          border: '1.5px solid #E0E0E0',
           '&:focus': {
-            borderColor: '#FF6B35',
+            borderColor: '#FC8019',
+          },
+        },
+      },
+    },
+    PasswordInput: {
+      defaultProps: {
+        radius: 'md',
+      },
+      styles: {
+        input: {
+          backgroundColor: '#FFFFFF',
+          border: '1.5px solid #E0E0E0',
+          '&:focus': {
+            borderColor: '#FC8019',
           },
         },
       },
@@ -104,10 +117,10 @@ export const theme: MantineThemeOverride = createTheme({
       },
       styles: {
         input: {
-          backgroundColor: '#F8F8F8',
-          border: '1px solid #E0E0E0',
+          backgroundColor: '#FFFFFF',
+          border: '1.5px solid #E0E0E0',
           '&:focus': {
-            borderColor: '#FF6B35',
+            borderColor: '#FC8019',
           },
         },
       },
@@ -128,6 +141,34 @@ export const theme: MantineThemeOverride = createTheme({
         radius: 'md',
       },
     },
+    Tabs: {
+      styles: {
+        tab: {
+          fontWeight: 500,
+          '&[data-active]': {
+            borderColor: '#FC8019',
+            color: '#FC8019',
+          },
+        },
+      },
+    },
+    Modal: {
+      defaultProps: {
+        radius: 'lg',
+      },
+    },
+    Stepper: {
+      styles: {
+        stepIcon: {
+          '&[data-completed]': {
+            backgroundColor: '#FC8019',
+            borderColor: '#FC8019',
+          },
+          '&[data-progress]': {
+            borderColor: '#FC8019',
+          },
+        },
+      },
+    },
   },
 });
-

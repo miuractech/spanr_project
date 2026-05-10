@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import '../models/plan_model.dart';
 import 'plan_details_dialog.dart';
 
+const _kOrange = Color(0xFFFC8019);
+const _kGreen = Color(0xFF267E3E);
+const _kHeading = Color(0xFF1C1C1C);
+const _kBody = Color(0xFF696969);
+
 class PlanCard extends StatelessWidget {
   final PlanModel plan;
   final String serviceName;
@@ -22,16 +27,12 @@ class PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Card(
-      elevation: isInCart ? 3 : 1,
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
+      decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        side: isInCart
-            ? BorderSide(color: primary, width: 2)
-            : BorderSide(color: Colors.grey.shade200, width: 1),
+        border: Border.all(color: const Color(0xFFE8E8E8), width: 1),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -44,204 +45,242 @@ class PlanCard extends StatelessWidget {
           onAddToCart: onAddToCart,
           onRemoveFromCart: onRemoveFromCart,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                plan.name,
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                            ),
-                            if (plan.badge != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: primary,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  plan.badge!,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
-                            const SizedBox(width: 3),
-                            Text(
-                              plan.durationDisplay,
-                              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                            ),
-                            const SizedBox(width: 12),
-                            Icon(Icons.location_on, size: 14, color: Colors.grey[500]),
-                            const SizedBox(width: 3),
-                            Text(
-                              plan.locationType == 'in_premise' ? 'In Premise' : 'Shed',
-                              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  // Header row: Name + Price
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '₹${plan.basePrice.toStringAsFixed(0)}',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: primary,
-                            ),
-                      ),
-                      Text(
-                        '+${plan.tax.toStringAsFixed(0)}% tax',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-
-              if (plan.fuelTypes.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: plan.fuelTypes.map((fuel) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
-                      child: Text(
-                        fuel.toUpperCase(),
-                        style: TextStyle(
-                          color: Colors.blue.shade700,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-
-              if (plan.features.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                ...plan.features.take(3).map((feature) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.check_circle, size: 14, color: Colors.green.shade600),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            feature,
-                            style: TextStyle(color: Colors.grey[700], fontSize: 12),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                      // Name
+                      Expanded(
+                        child: Text(
+                          plan.name,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: _kHeading,
                           ),
                         ),
-                      ],
-                    ),
-                  );
-                }),
-                if (plan.features.length > 3)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(
-                      '+${plan.features.length - 3} more features',
-                      style: TextStyle(
-                        color: primary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      // Price column
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '₹${plan.basePrice.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: _kOrange,
+                            ),
+                          ),
+                          Text(
+                            '+${plan.tax.toStringAsFixed(0)}% tax',
+                            style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-              ],
 
-              if (plan.warranty != null || plan.guarantee != null) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    if (plan.warranty != null) ...[
-                      Icon(Icons.verified_user, size: 13, color: Colors.orange.shade700),
-                      const SizedBox(width: 3),
-                      Text(
-                        plan.warranty!,
-                        style: TextStyle(
-                          color: Colors.orange.shade700,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                    if (plan.warranty != null && plan.guarantee != null) const SizedBox(width: 10),
-                    if (plan.guarantee != null) ...[
-                      Icon(Icons.shield, size: 13, color: Colors.green.shade700),
-                      const SizedBox(width: 3),
-                      Text(
-                        plan.guarantee!,
-                        style: TextStyle(
-                          color: Colors.green.shade700,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
+                  const SizedBox(height: 6),
 
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+                  // Duration & Location
                   Row(
                     children: [
-                      Icon(Icons.info_outline, size: 13, color: Colors.grey[500]),
-                      const SizedBox(width: 4),
+                      const Icon(Icons.access_time_rounded, size: 12, color: _kBody),
+                      const SizedBox(width: 3),
                       Text(
-                        'Tap to view details',
-                        style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                        plan.durationDisplay,
+                        style: const TextStyle(color: _kBody, fontSize: 11),
+                      ),
+                      Container(
+                        width: 3,
+                        height: 3,
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        decoration: const BoxDecoration(
+                          color: _kBody,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Icon(
+                        plan.locationType == 'in_premise'
+                            ? Icons.home_outlined
+                            : Icons.warehouse_outlined,
+                        size: 12,
+                        color: _kBody,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        plan.locationType == 'in_premise' ? 'At Doorstep' : 'At Workshop',
+                        style: const TextStyle(color: _kBody, fontSize: 11),
                       ),
                     ],
                   ),
-                  _CartButton(
-                    isInCart: isInCart,
-                    onAdd: onAddToCart,
-                    onRemove: onRemoveFromCart,
+
+                  if (plan.fuelTypes.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 5,
+                      runSpacing: 4,
+                      children: plan.fuelTypes.map((fuel) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: _kOrange.withOpacity(0.4)),
+                            color: _kOrange.withOpacity(0.06),
+                          ),
+                          child: Text(
+                            fuel.toUpperCase(),
+                            style: const TextStyle(
+                              color: _kOrange,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+
+                  if (plan.features.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    ...plan.features.take(3).map((feature) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_rounded, size: 13, color: _kGreen),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                feature,
+                                style: const TextStyle(color: _kBody, fontSize: 11, height: 1.3),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                    if (plan.features.length > 3)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Text(
+                          '+${plan.features.length - 3} more',
+                          style: const TextStyle(
+                            color: _kOrange,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+
+                  if (plan.warranty != null || plan.guarantee != null) ...[
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        if (plan.warranty != null)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.verified_user_rounded, size: 12, color: _kOrange.withOpacity(0.85)),
+                              const SizedBox(width: 3),
+                              Text(
+                                plan.warranty!,
+                                style: TextStyle(
+                                  color: _kOrange.withOpacity(0.85),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        if (plan.guarantee != null)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.shield_rounded, size: 12, color: _kGreen),
+                              const SizedBox(width: 3),
+                              Text(
+                                plan.guarantee!,
+                                style: const TextStyle(
+                                  color: _kGreen,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                  const SizedBox(height: 10),
+
+                  // Bottom row: Info + Add Button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline_rounded, size: 12, color: Colors.grey[400]),
+                          const SizedBox(width: 3),
+                          Text(
+                            'Tap for details',
+                            style: TextStyle(color: Colors.grey[400], fontSize: 10),
+                          ),
+                        ],
+                      ),
+                      _CartButton(
+                        isInCart: isInCart,
+                        onAdd: onAddToCart,
+                        onRemove: onRemoveFromCart,
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+
+            // Badge - positioned at top right but not overlapping
+            if (plan.badge != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _kOrange,
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(11),
+                      bottomLeft: Radius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    plan.badge!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -261,33 +300,32 @@ class _CartButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
-
     return GestureDetector(
       onTap: isInCart ? onRemove : onAdd,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isInCart ? Colors.grey.shade100 : primary,
-          borderRadius: BorderRadius.circular(20),
-          border: isInCart ? Border.all(color: Colors.grey.shade300) : null,
+          color: isInCart ? const Color(0xFFF2F2F2) : _kOrange,
+          borderRadius: BorderRadius.circular(6),
+          border: isInCart
+              ? Border.all(color: const Color(0xFFD0D0D0), width: 1)
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isInCart ? Icons.check : Icons.add,
-              size: 14,
-              color: isInCart ? Colors.grey.shade700 : Colors.white,
-            ),
+            if (isInCart)
+              const Icon(Icons.check_rounded, size: 14, color: _kBody)
+            else
+              const Icon(Icons.add, size: 14, color: Colors.white),
             const SizedBox(width: 4),
             Text(
               isInCart ? 'Added' : 'Add',
               style: TextStyle(
-                color: isInCart ? Colors.grey.shade700 : Colors.white,
+                color: isInCart ? _kBody : Colors.white,
                 fontSize: 12,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
