@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ordersService } from './orders.service';
-import type { OrderDetails, OrderFilters, PaginatedOrders } from './orders.types';
+import type { OrderFilters, PaginatedOrders } from './orders.types';
 
 export const useOrders = (
   companyId?: string,

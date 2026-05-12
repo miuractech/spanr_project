@@ -93,7 +93,7 @@ export const authService = {
 
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
     let seq = 0;
-    return supabase.auth.onAuthStateChange((event, session) => {
+    return supabase.auth.onAuthStateChange((_event, session) => {
       const current = ++seq;
       if (session?.user) {
         this.getCurrentUser().then((user) => {

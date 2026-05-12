@@ -1,5 +1,5 @@
 import supabase from '../supabaseconfig';
-import type { DbMechanicCompany, DbCompanyCertification, DbCompanySpecialization } from '../types';
+import type { DbMechanicCompany } from '../types';
 import type { DocumentFiles } from '../components/company_documents_form';
 
 export type DocumentType = 'gst_certificate' | 'pan_card' | 'utility_bill';

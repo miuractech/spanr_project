@@ -2,15 +2,15 @@
  * Redux state-related type definitions
  */
 
-import { mechanicCompanyProfile } from './company.types';
-import { masterPlanType } from './plan.types';
+import type { MechanicCompanyProfile } from './company.types';
+import type { MasterPlanType } from './plan.types';
 
 export interface CompanyDetailState {
-  companyProfile: mechanicCompanyProfile | null | undefined;
+  companyProfile: MechanicCompanyProfile | null | undefined;
 }
 
 export type MasterPlanState = {
-  plans: masterPlanType[];
+  plans: MasterPlanType[];
 };
 
 // Note: RootState and AppDispatch types are typically generated from store.getState()

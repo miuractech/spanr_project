@@ -218,7 +218,6 @@ export default function ServicesAndPlansPage() {
 
   // Get plans for active service
   const activePlans = plans.filter(p => p.service_id === activeServiceId);
-  const activeService = services.find(s => s.id === activeServiceId);
 
   if (!company) return <Alert color="yellow">No company profile found</Alert>;
 

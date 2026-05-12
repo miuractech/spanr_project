@@ -7,7 +7,6 @@ import {
   FileInput,
   Image,
   SimpleGrid,
-  Textarea,
 } from '@mantine/core';
 import { IconUpload } from '@tabler/icons-react';
 import type { CompanyFormData } from '../company/company.service';

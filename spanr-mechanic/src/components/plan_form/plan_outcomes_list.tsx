@@ -1,6 +1,5 @@
 import { Stack, TextInput, Button, Group, ActionIcon, Text, Textarea, FileInput, Image } from '@mantine/core';
 import { IconPlus, IconTrash, IconUpload } from '@tabler/icons-react';
-import { useState } from 'react';
 
 interface Outcome {
   title: string;

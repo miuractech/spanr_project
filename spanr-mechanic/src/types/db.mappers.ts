@@ -6,25 +6,20 @@
  */
 
 import type {
-  DbUser,
   DbMechanicCompany,
   DbCompanyRating,
-  DbStaff,
-  DbService,
   DbPlan,
   DbPlanFeature,
   DbPlanFaq,
   DbVehicle,
   DbOrder,
   DbPayment,
-  UserDataType,
   VehicleData,
   OrderType,
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
   MechanicCompanyProfile,
-  AddressType,
 } from './index';
 
 // ===========================================
@@ -88,6 +83,9 @@ export function profileToDbCompany(profile: MechanicCompanyProfile): Omit<DbMech
     phone: profile.phone,
     email: profile.email,
     logo: profile.logo || null,
+    latitude: null,
+    longitude: null,
+    images: [],
   };
 }
 

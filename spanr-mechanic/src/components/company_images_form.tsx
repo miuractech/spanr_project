@@ -5,7 +5,6 @@ import {
   Image,
   SimpleGrid,
   Text,
-  Group,
   ActionIcon,
   Paper,
 } from '@mantine/core';

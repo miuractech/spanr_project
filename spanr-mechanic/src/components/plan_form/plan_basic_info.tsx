@@ -1,4 +1,4 @@
-import { TextInput, Select, NumberInput, SimpleGrid, Textarea } from '@mantine/core';
+import { TextInput, Select, NumberInput, SimpleGrid } from '@mantine/core';
 
 interface PlanBasicInfoProps {
   formData: any;

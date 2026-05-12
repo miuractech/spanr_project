@@ -15,6 +15,7 @@ import {
   Center,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
+import type { DatesRangeValue } from '@mantine/dates';
 import { IconAlertCircle, IconSearch } from '@tabler/icons-react';
 import { useDebouncedValue } from '@mantine/hooks';
 import { useCompany } from '../company/company.hook';
@@ -37,15 +38,15 @@ export default function OrdersPage() {
   const navigate = useNavigate();
   const { company } = useCompany();
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [dateRange, setDateRange] = useState<DatesRangeValue<string>>([null, null]);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [debouncedSearch] = useDebouncedValue(searchQuery, 500);
 
   const filters = useMemo<OrderFilters>(() => ({
     status: statusFilter !== 'all' ? statusFilter as OrderStatus : undefined,
-    startDate: dateRange[0] || undefined,
-    endDate: dateRange[1] || undefined,
+    startDate: dateRange[0] ? new Date(dateRange[0]) : undefined,
+    endDate: dateRange[1] ? new Date(dateRange[1]) : undefined,
     search: debouncedSearch || undefined,
   }), [statusFilter, dateRange, debouncedSearch]);
 

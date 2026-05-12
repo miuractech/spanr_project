@@ -95,8 +95,8 @@ export default function DashboardPage() {
           <Title order={3} mb="md" c="#1C1C1C">Order Status</Title>
           <Stack gap="sm">
             {[
-              { label: 'Pending', value: orderStats.pending, color: '#696969' },
-              { label: 'Confirmed', value: orderStats.confirmed, color: '#FC8019' },
+              { label: 'Created', value: orderStats.created, color: '#696969' },
+              { label: 'Accepted', value: orderStats.accepted, color: '#FC8019' },
               { label: 'In Progress', value: orderStats.inProgress, color: '#1976D2' },
               { label: 'Completed', value: orderStats.completed, color: '#267E3E' },
             ].map((item) => (

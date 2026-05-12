@@ -62,7 +62,7 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         warranty: initialData.warranty || '',
         guarantee: initialData.guarantee || '',
         badge: initialData.badge || '',
-        fuelTypes: initialData.fuelTypes || [],
+        fuelTypes: (initialData.fuelTypes?.filter((f): f is 'diesel' | 'petrol' => f === 'diesel' || f === 'petrol')) || [],
         features: initialData.features?.map(f => ({ 
           feature: f.feature, 
           displayOrder: f.display_order 

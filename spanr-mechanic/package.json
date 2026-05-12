@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "deploy:firebase": "npm run build && npx --yes firebase-tools deploy --only hosting --config ../firebase.json",
     "lint": "eslint .",
     "preview": "vite preview"
   },

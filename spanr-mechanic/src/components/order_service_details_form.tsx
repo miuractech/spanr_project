@@ -6,7 +6,6 @@ import {
   NumberInput,
   Button,
   Paper,
-  Text,
   Loader,
 } from '@mantine/core';
 import { ordersService } from '../orders/orders.service';

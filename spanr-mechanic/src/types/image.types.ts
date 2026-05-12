@@ -2,7 +2,7 @@
  * Image and media-related type definitions
  */
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 // UI component types (not database tables)
 export type EditConfigType = {

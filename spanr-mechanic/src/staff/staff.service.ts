@@ -1,5 +1,5 @@
 import supabase from '../supabaseconfig';
-import type { DbStaff, DbStaffAccess } from '../types';
+import type { DbStaff } from '../types';
 
 export interface StaffFormData {
   name: string;
