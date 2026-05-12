@@ -1,5 +1,18 @@
 import { useState } from 'react';
-import { TextInput, Stack, SimpleGrid, Group, Badge, ActionIcon, Button, Text, Box, FileInput, Image, Paper } from '@mantine/core';
+import {
+  TextInput,
+  Stack,
+  SimpleGrid,
+  Group,
+  Badge,
+  ActionIcon,
+  Button,
+  Text,
+  Box,
+  FileInput,
+  Image,
+  Paper,
+} from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { IconPlus, IconX, IconUpload } from '@tabler/icons-react';
 
@@ -18,6 +31,15 @@ interface CompanyGeneralFormProps {
   existingLogo?: string;
   onLogoChange?: (file: File | null) => void;
 }
+
+const addButtonProps = {
+  color: 'orange' as const,
+  variant: 'filled' as const,
+  size: 'md' as const,
+  miw: 112,
+  h: 48,
+  radius: 'md' as const,
+};
 
 export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
   form,
@@ -41,48 +63,57 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
   };
 
   const handleRemoveCertification = (cert: string) => {
-    form.setFieldValue('certifications', form.values.certifications.filter(c => c !== cert));
+    form.setFieldValue(
+      'certifications',
+      form.values.certifications.filter((c) => c !== cert)
+    );
   };
 
   const handleAddSpecialization = () => {
     if (!newSpecialization.trim()) return;
-    form.setFieldValue('specializations', [...form.values.specializations, newSpecialization.trim()]);
+    form.setFieldValue('specializations', [
+      ...form.values.specializations,
+      newSpecialization.trim(),
+    ]);
     setNewSpecialization('');
   };
 
   const handleRemoveSpecialization = (spec: string) => {
-    form.setFieldValue('specializations', form.values.specializations.filter(s => s !== spec));
+    form.setFieldValue(
+      'specializations',
+      form.values.specializations.filter((s) => s !== spec)
+    );
   };
 
   return (
-    <Stack gap={32}>
+    <Stack gap={28} maw={680} w="100%">
       <Box>
-        <Text size="lg" fw={600} mb={24}>Basic Information</Text>
-        <Stack gap={20}>
+        <Text size="lg" fw={600} c="#1C1C1C" mb="md">
+          Basic information
+        </Text>
+        <Stack gap="md">
           <TextInput
-            label="Company Name"
+            label="Company name"
             placeholder="Elite Auto Care"
             required
-            size="md"
             {...form.getInputProps('companyName')}
-            styles={{ input: { border: 'none', borderBottom: '1px solid #e9ecef', borderRadius: 0, paddingLeft: 0 } }}
           />
 
           <Box>
             <FileInput
-              label="Company Logo"
-              placeholder="Upload logo"
+              label="Company logo"
+              placeholder="Choose image file"
               accept="image/*"
-              leftSection={<IconUpload size={16} />}
+              leftSection={<IconUpload size={18} />}
               value={logoFile}
               onChange={handleLogoChange}
-              size="md"
-              description="Upload your company logo"
+              description="PNG or JPG, recommended square image"
+              clearable
             />
             {(existingLogo || logoFile) && (
-              <Paper withBorder p="md" mt="md">
-                <Text size="sm" fw={500} mb="xs">
-                  {logoFile ? 'New Logo Preview' : 'Current Logo'}
+              <Paper withBorder p="md" mt="md" radius="md">
+                <Text size="sm" fw={600} mb="xs" c="#1C1C1C">
+                  {logoFile ? 'New logo preview' : 'Current logo'}
                 </Text>
                 <Group>
                   <Image
@@ -91,14 +122,18 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
                     h={100}
                     w={100}
                     fit="contain"
+                    radius="md"
                   />
                   {logoFile && (
                     <ActionIcon
                       color="red"
-                      size="sm"
+                      variant="light"
+                      size="lg"
+                      radius="md"
                       onClick={() => handleLogoChange(null)}
+                      aria-label="Remove selected logo"
                     >
-                      <IconX size={16} />
+                      <IconX size={18} />
                     </ActionIcon>
                   )}
                 </Group>
@@ -106,80 +141,85 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
             )}
           </Box>
 
-          <SimpleGrid cols={2} spacing={20}>
+          <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
             <TextInput
               label="Email"
               placeholder="contact@company.com"
               type="email"
               required
-              size="md"
               value={userEmail || form.values.email}
               disabled
               description="From your account"
-              styles={{ input: { border: 'none', borderBottom: '1px solid #e9ecef', borderRadius: 0, paddingLeft: 0 } }}
             />
 
             <TextInput
-              label="Primary Phone"
+              label="Primary phone"
               placeholder="+91 98765 43210"
               required
-              size="md"
               {...form.getInputProps('phone')}
-              styles={{ input: { border: 'none', borderBottom: '1px solid #e9ecef', borderRadius: 0, paddingLeft: 0 } }}
             />
           </SimpleGrid>
 
           <TextInput
-            label="Alternative Phone"
+            label="Alternative phone"
             placeholder="+91 98765 43210"
             required
-            size="md"
             {...form.getInputProps('phoneNumber')}
-            styles={{ input: { border: 'none', borderBottom: '1px solid #e9ecef', borderRadius: 0, paddingLeft: 0 } }}
           />
         </Stack>
       </Box>
 
       <Box>
-        <Text size="lg" fw={600} mb={24}>Certifications</Text>
-        <Stack gap={16}>
-          <Group gap={8}>
-            {form.values.certifications.map((cert) => (
-              <Badge
-                key={cert}
-                size="lg"
-                variant="light"
-                rightSection={
-                  <ActionIcon
-                    size="xs"
-                    color="gray"
-                    radius="xl"
-                    variant="transparent"
-                    onClick={() => handleRemoveCertification(cert)}
-                  >
-                    <IconX size={12} />
-                  </ActionIcon>
-                }
-              >
-                {cert}
-              </Badge>
-            ))}
-          </Group>
-          <Group gap={12}>
+        <Text size="lg" fw={600} c="#1C1C1C" mb="md">
+          Certifications
+        </Text>
+        <Stack gap="md">
+          {form.values.certifications.length > 0 && (
+            <Group gap="xs">
+              {form.values.certifications.map((cert) => (
+                <Badge
+                  key={cert}
+                  size="lg"
+                  variant="light"
+                  color="orange"
+                  radius="md"
+                  tt="none"
+                  pr={6}
+                  rightSection={
+                    <ActionIcon
+                      size="xs"
+                      color="gray"
+                      radius="xl"
+                      variant="transparent"
+                      onClick={() => handleRemoveCertification(cert)}
+                      aria-label={`Remove ${cert}`}
+                    >
+                      <IconX size={12} />
+                    </ActionIcon>
+                  }
+                >
+                  {cert}
+                </Badge>
+              ))}
+            </Group>
+          )}
+          <Group gap="sm" align="flex-end" wrap="nowrap">
             <TextInput
-              placeholder="Add certification (e.g., ISO 9001)"
+              style={{ flex: 1, minWidth: 0 }}
+              placeholder="e.g. ISO 9001"
               value={newCertification}
-              size="md"
               onChange={(e) => setNewCertification(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddCertification()}
-              style={{ flex: 1 }}
-              styles={{ input: { border: 'none', borderBottom: '1px solid #e9ecef', borderRadius: 0, paddingLeft: 0 } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddCertification();
+                }
+              }}
             />
-            <Button 
-              leftSection={<IconPlus size={16} />} 
+            <Button
+              leftSection={<IconPlus size={18} />}
               onClick={handleAddCertification}
-              variant="light"
-              size="md"
+              {...addButtonProps}
             >
               Add
             </Button>
@@ -188,45 +228,56 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
       </Box>
 
       <Box>
-        <Text size="lg" fw={600} mb={24}>Specializations</Text>
-        <Stack gap={16}>
-          <Group gap={8}>
-            {form.values.specializations.map((spec) => (
-              <Badge
-                key={spec}
-                size="lg"
-                variant="light"
-                rightSection={
-                  <ActionIcon
-                    size="xs"
-                    color="gray"
-                    radius="xl"
-                    variant="transparent"
-                    onClick={() => handleRemoveSpecialization(spec)}
-                  >
-                    <IconX size={12} />
-                  </ActionIcon>
-                }
-              >
-                {spec}
-              </Badge>
-            ))}
-          </Group>
-          <Group gap={12}>
+        <Text size="lg" fw={600} c="#1C1C1C" mb="md">
+          Specializations
+        </Text>
+        <Stack gap="md">
+          {form.values.specializations.length > 0 && (
+            <Group gap="xs">
+              {form.values.specializations.map((spec) => (
+                <Badge
+                  key={spec}
+                  size="lg"
+                  variant="light"
+                  color="orange"
+                  radius="md"
+                  tt="none"
+                  pr={6}
+                  rightSection={
+                    <ActionIcon
+                      size="xs"
+                      color="gray"
+                      radius="xl"
+                      variant="transparent"
+                      onClick={() => handleRemoveSpecialization(spec)}
+                      aria-label={`Remove ${spec}`}
+                    >
+                      <IconX size={12} />
+                    </ActionIcon>
+                  }
+                >
+                  {spec}
+                </Badge>
+              ))}
+            </Group>
+          )}
+          <Group gap="sm" align="flex-end" wrap="nowrap">
             <TextInput
-              placeholder="Add specialization (e.g., Engine Repair)"
+              style={{ flex: 1, minWidth: 0 }}
+              placeholder="e.g. Engine repair"
               value={newSpecialization}
-              size="md"
               onChange={(e) => setNewSpecialization(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddSpecialization()}
-              style={{ flex: 1 }}
-              styles={{ input: { border: 'none', borderBottom: '1px solid #e9ecef', borderRadius: 0, paddingLeft: 0 } }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddSpecialization();
+                }
+              }}
             />
-            <Button 
-              leftSection={<IconPlus size={16} />} 
+            <Button
+              leftSection={<IconPlus size={18} />}
               onClick={handleAddSpecialization}
-              variant="light"
-              size="md"
+              {...addButtonProps}
             >
               Add
             </Button>
@@ -236,4 +287,3 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
     </Stack>
   );
 };
-

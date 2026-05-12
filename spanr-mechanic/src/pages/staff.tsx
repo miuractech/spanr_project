@@ -12,6 +12,7 @@ import {
 } from '@mantine/core';
 import { IconPlus, IconEdit, IconTrash, IconAlertCircle } from '@tabler/icons-react';
 import { useCompany } from '../company/company.hook';
+import { StaffTableSkeleton } from '../components/dashboard_page_loading';
 import { useStaff } from '../staff/staff.hook';
 import { staffService, type StaffFormData } from '../staff/staff.service';
 import { StaffForm } from '../components/staff_form';
@@ -71,7 +72,6 @@ export default function StaffPage() {
     setEditingStaff(undefined);
   };
 
-  if (loading) return <div>Loading...</div>;
   if (error) return <Alert color="red">{error}</Alert>;
   if (!company) return <Alert color="yellow">No company profile found</Alert>;
 
@@ -84,7 +84,9 @@ export default function StaffPage() {
         </Button>
       </Group>
 
-      {staff.length === 0 ? (
+      {loading ? (
+        <StaffTableSkeleton />
+      ) : staff.length === 0 ? (
         <Alert icon={<IconAlertCircle size={16} />} color="blue">
           <Text>No staff members found. Add your first staff member to get started.</Text>
         </Alert>
@@ -138,7 +140,6 @@ export default function StaffPage() {
           </Table.Tbody>
         </Table>
       )}
-
       <StaffForm
         opened={formOpened}
         onClose={handleCloseForm}

@@ -60,16 +60,16 @@ export const CompanyLocationForm: React.FC<CompanyLocationFormProps> = ({
   };
 
   return (
-    <Stack gap="md">
+    <Stack gap="md" maw={680} w="100%">
       <TextInput
-        label="Address Line 1"
+        label="Address line 1"
         placeholder="123 Main Street"
         required
         {...form.getInputProps('addressLine1')}
       />
 
       <TextInput
-        label="Address Line 2"
+        label="Address line 2"
         placeholder="Near XYZ Mall"
         {...form.getInputProps('addressLine2')}
       />
@@ -80,52 +80,42 @@ export const CompanyLocationForm: React.FC<CompanyLocationFormProps> = ({
         {...form.getInputProps('landmark')}
       />
 
-      <SimpleGrid cols={3}>
-        <TextInput
-          label="City"
-          placeholder="Mumbai"
-          required
-          {...form.getInputProps('city')}
-        />
+      <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+        <TextInput label="City" placeholder="Mumbai" required {...form.getInputProps('city')} />
 
-        <TextInput
-          label="State"
-          placeholder="Maharashtra"
-          required
-          {...form.getInputProps('state')}
-        />
+        <TextInput label="State" placeholder="Maharashtra" required {...form.getInputProps('state')} />
 
-        <TextInput
-          label="Pincode"
-          placeholder="400001"
-          required
-          {...form.getInputProps('pincode')}
-        />
+        <TextInput label="Pincode" placeholder="400001" required {...form.getInputProps('pincode')} />
       </SimpleGrid>
 
-      <Group align="flex-end">
+      <Group align="flex-end" gap="md" wrap="wrap">
         <NumberInput
+          style={{ flex: '1 1 160px' }}
           label="Latitude"
           placeholder="19.0760"
           decimalScale={6}
           {...form.getInputProps('latitude')}
-          style={{ flex: 1 }}
         />
 
         <NumberInput
+          style={{ flex: '1 1 160px' }}
           label="Longitude"
           placeholder="72.8777"
           decimalScale={6}
           {...form.getInputProps('longitude')}
-          style={{ flex: 1 }}
         />
 
         <Button
-          leftSection={<IconCurrentLocation size={16} />}
+          leftSection={<IconCurrentLocation size={18} />}
           onClick={getCurrentLocation}
           loading={loading}
+          color="orange"
+          variant="light"
+          radius="md"
+          h={48}
+          miw={200}
         >
-          Get Current Location
+          Use current location
         </Button>
       </Group>
 

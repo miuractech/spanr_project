@@ -25,6 +25,7 @@ import { plansService, type PlanFormData, type PlanDetails } from '../plans/plan
 import { ServiceForm } from '../components/service_form';
 import { PlanCard } from '../components/plan_card';
 import { PlanForm } from '../components/plan_form';
+import { ServicesPlansSkeleton } from '../components/dashboard_page_loading';
 import { useNotification } from '../core/notification.hook';
 import type { DbService, DbPlan } from '../types';
 
@@ -251,7 +252,7 @@ export default function ServicesAndPlansPage() {
       )}
 
       {isLoading ? (
-        <LoadingOverlay visible />
+        <ServicesPlansSkeleton />
       ) : services.length === 0 ? (
         <Alert icon={<IconAlertCircle size={16} />} color="blue">
           <Stack gap="sm">

@@ -15,9 +15,19 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle, IconTool, IconLogout, IconUser } from '@tabler/icons-react';
 import { useAuth } from '../auth/auth.hook';
+import { authService } from '../auth/auth.service';
 import { companyService, type CompanyFormData } from '../company/company.service';
 import { CompanyProfileStepper } from '../components/company_profile_stepper';
 import type { DocumentFiles } from '../components/company_documents_form';
+
+function submitErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    const m = (err as { message: unknown }).message;
+    if (typeof m === 'string' && m.trim()) return m;
+  }
+  return 'Failed to create company profile';
+}
 
 export default function OnboardingPage() {
   const [error, setError] = useState('');
@@ -43,7 +53,38 @@ export default function OnboardingPage() {
     try {
       setError('');
 
-      const company = await companyService.createCompany(data, user.email, user.name);
+      const existing = await companyService.getCompanyByStaffEmail(user.email);
+      const company = existing
+        ? await companyService.updateCompany(existing.id, {
+            companyName: data.companyName,
+            addressLine1: data.addressLine1,
+            addressLine2: data.addressLine2,
+            landmark: data.landmark,
+            city: data.city,
+            state: data.state,
+            phoneNumber: data.phoneNumber,
+            pincode: data.pincode,
+            phone: data.phone,
+            email: data.email,
+            logo: data.logo,
+            latitude: data.latitude,
+            longitude: data.longitude,
+            images: data.images,
+          })
+        : await companyService.createCompany(data, user.email, user.name);
+
+      const certList = [...new Set(certifications || [])];
+      const specList = [...new Set(specializations || [])];
+      const certPromises = existing
+        ? certList
+            .filter((c) => !existing.certifications.includes(c))
+            .map((c) => companyService.addCertification(company.id, c))
+        : certList.map((c) => companyService.addCertification(company.id, c));
+      const specPromises = existing
+        ? specList
+            .filter((s) => !existing.specializations.includes(s))
+            .map((s) => companyService.addSpecialization(company.id, s))
+        : specList.map((s) => companyService.addSpecialization(company.id, s));
 
       await Promise.all([
         logoFile
@@ -51,21 +92,37 @@ export default function OnboardingPage() {
               companyService.updateCompany(company.id, { logo: url })
             )
           : Promise.resolve(),
-        ...(certifications || []).map((c) =>
-          companyService.addCertification(company.id, c)
-        ),
-        ...(specializations || []).map((s) =>
-          companyService.addSpecialization(company.id, s)
-        ),
+        ...certPromises,
+        ...specPromises,
         documents && Object.keys(documents).length > 0
           ? companyService.uploadAndSaveDocuments(company.id, documents)
           : Promise.resolve(),
       ]);
 
       await refreshUser();
-      navigate('/dashboard');
+
+      let resolved = await authService.getCurrentUser();
+      for (let i = 0; i < 10 && resolved && !resolved.companyId; i++) {
+        await new Promise((r) => setTimeout(r, 300));
+        resolved = await authService.getCurrentUser();
+      }
+
+      if (!resolved?.companyId) {
+        await refreshUser();
+        const again = await authService.getCurrentUser();
+        if (again?.companyId) {
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+        setError(
+          'Your company profile was saved. Open the dashboard from the menu or refresh this page.'
+        );
+        return;
+      }
+
+      navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create company profile');
+      setError(submitErrorMessage(err));
     }
   };
 
@@ -131,7 +188,7 @@ export default function OnboardingPage() {
           {error && (
             <Alert
               icon={<IconAlertCircle size={16} />}
-              color="red"
+              color={error.includes('profile was saved') ? 'blue' : 'red'}
               mb="xl"
               variant="light"
               radius="md"

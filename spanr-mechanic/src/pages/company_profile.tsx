@@ -13,7 +13,7 @@ import { useAuth } from '../auth/auth.hook';
 import type { CompanyFormData } from '../company/company.service';
 
 export default function CompanyProfilePage() {
-  const { company, loading, error, refreshCompany } = useCompany();
+  const { company, error, refreshCompany } = useCompany();
   const { user } = useAuth();
   const [updateError, setUpdateError] = useState('');
 
@@ -103,13 +103,14 @@ export default function CompanyProfilePage() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
   if (error) return <Alert color="red">{error}</Alert>;
   if (!company) return <Alert color="yellow">No company profile found</Alert>;
 
   return (
-    <Container size="lg" py={60}>
-      <Title mb={48} size={32} c="#1C1C1C">Company Profile</Title>
+    <Container size="lg" py={{ base: 32, md: 48 }} maw={960}>
+      <Title order={2} mb="xl" fz={28} fw={700} c="#1C1C1C">
+        Company profile
+      </Title>
 
       {updateError && (
         <Alert icon={<IconAlertCircle size={16} />} color="red" mb={32}>

@@ -86,42 +86,140 @@ export const theme: MantineThemeOverride = createTheme({
     TextInput: {
       defaultProps: {
         radius: 'md',
+        size: 'md',
       },
       styles: {
         input: {
           backgroundColor: '#FFFFFF',
           border: '1.5px solid #E0E0E0',
+          minHeight: 48,
+          height: 'auto',
+          paddingTop: 11,
+          paddingBottom: 11,
+          paddingLeft: 14,
+          paddingRight: 14,
+          fontSize: 15,
+          lineHeight: 1.5,
           '&:focus': {
             borderColor: '#FC8019',
           },
+          '&:disabled': {
+            opacity: 1,
+            color: 'var(--mantine-color-gray-7)',
+            backgroundColor: 'var(--mantine-color-gray-0)',
+            cursor: 'not-allowed',
+          },
+        },
+        label: {
+          fontWeight: 600,
+          fontSize: 13,
+          marginBottom: 8,
+        },
+      },
+    },
+    NumberInput: {
+      defaultProps: {
+        radius: 'md',
+        size: 'md',
+      },
+      styles: {
+        input: {
+          backgroundColor: '#FFFFFF',
+          border: '1.5px solid #E0E0E0',
+          minHeight: 48,
+          height: 'auto',
+          paddingTop: 11,
+          paddingBottom: 11,
+          fontSize: 15,
+          lineHeight: 1.5,
+          '&:focus': {
+            borderColor: '#FC8019',
+          },
+        },
+        label: {
+          fontWeight: 600,
+          fontSize: 13,
+          marginBottom: 8,
+        },
+      },
+    },
+    FileInput: {
+      defaultProps: {
+        radius: 'md',
+        size: 'md',
+      },
+      styles: {
+        input: {
+          backgroundColor: '#FFFFFF',
+          border: '1.5px solid #E0E0E0',
+          minHeight: 48,
+          height: 'auto',
+          paddingTop: 11,
+          paddingBottom: 11,
+          paddingLeft: 14,
+          paddingRight: 14,
+          fontSize: 15,
+          lineHeight: 1.5,
+          '&:focus': {
+            borderColor: '#FC8019',
+          },
+        },
+        label: {
+          fontWeight: 600,
+          fontSize: 13,
+          marginBottom: 8,
         },
       },
     },
     PasswordInput: {
       defaultProps: {
         radius: 'md',
+        size: 'md',
       },
       styles: {
         input: {
           backgroundColor: '#FFFFFF',
           border: '1.5px solid #E0E0E0',
+          minHeight: 48,
+          height: 'auto',
+          paddingTop: 11,
+          paddingBottom: 11,
+          paddingLeft: 14,
+          paddingRight: 14,
+          fontSize: 15,
+          lineHeight: 1.5,
           '&:focus': {
             borderColor: '#FC8019',
           },
+        },
+        label: {
+          fontWeight: 600,
+          fontSize: 13,
+          marginBottom: 8,
         },
       },
     },
     Select: {
       defaultProps: {
         radius: 'md',
+        size: 'md',
       },
       styles: {
         input: {
           backgroundColor: '#FFFFFF',
           border: '1.5px solid #E0E0E0',
+          minHeight: 48,
+          height: 'auto',
+          fontSize: 15,
+          lineHeight: 1.5,
           '&:focus': {
             borderColor: '#FC8019',
           },
+        },
+        label: {
+          fontWeight: 600,
+          fontSize: 13,
+          marginBottom: 8,
         },
       },
     },

@@ -58,7 +58,7 @@ const DocumentSlot: React.FC<DocumentSlotProps> = ({
     : existingUrl?.toLowerCase().endsWith('.pdf');
 
   return (
-    <Paper withBorder p="md" radius="md">
+    <Paper withBorder p="md" radius="lg" style={{ borderColor: '#E8E8E8' }}>
       <Group justify="space-between" mb={8} wrap="nowrap" align="flex-start">
         <Box style={{ flex: 1 }}>
           <Group gap="xs" mb={2}>
@@ -138,11 +138,13 @@ const DocumentSlot: React.FC<DocumentSlotProps> = ({
         {(props) => (
           <Button
             {...props}
-            size="xs"
-            variant={hasFile ? 'subtle' : 'light'}
-            color={hasFile ? 'gray' : 'orange'}
-            leftSection={<IconUpload size={13} />}
+            size="sm"
+            radius="md"
+            variant={hasFile ? 'light' : 'filled'}
+            color="orange"
+            leftSection={<IconUpload size={16} />}
             fullWidth
+            h={40}
           >
             {hasFile ? 'Replace' : 'Upload'}
           </Button>
@@ -178,7 +180,7 @@ export const CompanyDocumentsForm: React.FC<CompanyDocumentsFormProps> = ({
   ].filter(Boolean).length;
 
   return (
-    <Stack gap={24}>
+    <Stack gap="lg" maw={680} w="100%">
       <Alert
         icon={<IconAlertCircle size={16} />}
         color="blue"

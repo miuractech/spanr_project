@@ -16,13 +16,14 @@ import {
 } from '@mantine/core';
 import { IconArrowLeft, IconClock, IconCoin } from '@tabler/icons-react';
 import { usePlanDetails } from '../plans/plans.hook';
+import { PlanDetailSkeleton } from '../components/dashboard_page_loading';
 
 export default function PlanDetailPage() {
   const { planId } = useParams<{ planId: string }>();
   const navigate = useNavigate();
   const { planDetails, loading, error } = usePlanDetails(planId);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <PlanDetailSkeleton />;
   if (error) return <Alert color="red">{error}</Alert>;
   if (!planDetails) return <Alert color="yellow">Plan not found</Alert>;
 

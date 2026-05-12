@@ -36,19 +36,20 @@ export const CompanyImagesForm: React.FC<CompanyImagesFormProps> = ({
   };
 
   return (
-    <Stack gap="md">
+    <Stack gap="md" maw={680} w="100%">
       <Text size="sm" c="dimmed">
-        Upload company banners or images to showcase your business
+        Upload company banners or images to showcase your business.
       </Text>
 
       <FileInput
-        label="Company Images"
-        placeholder="Upload images"
+        label="Company images"
+        placeholder="Choose one or more images"
         accept="image/*"
         multiple
-        leftSection={<IconUpload size={14} />}
+        leftSection={<IconUpload size={18} />}
         value={selectedFiles}
         onChange={(files) => handleFilesChange(files || [])}
+        clearable
       />
 
       {existingImages.length > 0 && (
@@ -56,7 +57,7 @@ export const CompanyImagesForm: React.FC<CompanyImagesFormProps> = ({
           <Text size="sm" fw={500} mb="xs">
             Existing Images
           </Text>
-          <SimpleGrid cols={3}>
+          <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="md">
             {existingImages.map((imageUrl, index) => (
               <Paper key={`${index}-${imageUrl}`} withBorder p="xs" pos="relative">
                 <ActionIcon
@@ -81,7 +82,7 @@ export const CompanyImagesForm: React.FC<CompanyImagesFormProps> = ({
           <Text size="sm" fw={500} mb="xs">
             New Images (Preview)
           </Text>
-          <SimpleGrid cols={3}>
+          <SimpleGrid cols={{ base: 2, sm: 3 }} spacing="md">
             {selectedFiles.map((file, index) => (
               <Paper key={index} withBorder p="xs" pos="relative">
                 <ActionIcon

@@ -77,20 +77,6 @@ export const companyService = {
 
     if (staffError) throw staffError;
 
-    // Initialize company ratings
-    const { error: ratingError } = await supabase
-      .from('company_ratings')
-      .insert({
-        company_id: company.id,
-        count: 0,
-        professionalism: 0,
-        timeliness: 0,
-        quality: 0,
-        rating: 0,
-      });
-
-    if (ratingError) throw ratingError;
-
     return company;
   },
 

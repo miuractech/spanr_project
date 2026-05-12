@@ -13,7 +13,6 @@ import {
   Alert,
   Divider,
   Tabs,
-  Loader,
 } from '@mantine/core';
 import {
   IconArrowLeft,
@@ -33,6 +32,7 @@ import { OrderImagesManager } from '../components/order_images_manager';
 import { OrderServiceDetailsForm } from '../components/order_service_details_form';
 import { OrderHistoryTimeline } from '../components/order_history_timeline';
 import { OrderJobCard } from '../components/order_job_card';
+import { OrderDetailSkeleton } from '../components/dashboard_page_loading';
 
 const getStatusColor = (status: OrderStatus) => {
   switch (status) {
@@ -79,7 +79,7 @@ export default function OrderDetailPage() {
     }
   };
 
-  if (loading) return <Container size="lg" my={40}><Loader /></Container>;
+  if (loading) return <OrderDetailSkeleton />;
   if (error) return <Alert color="red">{error}</Alert>;
   if (!order) return <Alert color="yellow">Order not found</Alert>;
 

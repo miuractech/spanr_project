@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Stepper, Button, Group, Box, Alert, Text } from '@mantine/core';
 import { useForm, yupResolver } from '@mantine/form';
 import * as yup from 'yup';
@@ -61,6 +61,7 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
 }) => {
   const [active, setActive] = useState(0);
   const [loading, setLoading] = useState(false);
+  const submitInFlight = useRef(false);
   const [stepError, setStepError] = useState<string>('');
 
   const generalForm = useForm({
@@ -142,6 +143,9 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
       return;
     }
 
+    if (submitInFlight.current || loading) return;
+    submitInFlight.current = true;
+
     setLoading(true);
     try {
       setStepError('');
@@ -171,8 +175,8 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
       );
     } catch (error) {
       setStepError(error instanceof Error ? error.message : 'Failed to submit form');
-      throw error;
     } finally {
+      submitInFlight.current = false;
       setLoading(false);
     }
   };
@@ -200,14 +204,16 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
             : undefined
         }
         allowNextStepsSelect={allowFreeNavigation}
-        mb={48}
+        mb={40}
         styles={{
           step: { padding: 0 },
-          stepBody: { marginTop: 8 },
+          stepBody: { marginTop: 10 },
+          stepLabel: { fontWeight: 600, fontSize: 14 },
+          stepDescription: { fontSize: 12, marginTop: 4 },
         }}
       >
         <Stepper.Step label="General Info" description="Company details">
-          <Box pt={32}>
+          <Box pt={24}>
             <CompanyGeneralForm
               form={generalForm}
               userEmail={userEmail}
@@ -218,13 +224,13 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
         </Stepper.Step>
 
         <Stepper.Step label="Location" description="Address & map">
-          <Box pt={32}>
+          <Box pt={24}>
             <CompanyLocationForm form={locationForm} />
           </Box>
         </Stepper.Step>
 
         <Stepper.Step label="Photos" description="Shop images">
-          <Box pt={32}>
+          <Box pt={24}>
             <CompanyImagesForm
               existingImages={existingImages}
               onImagesChange={setImageFiles}
@@ -234,7 +240,7 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
         </Stepper.Step>
 
         <Stepper.Step label="Documents" description="KYC verification">
-          <Box pt={32}>
+          <Box pt={24}>
             <CompanyDocumentsForm
               files={documentFiles}
               onFilesChange={setDocumentFiles}

@@ -12,7 +12,6 @@ import {
   Stack,
   TextInput,
   Pagination,
-  Loader,
   Center,
 } from '@mantine/core';
 import { DatePickerInput } from '@mantine/dates';
@@ -21,6 +20,7 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { useCompany } from '../company/company.hook';
 import { useOrders, useOrderStats } from '../orders/orders.hook';
 import { OrderCard } from '../components/order_card';
+import { OrdersListSkeleton } from '../components/dashboard_page_loading';
 import type { OrderStatus, OrderFilters } from '../orders/orders.types';
 
 const statConfig = [
@@ -138,9 +138,7 @@ export default function OrdersPage() {
       </Stack>
 
       {loading ? (
-        <Center h={200}>
-          <Loader color="orange" />
-        </Center>
+        <OrdersListSkeleton />
       ) : orders.length === 0 ? (
         <Alert icon={<IconAlertCircle size={16} />} color="blue" radius="md">
           <Text>No orders found.</Text>

@@ -16,6 +16,8 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 
+const CARD_MAW = 560;
+
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -65,6 +67,11 @@ export default function SignupPage() {
     }
   };
 
+  const inputStyles = {
+    input: { minHeight: 52, fontSize: 16 },
+    label: { fontSize: 15, fontWeight: 600, marginBottom: 8 },
+  } as const;
+
   return (
     <Box
       style={{
@@ -72,18 +79,21 @@ export default function SignupPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#F2F2F2',
+        backgroundColor: '#ECECEC',
+        padding: 'clamp(1rem, 4vw, 2.5rem)',
       }}
     >
-      <Container size={420}>
-        <Stack align="center" mb={32}>
+      <Container w="100%" maw={CARD_MAW} p={0}>
+        <Stack align="center" gap="sm" mb={36}>
           <Title
+            order={1}
             ta="center"
             style={{
-              fontSize: 28,
+              fontSize: 'clamp(1.875rem, 5vw, 2.375rem)',
               fontWeight: 800,
               color: '#1C1C1C',
               letterSpacing: -0.5,
+              lineHeight: 1.2,
             }}
           >
             Join{' '}
@@ -91,16 +101,24 @@ export default function SignupPage() {
               SPANR
             </Text>
           </Title>
-          <Text c="#696969" size="sm" ta="center">
+          <Text c="#696969" size="md" ta="center" fw={500} style={{ fontSize: 'clamp(0.9375rem, 2vw, 1.0625rem)' }}>
             Create your mechanic business account
           </Text>
         </Stack>
 
-        <Paper shadow="sm" p={32} radius="lg" style={{ border: '1px solid #E0E0E0' }}>
+        <Paper
+          shadow="md"
+          p={{ base: 32, sm: 44 }}
+          radius="xl"
+          style={{
+            border: '1px solid #E8E8E8',
+            boxShadow: '0 8px 40px rgba(0, 0, 0, 0.08)',
+          }}
+        >
           <form onSubmit={handleSubmit}>
-            <Stack>
+            <Stack gap={24}>
               {error && (
-                <Alert icon={<IconAlertCircle size={16} />} color="red" radius="md">
+                <Alert icon={<IconAlertCircle size={22} stroke={1.5} />} color="red" radius="md" p="md">
                   {error}
                 </Alert>
               )}
@@ -109,6 +127,8 @@ export default function SignupPage() {
                 label="Full Name"
                 placeholder="John Doe"
                 required
+                size="lg"
+                styles={inputStyles}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -118,6 +138,8 @@ export default function SignupPage() {
                 placeholder="your@email.com"
                 required
                 type="email"
+                size="lg"
+                styles={inputStyles}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -126,6 +148,8 @@ export default function SignupPage() {
                 label="Password"
                 placeholder="At least 6 characters"
                 required
+                size="lg"
+                styles={inputStyles}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -134,17 +158,19 @@ export default function SignupPage() {
                 label="Confirm Password"
                 placeholder="Repeat your password"
                 required
+                size="lg"
+                styles={inputStyles}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
 
-              <Button type="submit" fullWidth loading={submitting} color="orange" size="md">
+              <Button type="submit" fullWidth loading={submitting} color="orange" size="xl" h={56} fz={17} fw={700} mt={8}>
                 Create Account
               </Button>
 
-              <Text ta="center" size="sm" c="#696969">
+              <Text ta="center" size="md" c="#696969" pt={4}>
                 Already have an account?{' '}
-                <Link to="/login" style={{ fontWeight: 600, color: '#FC8019', textDecoration: 'none' }}>
+                <Link to="/login" style={{ fontWeight: 700, color: '#FC8019', textDecoration: 'none' }}>
                   Sign in
                 </Link>
               </Text>
