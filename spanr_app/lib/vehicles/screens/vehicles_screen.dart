@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/vehicle_model.dart';
 import '../vehicles_provider.dart';
 import '../../auth/auth_provider.dart';
 import '../widgets/vehicle_card.dart';
@@ -36,6 +37,77 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
       MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
     );
     if (result == true) _loadVehicles();
+  }
+
+  Future<void> _deleteVehicle(BuildContext context, VehicleModel vehicle) async {
+    final provider = context.read<VehiclesProvider>();
+
+    if (await provider.hasLinkedOrders(vehicle.id)) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Cannot Delete Vehicle',
+              style: TextStyle(fontWeight: FontWeight.w700, color: _kHeading)),
+          content: const Text(
+            'This vehicle is linked to existing service orders and cannot be deleted.',
+            style: TextStyle(color: _kBody),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK', style: TextStyle(color: _kOrange, fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Vehicle',
+            style: TextStyle(fontWeight: FontWeight.w700, color: _kHeading)),
+        content: const Text('Are you sure you want to delete this vehicle?',
+            style: TextStyle(color: _kBody)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel', style: TextStyle(color: _kBody)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await provider.deleteVehicle(vehicle.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Vehicle deleted successfully'),
+            backgroundColor: _kOrange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
   }
 
   @override
@@ -217,54 +289,13 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
           final vehicle = provider.vehicles[index];
           return VehicleCard(
             vehicle: vehicle,
-            onDelete: () async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  title: const Text('Delete Vehicle',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: _kHeading)),
-                  content: const Text('Are you sure you want to delete this vehicle?',
-                      style: TextStyle(color: _kBody)),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Cancel', style: TextStyle(color: _kBody)),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      child: const Text('Delete'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirmed == true && mounted) {
-                try {
-                  await context.read<VehiclesProvider>().deleteVehicle(vehicle.id);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text('Vehicle deleted successfully'),
-                        backgroundColor: _kOrange,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to delete vehicle: $e')),
-                    );
-                  }
-                }
-              }
-            },
+            onDelete: () => _deleteVehicle(context, vehicle),
             onEdit: () async {
+              final freshVehicle = provider.vehicles
+                  .firstWhere((v) => v.id == vehicle.id, orElse: () => vehicle);
               final result = await Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => AddVehicleScreen(vehicle: vehicle),
+                  builder: (context) => AddVehicleScreen(vehicle: freshVehicle),
                 ),
               );
               if (result == true) _loadVehicles();

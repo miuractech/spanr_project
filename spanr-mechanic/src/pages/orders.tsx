@@ -91,52 +91,58 @@ export default function OrdersPage() {
         ))}
       </SimpleGrid>
 
-      <Stack gap="md" mb="xl">
-        <TextInput
-          placeholder="Search by customer name, email, or phone..."
-          leftSection={<IconSearch size={16} />}
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            handleFilterChange();
-          }}
-        />
-
-        <Group>
-          <Select
-            placeholder="Filter by status"
-            data={[
-              { value: 'all', label: 'All Statuses' },
-              { value: 'created', label: 'Created' },
-              { value: 'accepted', label: 'Accepted' },
-              { value: 'in_progress', label: 'In Progress' },
-              { value: 'ready_for_delivery', label: 'Ready for Delivery' },
-              { value: 'completed', label: 'Completed' },
-              { value: 'dispute', label: 'Dispute' },
-              { value: 'cancelled', label: 'Cancelled' },
-            ]}
-            value={statusFilter}
-            onChange={(value) => {
-              setStatusFilter(value || 'all');
+      <Paper p="lg" radius="lg" mb="xl" style={{ border: '1px solid #E0E0E0' }}>
+        <Stack gap="md">
+          <TextInput
+            label="Search orders"
+            placeholder="Customer name, email, or phone"
+            leftSection={<IconSearch size={18} stroke={1.5} />}
+            leftSectionWidth={40}
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
               handleFilterChange();
             }}
-            style={{ width: 200 }}
-            clearable
           />
 
-          <DatePickerInput
-            type="range"
-            placeholder="Filter by date range"
-            value={dateRange}
-            onChange={(value) => {
-              setDateRange(value);
-              handleFilterChange();
-            }}
-            style={{ width: 300 }}
-            clearable
-          />
-        </Group>
-      </Stack>
+          <Group align="flex-end" grow preventGrowOverflow={false} wrap="wrap">
+            <Select
+              label="Status"
+              placeholder="All statuses"
+              data={[
+                { value: 'all', label: 'All Statuses' },
+                { value: 'created', label: 'Created' },
+                { value: 'accepted', label: 'Accepted' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'ready_for_delivery', label: 'Ready for Delivery' },
+                { value: 'completed', label: 'Completed' },
+                { value: 'dispute', label: 'Dispute' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+              value={statusFilter}
+              onChange={(value) => {
+                setStatusFilter(value || 'all');
+                handleFilterChange();
+              }}
+              style={{ flex: '1 1 200px', minWidth: 200 }}
+              clearable
+            />
+
+            <DatePickerInput
+              type="range"
+              label="Date range"
+              placeholder="Select dates"
+              value={dateRange}
+              onChange={(value) => {
+                setDateRange(value);
+                handleFilterChange();
+              }}
+              style={{ flex: '1 1 280px', minWidth: 280 }}
+              clearable
+            />
+          </Group>
+        </Stack>
+      </Paper>
 
       {loading ? (
         <OrdersListSkeleton />

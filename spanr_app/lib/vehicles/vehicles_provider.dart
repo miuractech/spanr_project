@@ -53,6 +53,10 @@ class VehiclesProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> hasLinkedOrders(String vehicleId) async {
+    return _service.hasLinkedOrders(vehicleId);
+  }
+
   Future<void> deleteVehicle(String vehicleId) async {
     try {
       await _service.deleteVehicle(vehicleId);

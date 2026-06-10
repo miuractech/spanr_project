@@ -67,11 +67,15 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   String _vehicleType = 'car';
   int _year = DateTime.now().year;
   List<File> _newImages = [];
+  List<String> _existingImages = [];
+  List<String> _originalImages = [];
 
   @override
   void initState() {
     super.initState();
     if (widget.vehicle != null) {
+      _originalImages = List<String>.from(widget.vehicle!.images);
+      _existingImages = List<String>.from(_originalImages);
       _licensePlateController.text = widget.vehicle!.licensePlate;
       _nameController.text = widget.vehicle!.name ?? '';
       _modelController.text = widget.vehicle!.model;
@@ -244,26 +248,8 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       ),
     );
 
-    if (confirmed == true) {
-      setState(() => _isUploadingImage = true);
-      try {
-        await context
-            .read<VehiclesProvider>()
-            .deleteImage(widget.vehicle!.id, imageUrl);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Image deleted successfully')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete image: $e')),
-          );
-        }
-      } finally {
-        setState(() => _isUploadingImage = false);
-      }
+    if (confirmed == true && mounted) {
+      setState(() => _existingImages.remove(imageUrl));
     }
   }
 
@@ -279,8 +265,17 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
       String vehicleId;
 
       if (widget.vehicle != null) {
+        vehicleId = widget.vehicle!.id;
+
+        final removedUrls = _originalImages
+            .where((url) => !_existingImages.contains(url))
+            .toList();
+        for (final imageUrl in removedUrls) {
+          await context.read<VehiclesProvider>().deleteImage(vehicleId, imageUrl);
+        }
+
         await context.read<VehiclesProvider>().updateVehicle(
-          widget.vehicle!.id,
+          vehicleId,
           {
             'name': _nameController.text.trim(),
             'make': _makeController.text.trim(),
@@ -293,7 +288,6 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
             'is_indian_licensed': _isIndianLicensed,
           },
         );
-        vehicleId = widget.vehicle!.id;
       } else {
         final vehicle = VehicleModel(
           id: '',
@@ -488,19 +482,18 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
             ),
             const SizedBox(height: 24),
 
-            if (widget.vehicle?.images.isNotEmpty == true ||
-                _newImages.isNotEmpty) ...[
+            if (_existingImages.isNotEmpty || _newImages.isNotEmpty) ...[
               _buildLabel('Vehicle Images'),
               const SizedBox(height: 8),
 
-              if (widget.vehicle?.images.isNotEmpty == true)
+              if (_existingImages.isNotEmpty)
                 SizedBox(
                   height: 100,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
-                    itemCount: widget.vehicle!.images.length,
+                    itemCount: _existingImages.length,
                     itemBuilder: (context, index) {
-                      final imageUrl = widget.vehicle!.images[index];
+                      final imageUrl = _existingImages[index];
                       return Container(
                         width: 100,
                         margin: const EdgeInsets.only(right: 10),

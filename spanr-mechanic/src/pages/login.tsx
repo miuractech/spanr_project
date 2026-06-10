@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../auth/auth.hook';
 import {
@@ -14,17 +14,33 @@ import {
   Loader,
   Box,
 } from '@mantine/core';
+import { useForm } from '@mantine/form';
 import { IconAlertCircle } from '@tabler/icons-react';
 
 const CARD_MAW = 520;
 
+const inputStyles = {
+  input: { minHeight: 52, fontSize: 16 },
+  label: { fontSize: 15, fontWeight: 600, marginBottom: 8 },
+} as const;
+
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const { login, user, hasCompany, loading } = useAuth();
   const navigate = useNavigate();
+
+  const form = useForm({
+    initialValues: { email: '', password: '' },
+    validate: {
+      email: (value) => {
+        if (!value.trim()) return 'Email is required';
+        if (!/^\S+@\S+\.\S+$/.test(value)) return 'Enter a valid email address';
+        return null;
+      },
+      password: (value) => (value ? null : 'Password is required'),
+    },
+  });
 
   useEffect(() => {
     if (!loading && user) {
@@ -40,24 +56,18 @@ export default function LoginPage() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = form.onSubmit(async (values) => {
     setError('');
     setSubmitting(true);
 
     try {
-      await login(email, password);
+      await login(values.email, values.password);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to login';
       setError(message);
       setSubmitting(false);
     }
-  };
-
-  const inputStyles = {
-    input: { minHeight: 52, fontSize: 16 },
-    label: { fontSize: 15, fontWeight: 600, marginBottom: 8 },
-  } as const;
+  });
 
   return (
     <Box
@@ -102,7 +112,7 @@ export default function LoginPage() {
             boxShadow: '0 8px 40px rgba(0, 0, 0, 0.08)',
           }}
         >
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <Stack gap={28}>
               {error && (
                 <Alert icon={<IconAlertCircle size={22} stroke={1.5} />} color="red" radius="md" p="md">
@@ -113,21 +123,20 @@ export default function LoginPage() {
               <TextInput
                 label="Email"
                 placeholder="your@email.com"
-                required
+                type="email"
+                withAsterisk
                 size="lg"
                 styles={inputStyles}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...form.getInputProps('email')}
               />
 
               <PasswordInput
                 label="Password"
                 placeholder="Your password"
-                required
+                withAsterisk
                 size="lg"
                 styles={inputStyles}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...form.getInputProps('password')}
               />
 
               <Button type="submit" fullWidth loading={submitting} color="orange" size="xl" h={56} fz={17} fw={700} mt={4}>

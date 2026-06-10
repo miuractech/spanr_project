@@ -46,6 +46,7 @@ export const CompanyImagesForm: React.FC<CompanyImagesFormProps> = ({
         accept="image/*"
         multiple
         leftSection={<IconUpload size={18} />}
+        leftSectionWidth={36}
         value={selectedFiles}
         onChange={(files) => handleFilesChange(files || [])}
         clearable

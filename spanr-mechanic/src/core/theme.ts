@@ -87,6 +87,7 @@ export const theme: MantineThemeOverride = createTheme({
       defaultProps: {
         radius: 'md',
         size: 'md',
+        leftSectionPointerEvents: 'none',
       },
       styles: {
         input: {
@@ -96,7 +97,7 @@ export const theme: MantineThemeOverride = createTheme({
           height: 'auto',
           paddingTop: 11,
           paddingBottom: 11,
-          paddingLeft: 14,
+          paddingLeft: 'calc(var(--input-left-section-width, 0px) + 14px)',
           paddingRight: 14,
           fontSize: 15,
           lineHeight: 1.5,
@@ -109,6 +110,10 @@ export const theme: MantineThemeOverride = createTheme({
             backgroundColor: 'var(--mantine-color-gray-0)',
             cursor: 'not-allowed',
           },
+        },
+        section: {
+          width: 36,
+          justifyContent: 'center',
         },
         label: {
           fontWeight: 600,
@@ -147,6 +152,7 @@ export const theme: MantineThemeOverride = createTheme({
       defaultProps: {
         radius: 'md',
         size: 'md',
+        leftSectionPointerEvents: 'none',
       },
       styles: {
         input: {
@@ -156,13 +162,17 @@ export const theme: MantineThemeOverride = createTheme({
           height: 'auto',
           paddingTop: 11,
           paddingBottom: 11,
-          paddingLeft: 14,
+          paddingLeft: 'calc(var(--input-left-section-width, 0px) + 14px)',
           paddingRight: 14,
           fontSize: 15,
           lineHeight: 1.5,
           '&:focus': {
             borderColor: '#FC8019',
           },
+        },
+        section: {
+          width: 36,
+          justifyContent: 'center',
         },
         label: {
           fontWeight: 600,

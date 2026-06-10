@@ -1,183 +1,395 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+
 import { useNavigate, Link } from 'react-router-dom';
+
 import { useAuth } from '../auth/auth.hook';
+
 import {
+
   TextInput,
+
   PasswordInput,
+
   Button,
+
   Paper,
+
   Title,
+
   Container,
+
   Text,
+
   Stack,
+
   Alert,
+
   Loader,
+
   Box,
+
 } from '@mantine/core';
+
+import { useForm } from '@mantine/form';
+
 import { IconAlertCircle } from '@tabler/icons-react';
+
+import { PasswordStrengthIndicator } from '../components/password_strength_indicator';
+
+import { isPasswordStrongEnough } from '../core/password.util';
+
+
 
 const CARD_MAW = 560;
 
+
+
+const inputStyles = {
+
+  input: { minHeight: 52, fontSize: 16 },
+
+  label: { fontSize: 15, fontWeight: 600, marginBottom: 8 },
+
+} as const;
+
+
+
 export default function SignupPage() {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [submitting, setSubmitting] = useState(false);
+
   const [error, setError] = useState('');
+
   const { signUp, user, hasCompany, loading } = useAuth();
+
   const navigate = useNavigate();
 
+
+
+  const form = useForm({
+
+    initialValues: {
+
+      name: '',
+
+      email: '',
+
+      password: '',
+
+      confirmPassword: '',
+
+    },
+
+    validate: {
+
+      name: (value) => (value.trim() ? null : 'Full name is required'),
+
+      email: (value) => {
+
+        if (!value.trim()) return 'Email is required';
+
+        if (!/^\S+@\S+\.\S+$/.test(value)) return 'Enter a valid email address';
+
+        return null;
+
+      },
+
+      password: (value) => {
+
+        if (!value) return 'Password is required';
+
+        if (!isPasswordStrongEnough(value)) {
+
+          return 'Use 8+ characters with upper, lower, number, and special character';
+
+        }
+
+        return null;
+
+      },
+
+      confirmPassword: (value, values) => {
+
+        if (!value) return 'Please confirm your password';
+
+        if (value !== values.password) return 'Passwords do not match';
+
+        return null;
+
+      },
+
+    },
+
+  });
+
+
+
   useEffect(() => {
+
     if (!loading && user) {
+
       navigate(hasCompany ? '/dashboard' : '/onboarding', { replace: true });
+
     }
+
   }, [user, hasCompany, loading, navigate]);
 
+
+
   if (loading) {
+
     return (
+
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+
         <Loader size="lg" color="orange" />
+
       </div>
+
     );
+
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+
+
+  const handleSubmit = form.onSubmit(async (values) => {
+
     setError('');
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
 
     setSubmitting(true);
 
-    try {
-      await signUp(email, password, name);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create account';
-      setError(message);
-      setSubmitting(false);
-    }
-  };
 
-  const inputStyles = {
-    input: { minHeight: 52, fontSize: 16 },
-    label: { fontSize: 15, fontWeight: 600, marginBottom: 8 },
-  } as const;
+
+    try {
+
+      await signUp(values.email, values.password, values.name.trim());
+
+    } catch (err) {
+
+      const message = err instanceof Error ? err.message : 'Failed to create account';
+
+      setError(message);
+
+      setSubmitting(false);
+
+    }
+
+  });
+
+
 
   return (
+
     <Box
+
       style={{
+
         minHeight: '100vh',
+
         display: 'flex',
+
         alignItems: 'center',
+
         justifyContent: 'center',
+
         backgroundColor: '#ECECEC',
+
         padding: 'clamp(1rem, 4vw, 2.5rem)',
+
       }}
+
     >
+
       <Container w="100%" maw={CARD_MAW} p={0}>
+
         <Stack align="center" gap="sm" mb={36}>
+
           <Title
+
             order={1}
+
             ta="center"
+
             style={{
+
               fontSize: 'clamp(1.875rem, 5vw, 2.375rem)',
+
               fontWeight: 800,
+
               color: '#1C1C1C',
+
               letterSpacing: -0.5,
+
               lineHeight: 1.2,
+
             }}
+
           >
+
             Join{' '}
+
             <Text component="span" c="#FC8019" inherit>
+
               SPANR
+
             </Text>
+
           </Title>
+
           <Text c="#696969" size="md" ta="center" fw={500} style={{ fontSize: 'clamp(0.9375rem, 2vw, 1.0625rem)' }}>
+
             Create your mechanic business account
+
           </Text>
+
         </Stack>
 
+
+
         <Paper
+
           shadow="md"
+
           p={{ base: 32, sm: 44 }}
+
           radius="xl"
+
           style={{
+
             border: '1px solid #E8E8E8',
+
             boxShadow: '0 8px 40px rgba(0, 0, 0, 0.08)',
+
           }}
+
         >
-          <form onSubmit={handleSubmit}>
+
+          <form onSubmit={handleSubmit} noValidate>
+
             <Stack gap={24}>
+
               {error && (
+
                 <Alert icon={<IconAlertCircle size={22} stroke={1.5} />} color="red" radius="md" p="md">
+
                   {error}
+
                 </Alert>
+
               )}
 
+
+
               <TextInput
+
                 label="Full Name"
+
                 placeholder="John Doe"
-                required
+
+                withAsterisk
+
                 size="lg"
+
                 styles={inputStyles}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+
+                {...form.getInputProps('name')}
+
               />
+
+
 
               <TextInput
+
                 label="Email"
+
                 placeholder="your@email.com"
-                required
+
                 type="email"
+
+                withAsterisk
+
                 size="lg"
+
                 styles={inputStyles}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+
+                {...form.getInputProps('email')}
+
               />
 
+
+
               <PasswordInput
+
                 label="Password"
-                placeholder="At least 6 characters"
-                required
+
+                placeholder="Create a strong password"
+
+                withAsterisk
+
                 size="lg"
+
                 styles={inputStyles}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+
+                {...form.getInputProps('password')}
+
               />
 
+
+
+              <PasswordStrengthIndicator password={form.values.password} />
+
+
+
               <PasswordInput
+
                 label="Confirm Password"
+
                 placeholder="Repeat your password"
-                required
+
+                withAsterisk
+
                 size="lg"
+
                 styles={inputStyles}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+
+                {...form.getInputProps('confirmPassword')}
+
               />
+
+
 
               <Button type="submit" fullWidth loading={submitting} color="orange" size="xl" h={56} fz={17} fw={700} mt={8}>
+
                 Create Account
+
               </Button>
 
+
+
               <Text ta="center" size="md" c="#696969" pt={4}>
+
                 Already have an account?{' '}
+
                 <Link to="/login" style={{ fontWeight: 700, color: '#FC8019', textDecoration: 'none' }}>
+
                   Sign in
+
                 </Link>
+
               </Text>
+
             </Stack>
+
           </form>
+
         </Paper>
+
       </Container>
+
     </Box>
+
   );
+
 }
+
+

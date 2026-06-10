@@ -132,8 +132,23 @@ class VehiclesService {
     }
   }
 
+  Future<bool> hasLinkedOrders(String vehicleId) async {
+    final orders = await _client
+        .from('orders')
+        .select('id')
+        .eq('vehicle_id', vehicleId)
+        .limit(1);
+    return (orders as List).isNotEmpty;
+  }
+
   Future<void> deleteVehicle(String vehicleId) async {
     try {
+      if (await hasLinkedOrders(vehicleId)) {
+        throw Exception(
+          'This vehicle is linked to existing service orders and cannot be deleted.',
+        );
+      }
+
       // Delete images from storage
       final images = await _client
           .from('images')
@@ -184,27 +199,29 @@ class VehiclesService {
 
   Future<void> deleteImage(String vehicleId, String imageUrl) async {
     try {
-      // Get file name from images table
       final imageRecord = await _client
           .from('images')
-          .select('file_name')
+          .select('id, file_name')
           .eq('entity_type', 'vehicle')
           .eq('entity_id', vehicleId)
           .eq('url', imageUrl)
-          .single();
+          .maybeSingle();
 
-      // Delete from storage
+      if (imageRecord == null) return;
+
+      final deleted = await _client
+          .from('images')
+          .delete()
+          .eq('id', imageRecord['id'])
+          .select('id');
+
+      if (deleted.isEmpty) {
+        throw Exception('Image delete was not permitted');
+      }
+
       await _client.storage
           .from('vehicle-images')
           .remove([imageRecord['file_name']]);
-
-      // Delete from images table
-      await _client
-          .from('images')
-          .delete()
-          .eq('entity_type', 'vehicle')
-          .eq('entity_id', vehicleId)
-          .eq('url', imageUrl);
     } catch (e) {
       rethrow;
     }

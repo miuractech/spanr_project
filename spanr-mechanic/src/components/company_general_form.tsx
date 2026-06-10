@@ -12,9 +12,11 @@ import {
   FileInput,
   Image,
   Paper,
+  MultiSelect,
 } from '@mantine/core';
 import type { UseFormReturnType } from '@mantine/form';
 import { IconPlus, IconX, IconUpload } from '@tabler/icons-react';
+import { CERTIFICATION_OPTIONS } from '../company/company.constants';
 
 interface GeneralFormData {
   companyName: string;
@@ -47,26 +49,12 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
   existingLogo,
   onLogoChange,
 }) => {
-  const [newCertification, setNewCertification] = useState('');
   const [newSpecialization, setNewSpecialization] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const handleLogoChange = (file: File | null) => {
     setLogoFile(file);
     onLogoChange?.(file);
-  };
-
-  const handleAddCertification = () => {
-    if (!newCertification.trim()) return;
-    form.setFieldValue('certifications', [...form.values.certifications, newCertification.trim()]);
-    setNewCertification('');
-  };
-
-  const handleRemoveCertification = (cert: string) => {
-    form.setFieldValue(
-      'certifications',
-      form.values.certifications.filter((c) => c !== cert)
-    );
   };
 
   const handleAddSpecialization = () => {
@@ -105,6 +93,7 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
               placeholder="Choose image file"
               accept="image/*"
               leftSection={<IconUpload size={18} />}
+              leftSectionWidth={36}
               value={logoFile}
               onChange={handleLogoChange}
               description="PNG or JPG, recommended square image"
@@ -149,7 +138,7 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
               required
               value={userEmail || form.values.email}
               disabled
-              description="From your account"
+              // description="From your account"
             />
 
             <TextInput
@@ -173,58 +162,16 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
         <Text size="lg" fw={600} c="#1C1C1C" mb="md">
           Certifications
         </Text>
-        <Stack gap="md">
-          {form.values.certifications.length > 0 && (
-            <Group gap="xs">
-              {form.values.certifications.map((cert) => (
-                <Badge
-                  key={cert}
-                  size="lg"
-                  variant="light"
-                  color="orange"
-                  radius="md"
-                  tt="none"
-                  pr={6}
-                  rightSection={
-                    <ActionIcon
-                      size="xs"
-                      color="gray"
-                      radius="xl"
-                      variant="transparent"
-                      onClick={() => handleRemoveCertification(cert)}
-                      aria-label={`Remove ${cert}`}
-                    >
-                      <IconX size={12} />
-                    </ActionIcon>
-                  }
-                >
-                  {cert}
-                </Badge>
-              ))}
-            </Group>
-          )}
-          <Group gap="sm" align="flex-end" wrap="nowrap">
-            <TextInput
-              style={{ flex: 1, minWidth: 0 }}
-              placeholder="e.g. ISO 9001"
-              value={newCertification}
-              onChange={(e) => setNewCertification(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddCertification();
-                }
-              }}
-            />
-            <Button
-              leftSection={<IconPlus size={18} />}
-              onClick={handleAddCertification}
-              {...addButtonProps}
-            >
-              Add
-            </Button>
-          </Group>
-        </Stack>
+        <MultiSelect
+          label="Select certifications"
+          placeholder="Choose certifications"
+          data={CERTIFICATION_OPTIONS}
+          value={form.values.certifications}
+          onChange={(value) => form.setFieldValue('certifications', value)}
+          searchable
+          clearable
+          nothingFoundMessage="No certification found"
+        />
       </Box>
 
       <Box>
