@@ -1,4 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useCompany } from '../company/company.hook';
+import { AssignMechanicModal } from '../components/assign_mechanic_modal';
+import { AssignmentBadge } from '../components/assignment_badge';
+import { VehicleHistoryTimeline } from '../components/vehicle_history_timeline';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -24,6 +28,8 @@ import {
   IconHistory,
   IconFileText,
   IconInfoCircle,
+  IconUserCheck,
+  IconClipboardList,
 } from '@tabler/icons-react';
 import { ordersService } from '../orders/orders.service';
 import type { OrderDetails, OrderStatus } from '../orders/orders.types';
@@ -39,6 +45,8 @@ const getStatusColor = (status: OrderStatus) => {
     case 'completed': return 'green';
     case 'in_progress': return 'cyan';
     case 'accepted': return 'blue';
+    case 'assigned': return 'indigo';
+    case 'waiting_for_parts': return 'yellow';
     case 'ready_for_delivery': return 'grape';
     case 'cancelled': return 'red';
     case 'dispute': return 'orange';
@@ -49,9 +57,11 @@ const getStatusColor = (status: OrderStatus) => {
 export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
+  const { company } = useCompany();
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   const loadOrder = useCallback(async () => {
     if (!orderId) return;
@@ -106,10 +116,37 @@ export default function OrderDetailPage() {
         <Text size="sm" c="dimmed">Created: {new Date(order.created_at).toLocaleString()}</Text>
       </Group>
 
-      {/* Status actions always visible */}
+      {/* Assignment + status actions */}
       <Paper withBorder p="sm" mb="md">
-        <OrderActionButtons currentStatus={order.status} onUpdate={handleStatusUpdate} />
+        <Stack gap="sm">
+          <Group justify="space-between">
+            <AssignmentBadge assignment={order.assignment} />
+            {company && ['accepted', 'assigned'].includes(order.status) && (
+              <Button
+                size="xs"
+                color="orange"
+                variant="light"
+                leftSection={<IconUserCheck size={14} />}
+                onClick={() => setAssignModalOpen(true)}
+              >
+                {order.assignment ? 'Reassign' : 'Assign Mechanic'}
+              </Button>
+            )}
+          </Group>
+          <OrderActionButtons currentStatus={order.status} onUpdate={handleStatusUpdate} />
+        </Stack>
       </Paper>
+
+      {company && orderId && (
+        <AssignMechanicModal
+          opened={assignModalOpen}
+          onClose={() => setAssignModalOpen(false)}
+          orderId={orderId}
+          companyId={company.id}
+          currentStaffId={order.assignment?.staff_id}
+          onAssigned={loadOrder}
+        />
+      )}
 
       {/* Main tab view */}
       <Tabs defaultValue="details">
@@ -129,6 +166,11 @@ export default function OrderDetailPage() {
           <Tabs.Tab value="history" leftSection={<IconHistory size={16} />}>
             History
           </Tabs.Tab>
+          {order.status === 'completed' && (
+            <Tabs.Tab value="record" leftSection={<IconClipboardList size={16} />}>
+              Service Record
+            </Tabs.Tab>
+          )}
         </Tabs.List>
 
         {/* ── Order Details ── */}
@@ -239,6 +281,15 @@ export default function OrderDetailPage() {
         <Tabs.Panel value="history" pt="md">
           <OrderHistoryTimeline orderId={orderId!} />
         </Tabs.Panel>
+
+        {order.status === 'completed' && company && (
+          <Tabs.Panel value="record" pt="md">
+            <VehicleHistoryTimeline
+              companyId={company.id}
+              searchPlate={order.vehicle.license_plate}
+            />
+          </Tabs.Panel>
+        )}
       </Tabs>
     </Container>
   );

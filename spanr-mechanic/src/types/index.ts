@@ -50,6 +50,9 @@ export type {
   StaffType,
   DbStaff,
   DbStaffAccess,
+  DbStaffProfile,
+  DbStaffSkill,
+  StaffAvailability,
 } from './employee.types';
 
 // Auth types

@@ -25,7 +25,7 @@ export interface UserDataType {
   vehicle: VehicleData;
 }
 
-export type OrderStatus = 'created' | 'accepted' | 'in_progress' | 'ready_for_delivery' | 'completed' | 'dispute' | 'cancelled';
+export type OrderStatus = 'created' | 'accepted' | 'assigned' | 'in_progress' | 'waiting_for_parts' | 'ready_for_delivery' | 'completed' | 'dispute' | 'cancelled';
 export type PaymentMethod = 'credit_card' | 'debit_card' | 'net_banking' | 'upi';
 export type PaymentStatus = 'paid' | 'unpaid';
 

@@ -7,9 +7,14 @@ import {
   Stack,
   Group,
   MultiSelect,
+  NumberInput,
+  Select,
+  Text,
 } from '@mantine/core';
 import type { StaffFormData } from '../staff/staff.service';
 import type { StaffWithAccess } from '../staff/staff.service';
+import { StaffSkillsInput } from './staff_skills_input';
+import { isStaffAuthEmail } from '../core/phone.util';
 
 interface StaffFormProps {
   opened: boolean;
@@ -35,8 +40,11 @@ export const StaffForm: React.FC<StaffFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<StaffFormData>({
     name: '',
-    email: '',
     enabled: true,
+    phone: '',
+    experienceYears: 0,
+    availability: 'available',
+    skills: [],
   });
 
   const [permissions, setPermissions] = useState<string[]>([]);
@@ -46,49 +54,85 @@ export const StaffForm: React.FC<StaffFormProps> = ({
     if (initialData) {
       setFormData({
         name: initialData.name,
-        email: initialData.email,
         enabled: initialData.enabled,
+        phone: initialData.phone ?? initialData.profile?.phone ?? '',
+        experienceYears: initialData.profile?.experience_years ?? 0,
+        availability: initialData.profile?.availability ?? 'available',
+        skills: initialData.skills ?? [],
       });
       setPermissions(initialData.permissions);
     }
   }, [initialData]);
 
   const handleSubmit = async () => {
+    if (!formData.phone.trim()) return;
     setLoading(true);
     try {
       await onSubmit(formData, permissions);
       onClose();
-      // Reset form
-      setFormData({ name: '', email: '', enabled: true });
+      setFormData({ name: '', enabled: true, phone: '', experienceYears: 0, availability: 'available', skills: [] });
       setPermissions([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const isMechanicAccount = !initialData || isStaffAuthEmail(initialData.email);
+
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title={initialData ? 'Edit Staff Member' : 'Add Staff Member'}
+      title={initialData ? 'Edit Staff Member' : 'Add Mechanic Employee'}
+      size="lg"
     >
       <Stack>
+        {!initialData && (
+          <Text size="sm" c="dimmed">
+            A temporary password will be generated. Share the mobile number and password with the employee.
+          </Text>
+        )}
+
         <TextInput
           label="Name"
-          placeholder="John Doe"
+          placeholder="Rajesh Kumar"
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
 
         <TextInput
-          label="Email"
-          placeholder="john@example.com"
-          type="email"
+          label="Mobile Number (Login ID)"
+          placeholder="9876543210"
           required
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          disabled={!!initialData}
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          disabled={!!initialData && isMechanicAccount}
+          description={initialData && isMechanicAccount ? 'Phone cannot be changed after account is created' : 'Employee uses this number to log into the mechanic app'}
+        />
+
+        <Group grow>
+          <NumberInput
+            label="Experience (years)"
+            min={0}
+            value={formData.experienceYears}
+            onChange={(v) => setFormData({ ...formData, experienceYears: Number(v) || 0 })}
+          />
+          <Select
+            label="Availability"
+            data={[
+              { value: 'available', label: 'Available' },
+              { value: 'busy', label: 'Busy' },
+              { value: 'off', label: 'Off' },
+            ]}
+            value={formData.availability}
+            onChange={(v) => setFormData({ ...formData, availability: (v as StaffFormData['availability']) ?? 'available' })}
+          />
+        </Group>
+
+        <StaffSkillsInput
+          skills={formData.skills ?? []}
+          onChange={(skills) => setFormData({ ...formData, skills })}
         />
 
         <Switch
@@ -106,15 +150,12 @@ export const StaffForm: React.FC<StaffFormProps> = ({
         />
 
         <Group justify="flex-end">
-          <Button variant="subtle" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} loading={loading}>
-            {initialData ? 'Update' : 'Add'}
+          <Button variant="subtle" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} loading={loading} color="orange" disabled={!formData.name || !formData.phone}>
+            {initialData ? 'Update' : 'Add & Generate Password'}
           </Button>
         </Group>
       </Stack>
     </Modal>
   );
 };
-

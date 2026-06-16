@@ -17,6 +17,7 @@ import OrdersPage from './pages/orders';
 import OrderDetailPage from './pages/order_detail';
 import StaffPage from './pages/staff';
 import ProfilePage from './pages/profile';
+import VehicleHistoryPage from './pages/vehicle_history';
 
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
@@ -57,6 +58,7 @@ function App() {
               <Route path="orders" element={<OrdersPage />} />
               <Route path="orders/:orderId" element={<OrderDetailPage />} />
               <Route path="staff" element={<StaffPage />} />
+              <Route path="vehicle-history" element={<VehicleHistoryPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 

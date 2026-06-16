@@ -36,16 +36,27 @@ export interface OrderDetails extends DbOrder {
   plan: OrderPlan;
   service: OrderService;
   payment?: OrderPayment;
+  assignment?: OrderAssignmentInfo;
 }
 
 export type OrderStatus = 
   | 'created' 
-  | 'accepted' 
-  | 'in_progress' 
+  | 'accepted'
+  | 'assigned'
+  | 'in_progress'
+  | 'waiting_for_parts'
   | 'ready_for_delivery' 
   | 'completed' 
   | 'dispute' 
   | 'cancelled';
+
+export interface OrderAssignmentInfo {
+  id: string;
+  staff_id: string;
+  staff_name: string;
+  assigned_at: string;
+  status: string;
+}
 
 export interface OrderFilters {
   status?: OrderStatus;

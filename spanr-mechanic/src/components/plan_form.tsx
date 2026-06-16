@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Modal, Stack, Button, Group, Tabs } from '@mantine/core';
+import { Modal, Stack, Button, Group, Tabs, Box, LoadingOverlay } from '@mantine/core';
 import { PlanBasicInfo } from './plan_form/plan_basic_info';
 import { PlanFuelTypes } from './plan_form/plan_fuel_types';
 import { PlanFeaturesList } from './plan_form/plan_features_list';
@@ -18,7 +18,27 @@ interface PlanFormProps {
   services: Array<{ id: string; name: string }>;
   initialData?: PlanDetails;
   defaultServiceId?: string;
+  detailsLoading?: boolean;
 }
+
+const emptyFormData = (defaultServiceId?: string): PlanFormData => ({
+  serviceId: defaultServiceId || '',
+  name: '',
+  vehicleType: 'car',
+  locationType: 'in_premise',
+  duration: 60,
+  basePrice: 0,
+  tax: 18,
+  warranty: '',
+  guarantee: '',
+  badge: '',
+  fuelTypes: [],
+  features: [],
+  faqs: [],
+  serviceOutcomes: [],
+  additionalServices: [],
+  steps: [],
+});
 
 export const PlanForm: React.FC<PlanFormProps> = ({
   opened,
@@ -27,29 +47,13 @@ export const PlanForm: React.FC<PlanFormProps> = ({
   services,
   initialData,
   defaultServiceId,
+  detailsLoading = false,
 }) => {
-  const [formData, setFormData] = useState<PlanFormData>({
-    serviceId: defaultServiceId || '',
-    name: '',
-    vehicleType: 'car',
-    locationType: 'in_premise',
-    duration: 60,
-    basePrice: 0,
-    tax: 18,
-    warranty: '',
-    guarantee: '',
-    badge: '',
-    fuelTypes: [],
-    features: [],
-    faqs: [],
-    serviceOutcomes: [],
-    additionalServices: [],
-    steps: [],
-  });
-
-  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<PlanFormData>(emptyFormData(defaultServiceId));
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!opened) return;
     if (initialData) {
       setFormData({
         serviceId: initialData.service_id,
@@ -63,88 +67,65 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         guarantee: initialData.guarantee || '',
         badge: initialData.badge || '',
         fuelTypes: (initialData.fuelTypes?.filter((f): f is 'diesel' | 'petrol' => f === 'diesel' || f === 'petrol')) || [],
-        features: initialData.features?.map(f => ({ 
-          feature: f.feature, 
-          displayOrder: f.display_order 
+        features: initialData.features?.map(f => ({
+          feature: f.feature,
+          displayOrder: f.display_order,
         })) || [],
-        faqs: initialData.faqs?.map(f => ({ 
-          question: f.question, 
-          answer: f.answer, 
-          displayOrder: f.display_order 
+        faqs: initialData.faqs?.map(f => ({
+          question: f.question,
+          answer: f.answer,
+          displayOrder: f.display_order,
         })) || [],
-        serviceOutcomes: initialData.serviceOutcomes?.map(o => ({ 
-          title: o.title, 
-          imageUrl: o.image_url, 
-          description: o.description, 
-          displayOrder: o.display_order 
+        serviceOutcomes: initialData.serviceOutcomes?.map(o => ({
+          title: o.title,
+          imageUrl: o.image_url,
+          description: o.description,
+          displayOrder: o.display_order,
         })) || [],
-        additionalServices: initialData.additionalServices?.map(a => ({ 
-          serviceName: a.service_name, 
-          displayOrder: a.display_order 
+        additionalServices: initialData.additionalServices?.map(a => ({
+          serviceName: a.service_name,
+          displayOrder: a.display_order,
         })) || [],
-        steps: initialData.steps?.map(s => ({ 
-          stepDescription: s.step_description, 
-          displayOrder: s.display_order 
+        steps: initialData.steps?.map(s => ({
+          stepDescription: s.step_description,
+          displayOrder: s.display_order,
         })) || [],
       });
-    } else if (defaultServiceId && !formData.serviceId) {
-      setFormData(prev => ({ ...prev, serviceId: defaultServiceId }));
+    } else {
+      setFormData(emptyFormData(defaultServiceId));
     }
-  }, [initialData, defaultServiceId]);
+  }, [initialData, defaultServiceId, opened]);
 
-  const handleFieldChange = (field: string, value: any) => {
+  const handleFieldChange = (field: string, value: unknown) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
+    setSaving(true);
     try {
-      // Upload outcome images if needed
       const updatedOutcomes = await Promise.all(
         formData.serviceOutcomes.map(async (outcome) => {
-          if ((outcome as any).imageFile) {
+          const imageFile = (outcome as { imageFile?: File }).imageFile;
+          if (imageFile) {
             const imageUrl = await plansService.uploadOutcomeImage(
-              (outcome as any).imageFile,
-              initialData?.id || 'temp'
+              imageFile,
+              initialData?.id || 'temp',
             );
             return { ...outcome, imageUrl };
           }
           return outcome;
-        })
+        }),
       );
 
-      await onSubmit({
-        ...formData,
-        serviceOutcomes: updatedOutcomes,
-      });
-      
+      await onSubmit({ ...formData, serviceOutcomes: updatedOutcomes });
       onClose();
-      resetForm();
+      setFormData(emptyFormData(defaultServiceId));
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      serviceId: defaultServiceId || '',
-      name: '',
-      vehicleType: 'car',
-      locationType: 'in_premise',
-      duration: 60,
-      basePrice: 0,
-      tax: 18,
-      warranty: '',
-      guarantee: '',
-      badge: '',
-      fuelTypes: [],
-      features: [],
-      faqs: [],
-      serviceOutcomes: [],
-      additionalServices: [],
-      steps: [],
-    });
-  };
+  const isBusy = saving || detailsLoading;
 
   return (
     <Modal
@@ -152,70 +133,99 @@ export const PlanForm: React.FC<PlanFormProps> = ({
       onClose={onClose}
       title={initialData ? 'Edit Plan' : 'Create Plan'}
       size="xl"
+      closeOnClickOutside={!isBusy}
+      closeOnEscape={!isBusy}
+      styles={{
+        body: { paddingBottom: 0 },
+      }}
     >
-      <Tabs defaultValue="basic">
-        <Tabs.List>
-          <Tabs.Tab value="basic">Basic Info</Tabs.Tab>
-          <Tabs.Tab value="details">Details</Tabs.Tab>
-          <Tabs.Tab value="faqs">FAQs</Tabs.Tab>
-          <Tabs.Tab value="outcomes">Outcomes</Tabs.Tab>
-        </Tabs.List>
+      <Box pos="relative" mih={detailsLoading ? 280 : undefined}>
+        <LoadingOverlay
+          visible={detailsLoading}
+          zIndex={200}
+          overlayProps={{ blur: 1 }}
+          loaderProps={{ type: 'dots' }}
+        />
 
-        <Tabs.Panel value="basic" pt="md">
-          <Stack>
-            <PlanBasicInfo
-              formData={formData}
-              services={services}
-              onChange={handleFieldChange}
-            />
-            <PlanFuelTypes
-              selectedFuelTypes={formData.fuelTypes}
-              onChange={(fuelTypes) => handleFieldChange('fuelTypes', fuelTypes)}
-            />
-          </Stack>
-        </Tabs.Panel>
+        <Box
+          style={{ maxHeight: '60vh', overflowY: 'auto', paddingRight: 4 }}
+          opacity={detailsLoading ? 0.4 : 1}
+        >
+          <Tabs defaultValue="basic" keepMounted={false}>
+            <Tabs.List>
+              <Tabs.Tab value="basic">Basic Info</Tabs.Tab>
+              <Tabs.Tab value="details">Details</Tabs.Tab>
+              <Tabs.Tab value="faqs">FAQs</Tabs.Tab>
+              <Tabs.Tab value="outcomes">Outcomes</Tabs.Tab>
+            </Tabs.List>
 
-        <Tabs.Panel value="details" pt="md">
-          <Stack>
-            <PlanFeaturesList
-              features={formData.features}
-              onChange={(features) => handleFieldChange('features', features)}
-            />
-            <PlanAdditionalServices
-              services={formData.additionalServices}
-              onChange={(services) => handleFieldChange('additionalServices', services)}
-            />
-            <PlanStepsList
-              steps={formData.steps}
-              onChange={(steps) => handleFieldChange('steps', steps)}
-            />
-          </Stack>
-        </Tabs.Panel>
+            <Tabs.Panel value="basic" pt="md">
+              <Stack gap="md">
+                <PlanBasicInfo
+                  formData={formData}
+                  services={services}
+                  onChange={handleFieldChange}
+                />
+                <PlanFuelTypes
+                  selectedFuelTypes={formData.fuelTypes}
+                  onChange={(fuelTypes) => handleFieldChange('fuelTypes', fuelTypes)}
+                />
+              </Stack>
+            </Tabs.Panel>
 
-        <Tabs.Panel value="faqs" pt="md">
-          <PlanFaqsList
-            faqs={formData.faqs}
-            onChange={(faqs) => handleFieldChange('faqs', faqs)}
-          />
-        </Tabs.Panel>
+            <Tabs.Panel value="details" pt="md">
+              <Stack gap="lg">
+                <PlanFeaturesList
+                  features={formData.features}
+                  onChange={(features) => handleFieldChange('features', features)}
+                  disabled={isBusy}
+                />
+                <PlanAdditionalServices
+                  services={formData.additionalServices}
+                  onChange={(services) => handleFieldChange('additionalServices', services)}
+                  disabled={isBusy}
+                />
+                <PlanStepsList
+                  steps={formData.steps}
+                  onChange={(steps) => handleFieldChange('steps', steps)}
+                  disabled={isBusy}
+                />
+              </Stack>
+            </Tabs.Panel>
 
-        <Tabs.Panel value="outcomes" pt="md">
-          <PlanOutcomesList
-            outcomes={formData.serviceOutcomes}
-            onChange={(outcomes) => handleFieldChange('serviceOutcomes', outcomes)}
-          />
-        </Tabs.Panel>
-      </Tabs>
+            <Tabs.Panel value="faqs" pt="md">
+              <PlanFaqsList
+                faqs={formData.faqs}
+                onChange={(faqs) => handleFieldChange('faqs', faqs)}
+                disabled={isBusy}
+              />
+            </Tabs.Panel>
 
-      <Group justify="flex-end" mt="xl">
-        <Button variant="subtle" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={handleSubmit} loading={loading}>
-          {initialData ? 'Update' : 'Create'}
-        </Button>
-      </Group>
+            <Tabs.Panel value="outcomes" pt="md">
+              <PlanOutcomesList
+                outcomes={formData.serviceOutcomes}
+                onChange={(outcomes) => handleFieldChange('serviceOutcomes', outcomes)}
+                disabled={isBusy}
+              />
+            </Tabs.Panel>
+          </Tabs>
+        </Box>
+
+        <Group
+          justify="flex-end"
+          gap="sm"
+          py="md"
+          mt="md"
+          style={{ borderTop: '1px solid #e9ecef' }}
+        >
+          <Button variant="subtle" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button onClick={handleSubmit} loading={saving} disabled={detailsLoading}>
+            {initialData ? 'Update' : 'Create'}
+          </Button>
+        </Group>
+      </Box>
     </Modal>
   );
 };
-

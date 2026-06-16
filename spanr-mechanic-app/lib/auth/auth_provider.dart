@@ -1,0 +1,72 @@
+import 'package:flutter/foundation.dart';
+import 'auth_service.dart';
+import 'models/staff_user.dart';
+
+class AuthProvider extends ChangeNotifier {
+  final AuthService _authService;
+  StaffUser? _staff;
+  bool _loading = true;
+  String? _error;
+
+  AuthProvider(this._authService);
+
+  StaffUser? get staff => _staff;
+  bool get isAuthenticated => _staff != null;
+  bool get mustChangePassword => _staff?.mustChangePassword ?? false;
+  bool get isLoading => _loading;
+  String? get error => _error;
+
+  Future<void> init() async {
+    _loading = true;
+    notifyListeners();
+    try {
+      if (_authService.isAuthenticated) {
+        _staff = await _authService.resolveStaff();
+      }
+    } catch (e) {
+      _staff = null;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> login(String phone, String password) async {
+    _loading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      _staff = await _authService.signInWithPhone(phone, password);
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> changePassword(String newPassword) async {
+    _loading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      await _authService.changePassword(newPassword);
+      _staff = await _authService.resolveStaff();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      return false;
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> logout() async {
+    await _authService.signOut();
+    _staff = null;
+    notifyListeners();
+  }
+}

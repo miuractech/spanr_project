@@ -1,3 +1,9 @@
 # Webhooks are verified with HMAC (x-razorpay-signature), not Supabase JWTs.
 [functions.razorpay-webhook]
 verify_jwt = false
+
+[functions.provision-staff-auth]
+verify_jwt = true
+
+[functions.reset-staff-password]
+verify_jwt = true

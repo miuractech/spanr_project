@@ -1,0 +1,2 @@
+-- spanr-mechanic-app job workflow tables
+-- Applied via spanr-mechanic/sql/migrations/025-031

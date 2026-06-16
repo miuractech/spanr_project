@@ -6,8 +6,29 @@ import type {
   OrderStatus,
   OrderImage,
   OrderServiceDetail,
-  OrderHistory
+  OrderHistory,
+  OrderAssignmentInfo,
 } from './orders.types';
+
+async function fetchAssignment(orderId: string): Promise<OrderAssignmentInfo | undefined> {
+  const { data } = await supabase
+    .from('order_assignments')
+    .select('id, staff_id, assigned_at, status, staff:staff_id(name)')
+    .eq('order_id', orderId)
+    .eq('status', 'active')
+    .maybeSingle();
+
+  if (!data) return undefined;
+  const staffData = data.staff as unknown;
+  const staff = (Array.isArray(staffData) ? staffData[0] : staffData) as { name: string } | null;
+  return {
+    id: data.id,
+    staff_id: data.staff_id,
+    staff_name: staff?.name ?? 'Unknown',
+    assigned_at: data.assigned_at,
+    status: data.status,
+  };
+}
 
 export const ordersService = {
   async getOrdersByCompany(
@@ -86,6 +107,7 @@ export const ordersService = {
           serviceName = serviceRes.data?.name || '';
         }
 
+        const assignment = await fetchAssignment(order.id);
         return {
           ...order,
           user: userRes.data || { name: '', email: '', phone: '' },
@@ -93,6 +115,7 @@ export const ordersService = {
           plan: planRes.data || { name: '', base_price: 0, tax: 0 },
           service: { name: serviceName },
           payment: paymentRes.data || undefined,
+          assignment,
         };
       })
     );
@@ -134,6 +157,7 @@ export const ordersService = {
       serviceName = serviceRes.data?.name || '';
     }
 
+    const assignment = await fetchAssignment(order.id);
     return {
       ...order,
       user: userRes.data || { name: '', email: '', phone: '' },
@@ -141,6 +165,7 @@ export const ordersService = {
       plan: planRes.data || { name: '', base_price: 0, tax: 0 },
       service: { name: serviceName },
       payment: paymentRes.data || undefined,
+      assignment,
     };
   },
 
@@ -180,7 +205,9 @@ export const ordersService = {
       total: data?.length || 0,
       created: data?.filter(o => o.status === 'created').length || 0,
       accepted: data?.filter(o => o.status === 'accepted').length || 0,
+      assigned: data?.filter(o => o.status === 'assigned').length || 0,
       inProgress: data?.filter(o => o.status === 'in_progress').length || 0,
+      waitingForParts: data?.filter(o => o.status === 'waiting_for_parts').length || 0,
       readyForDelivery: data?.filter(o => o.status === 'ready_for_delivery').length || 0,
       completed: data?.filter(o => o.status === 'completed').length || 0,
       dispute: data?.filter(o => o.status === 'dispute').length || 0,

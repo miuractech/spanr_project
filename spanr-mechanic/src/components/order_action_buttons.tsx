@@ -34,13 +34,22 @@ export const OrderActionButtons: React.FC<OrderActionButtonsProps> = ({
         ];
       case 'accepted':
         return [
+          { label: 'Cancel Order', icon: <IconX size={16} />, targetStatus: 'cancelled', color: 'red', confirmRequired: true },
+        ];
+      case 'assigned':
+        return [
           { label: 'Start Work', icon: <IconPlayerPlay size={16} />, targetStatus: 'in_progress', color: 'blue' },
           { label: 'Cancel Order', icon: <IconX size={16} />, targetStatus: 'cancelled', color: 'red', confirmRequired: true },
         ];
       case 'in_progress':
         return [
+          { label: 'Waiting for Parts', icon: <IconAlertTriangle size={16} />, targetStatus: 'waiting_for_parts', color: 'yellow' },
           { label: 'Mark Ready for Delivery', icon: <IconPackage size={16} />, targetStatus: 'ready_for_delivery', color: 'grape' },
           { label: 'Report Issue', icon: <IconAlertTriangle size={16} />, targetStatus: 'dispute', color: 'orange', confirmRequired: true },
+        ];
+      case 'waiting_for_parts':
+        return [
+          { label: 'Resume Work', icon: <IconPlayerPlay size={16} />, targetStatus: 'in_progress', color: 'blue' },
         ];
       case 'ready_for_delivery':
         return [

@@ -7,6 +7,7 @@ import {
   IconShoppingCart,
   IconUsers,
   IconUser,
+  IconHistory,
 } from '@tabler/icons-react';
 
 const links = [
@@ -15,6 +16,7 @@ const links = [
   { to: '/services', label: 'Services & Plans', icon: IconTools },
   { to: '/orders', label: 'Orders', icon: IconShoppingCart },
   { to: '/staff', label: 'Staff', icon: IconUsers },
+  { to: '/vehicle-history', label: 'Vehicle History', icon: IconHistory },
   { to: '/profile', label: 'Profile', icon: IconUser },
 ];
 

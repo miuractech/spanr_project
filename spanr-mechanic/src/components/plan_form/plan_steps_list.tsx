@@ -1,5 +1,6 @@
-import { Stack, TextInput, Button, Group, ActionIcon, Text } from '@mantine/core';
-import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { Stack, TextInput, Group, ActionIcon, Text } from '@mantine/core';
+import { IconTrash } from '@tabler/icons-react';
+import { PlanListSection, planItemCardStyle } from './plan_list_section';
 
 interface Step {
   stepDescription: string;
@@ -9,9 +10,10 @@ interface Step {
 interface PlanStepsListProps {
   steps: Step[];
   onChange: (steps: Step[]) => void;
+  disabled?: boolean;
 }
 
-export const PlanStepsList: React.FC<PlanStepsListProps> = ({ steps, onChange }) => {
+export const PlanStepsList: React.FC<PlanStepsListProps> = ({ steps, onChange, disabled }) => {
   const addStep = () => {
     onChange([...steps, { stepDescription: '', displayOrder: steps.length }]);
   };
@@ -27,31 +29,34 @@ export const PlanStepsList: React.FC<PlanStepsListProps> = ({ steps, onChange })
   };
 
   return (
-    <Stack gap="xs">
-      <Group justify="space-between">
-        <Text size="sm" fw={500}>Process Steps</Text>
-        <Button size="xs" leftSection={<IconPlus size={14} />} onClick={addStep}>
-          Add Step
-        </Button>
-      </Group>
-
-      {steps.map((step, index) => (
-        <Group key={index} gap="xs">
-          <Text size="sm" c="dimmed" style={{ width: '30px' }}>
-            {index + 1}.
-          </Text>
-          <TextInput
-            placeholder="Step description"
-            value={step.stepDescription}
-            onChange={(e) => updateStep(index, e.target.value)}
-            style={{ flex: 1 }}
-          />
-          <ActionIcon color="red" onClick={() => removeStep(index)}>
-            <IconTrash size={16} />
-          </ActionIcon>
-        </Group>
-      ))}
-    </Stack>
+    <PlanListSection
+      title="Process Steps"
+      addLabel="Add Step"
+      onAdd={addStep}
+      isEmpty={steps.length === 0}
+      emptyText="No process steps added yet."
+    >
+      <Stack gap="sm">
+        {steps.map((step, index) => (
+          <div key={index} style={planItemCardStyle}>
+            <Group gap="sm" wrap="nowrap">
+              <Text size="sm" c="dimmed" fw={600} style={{ width: 24 }}>
+                {index + 1}.
+              </Text>
+              <TextInput
+                placeholder="Step description"
+                value={step.stepDescription}
+                onChange={(e) => updateStep(index, e.target.value)}
+                style={{ flex: 1 }}
+                disabled={disabled}
+              />
+              <ActionIcon color="red" variant="subtle" onClick={() => removeStep(index)} disabled={disabled}>
+                <IconTrash size={16} />
+              </ActionIcon>
+            </Group>
+          </div>
+        ))}
+      </Stack>
+    </PlanListSection>
   );
 };
-

@@ -42,6 +42,7 @@ export default function ServicesAndPlansPage() {
   const [editingService, setEditingService] = useState<DbService | undefined>();
   const [editingPlan, setEditingPlan] = useState<PlanDetails | undefined>();
   const [actionLoading, setActionLoading] = useState(false);
+  const [planDetailsLoading, setPlanDetailsLoading] = useState(false);
 
   // Set first service as active when services load
   useEffect(() => {
@@ -142,15 +143,13 @@ export default function ServicesAndPlansPage() {
     if (!company) return;
 
     try {
-      setActionLoading(true);
       await plansService.createPlan(company.id, data);
       await refreshPlans();
       notification.showSuccess('Plan created successfully');
       setPlanFormOpened(false);
     } catch (err: any) {
       notification.showError(err.message || 'Failed to create plan');
-    } finally {
-      setActionLoading(false);
+      throw err;
     }
   };
 
@@ -158,7 +157,6 @@ export default function ServicesAndPlansPage() {
     if (!editingPlan) return;
 
     try {
-      setActionLoading(true);
       await plansService.updatePlan(editingPlan.id, data);
       await refreshPlans();
       notification.showSuccess('Plan updated successfully');
@@ -166,8 +164,7 @@ export default function ServicesAndPlansPage() {
       setPlanFormOpened(false);
     } catch (err: any) {
       notification.showError(err.message || 'Failed to update plan');
-    } finally {
-      setActionLoading(false);
+      throw err;
     }
   };
 
@@ -187,15 +184,17 @@ export default function ServicesAndPlansPage() {
   };
 
   const handleEditPlan = async (plan: DbPlan) => {
+    setEditingPlan(undefined);
+    setPlanFormOpened(true);
+    setPlanDetailsLoading(true);
     try {
-      setActionLoading(true);
       const details = await plansService.getPlanDetails(plan.id);
       setEditingPlan(details || undefined);
-      setPlanFormOpened(true);
     } catch (err: any) {
       notification.showError(err.message || 'Failed to load plan details');
+      setPlanFormOpened(false);
     } finally {
-      setActionLoading(false);
+      setPlanDetailsLoading(false);
     }
   };
 
@@ -225,7 +224,7 @@ export default function ServicesAndPlansPage() {
 
   return (
     <Container size="xl" my={40} pos="relative">
-      <LoadingOverlay visible={actionLoading} />
+      <LoadingOverlay visible={actionLoading && !planFormOpened && !serviceFormOpened} />
 
       <Group justify="space-between" mb="xl">
         <Title c="#1C1C1C">Services & Plans</Title>
@@ -397,6 +396,7 @@ export default function ServicesAndPlansPage() {
         services={services.map(s => ({ id: s.id, name: s.name }))}
         initialData={editingPlan}
         defaultServiceId={activeServiceId || undefined}
+        detailsLoading={planDetailsLoading}
       />
     </Container>
   );
