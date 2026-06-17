@@ -1,6 +1,19 @@
 import supabase from '../supabaseconfig';
-import type { DbStaff, DbStaffProfile, StaffAvailability } from '../types';
+import type { DbStaff, DbStaffProfile, DbStaffCertificate, DbStaffCourse, StaffAvailability } from '../types';
 import { normalizePhone, phoneToAuthEmail } from '../core/phone.util';
+
+export interface StaffCertificateInput {
+  name: string;
+  file?: File;
+  fileUrl?: string;
+  expiryDate?: string;
+}
+
+export interface StaffCourseInput {
+  courseName: string;
+  institution?: string;
+  completedDate?: string;
+}
 
 export interface StaffFormData {
   name: string;
@@ -10,6 +23,9 @@ export interface StaffFormData {
   experienceYears?: number;
   availability?: StaffAvailability;
   skills?: string[];
+  photoFile?: File | null;
+  certificates?: StaffCertificateInput[];
+  courses?: StaffCourseInput[];
 }
 
 export interface StaffCredentials {
@@ -21,6 +37,8 @@ export interface StaffWithAccess extends DbStaff {
   permissions: string[];
   profile?: DbStaffProfile;
   skills?: string[];
+  certificates?: DbStaffCertificate[];
+  courses?: DbStaffCourse[];
 }
 
 export const staffService = {
@@ -31,7 +49,9 @@ export const staffService = {
         *,
         staff_access(access_permission),
         staff_profiles(*),
-        staff_skills(skill_name)
+        staff_skills(skill_name),
+        staff_certificates(*),
+        staff_courses(*)
       `)
       .eq('company_id', companyId)
       .order('created_at', { ascending: false });
@@ -43,6 +63,8 @@ export const staffService = {
       permissions: staff.staff_access?.map((sa: any) => sa.access_permission) || [],
       profile: Array.isArray(staff.staff_profiles) ? staff.staff_profiles[0] : staff.staff_profiles,
       skills: staff.staff_skills?.map((s: any) => s.skill_name) || [],
+      certificates: staff.staff_certificates || [],
+      courses: staff.staff_courses || [],
     }));
   },
 
@@ -65,6 +87,9 @@ export const staffService = {
     if (error) throw error;
     await staffService.upsertProfile(staff.id, data);
     if (data.skills) await staffService.setSkills(staff.id, data.skills);
+    if (data.photoFile) await staffService.uploadStaffPhoto(staff.id, data.photoFile);
+    if (data.certificates) await staffService.setCertificates(staff.id, data.certificates);
+    if (data.courses) await staffService.setCourses(staff.id, data.courses);
 
     const credentials = await staffService.provisionAuth(staff.id);
     return { staff, credentials };
@@ -86,6 +111,9 @@ export const staffService = {
     if (error) throw error;
     await staffService.upsertProfile(staffId, data);
     if (data.skills) await staffService.setSkills(staffId, data.skills);
+    if (data.photoFile) await staffService.uploadStaffPhoto(staffId, data.photoFile);
+    if (data.certificates) await staffService.setCertificates(staffId, data.certificates);
+    if (data.courses) await staffService.setCourses(staffId, data.courses);
     return staff;
   },
 
@@ -143,6 +171,53 @@ export const staffService = {
     const { data: { publicUrl } } = supabase.storage.from('staff-photos').getPublicUrl(path);
     await supabase.from('staff_profiles').upsert({ staff_id: staffId, photo_url: publicUrl }, { onConflict: 'staff_id' });
     return publicUrl;
+  },
+
+  async uploadCertificateFile(staffId: string, file: File): Promise<string> {
+    const ext = file.name.split('.').pop();
+    const path = `${staffId}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from('staff-certificates').upload(path, file);
+    if (uploadError) throw uploadError;
+    const { data: { publicUrl } } = supabase.storage.from('staff-certificates').getPublicUrl(path);
+    return publicUrl;
+  },
+
+  async setCertificates(staffId: string, certificates: StaffCertificateInput[]): Promise<void> {
+    await supabase.from('staff_certificates').delete().eq('staff_id', staffId);
+    if (certificates.length === 0) return;
+
+    const rows = await Promise.all(
+      certificates.map(async (cert) => {
+        let fileUrl = cert.fileUrl;
+        if (cert.file) {
+          fileUrl = await staffService.uploadCertificateFile(staffId, cert.file);
+        }
+        if (!fileUrl) throw new Error(`Certificate "${cert.name}" is missing a file`);
+        return {
+          staff_id: staffId,
+          name: cert.name,
+          file_url: fileUrl,
+          expiry_date: cert.expiryDate || null,
+        };
+      }),
+    );
+
+    const { error } = await supabase.from('staff_certificates').insert(rows);
+    if (error) throw error;
+  },
+
+  async setCourses(staffId: string, courses: StaffCourseInput[]): Promise<void> {
+    await supabase.from('staff_courses').delete().eq('staff_id', staffId);
+    if (courses.length === 0) return;
+    const { error } = await supabase.from('staff_courses').insert(
+      courses.map((course) => ({
+        staff_id: staffId,
+        course_name: course.courseName,
+        institution: course.institution || null,
+        completed_date: course.completedDate || null,
+      })),
+    );
+    if (error) throw error;
   },
 
   async deleteStaff(staffId: string): Promise<void> {

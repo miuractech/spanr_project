@@ -10,6 +10,7 @@ import 'core/providers/app_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'auth/auth_provider.dart';
 import 'auth/auth_service.dart';
+import 'auth/attendance_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +36,7 @@ class _SpanrMechanicAppState extends State<SpanrMechanicApp> {
   @override
   void initState() {
     super.initState();
-    _authProvider = AuthProvider(AuthService());
+    _authProvider = AuthProvider(AuthService(), AttendanceService());
     _connectivity = ConnectivityService();
     _router = AppRouter.create(_authProvider);
     _bootstrap();

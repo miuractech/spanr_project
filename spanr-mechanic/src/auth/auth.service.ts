@@ -19,6 +19,27 @@ export interface AuthUser {
   companyId?: string;
 }
 
+export function authUsersEqual(a: AuthUser | null, b: AuthUser | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.id === b.id &&
+    a.email === b.email &&
+    a.name === b.name &&
+    a.companyId === b.companyId
+  );
+}
+
+const staffByEmailQuery = (email: string) =>
+  supabase
+    .from('staff')
+    .select('id, name, company_id, enabled')
+    .eq('email', email)
+    .eq('enabled', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
 export const authService = {
   async signUp(data: SignUpData) {
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -55,16 +76,10 @@ export const authService = {
 
   async getCurrentUser(): Promise<AuthUser | null> {
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) return null;
 
-    // Check if user is staff member
-    const { data: staffData, error: staffError } = await supabase
-      .from('staff')
-      .select('id, name, company_id, enabled')
-      .eq('email', user.email)
-      .eq('enabled', true)
-      .maybeSingle();
+    const { data: staffData, error: staffError } = await staffByEmailQuery(user.email!);
 
     if (staffError) {
       console.error('Error fetching staff data:', staffError);
@@ -93,7 +108,9 @@ export const authService = {
 
   onAuthStateChange(callback: (user: AuthUser | null) => void) {
     let seq = 0;
-    return supabase.auth.onAuthStateChange((_event, session) => {
+    return supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED') return;
+
       const current = ++seq;
       if (session?.user) {
         this.getCurrentUser().then((user) => {
@@ -112,10 +129,11 @@ export const authService = {
       .select('*')
       .eq('email', email)
       .eq('enabled', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) return null;
     return data;
   },
 };
-

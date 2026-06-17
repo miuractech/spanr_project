@@ -1,5 +1,5 @@
 import type { MantineThemeOverride } from '@mantine/core';
-import { createTheme } from '@mantine/core';
+import { createTheme, type FileInputProps, type MantineTheme, type TextInputProps } from '@mantine/core';
 
 export const theme: MantineThemeOverride = createTheme({
   primaryColor: 'orange',
@@ -89,7 +89,7 @@ export const theme: MantineThemeOverride = createTheme({
         size: 'md',
         leftSectionPointerEvents: 'none',
       },
-      styles: {
+      styles: (_theme: MantineTheme, props: TextInputProps) => ({
         input: {
           backgroundColor: '#FFFFFF',
           border: '1.5px solid #E0E0E0',
@@ -97,7 +97,9 @@ export const theme: MantineThemeOverride = createTheme({
           height: 'auto',
           paddingTop: 11,
           paddingBottom: 11,
-          paddingLeft: 'calc(var(--input-left-section-width, 0px) + 14px)',
+          ...(props.leftSection
+            ? { paddingLeft: 'calc(var(--input-left-section-width, 36px) + 8px)' }
+            : { paddingLeft: 14 }),
           paddingRight: 14,
           fontSize: 15,
           lineHeight: 1.5,
@@ -112,7 +114,7 @@ export const theme: MantineThemeOverride = createTheme({
           },
         },
         section: {
-          width: 36,
+          width: 'var(--input-left-section-width, 36px)',
           justifyContent: 'center',
         },
         label: {
@@ -120,7 +122,7 @@ export const theme: MantineThemeOverride = createTheme({
           fontSize: 13,
           marginBottom: 8,
         },
-      },
+      }),
     },
     NumberInput: {
       defaultProps: {
@@ -154,7 +156,7 @@ export const theme: MantineThemeOverride = createTheme({
         size: 'md',
         leftSectionPointerEvents: 'none',
       },
-      styles: {
+      styles: (_theme: MantineTheme, props: FileInputProps) => ({
         input: {
           backgroundColor: '#FFFFFF',
           border: '1.5px solid #E0E0E0',
@@ -162,7 +164,9 @@ export const theme: MantineThemeOverride = createTheme({
           height: 'auto',
           paddingTop: 11,
           paddingBottom: 11,
-          paddingLeft: 'calc(var(--input-left-section-width, 0px) + 14px)',
+          ...(props.leftSection
+            ? { paddingLeft: 'calc(var(--input-left-section-width, 36px) + 8px)' }
+            : { paddingLeft: 14 }),
           paddingRight: 14,
           fontSize: 15,
           lineHeight: 1.5,
@@ -179,7 +183,7 @@ export const theme: MantineThemeOverride = createTheme({
           fontSize: 13,
           marginBottom: 8,
         },
-      },
+      }),
     },
     PasswordInput: {
       defaultProps: {
@@ -268,11 +272,11 @@ export const theme: MantineThemeOverride = createTheme({
     Stepper: {
       styles: {
         stepIcon: {
-          '&[data-completed]': {
+          '&[dataCompleted]': {
             backgroundColor: '#FC8019',
             borderColor: '#FC8019',
           },
-          '&[data-progress]': {
+          '&[dataProgress]': {
             borderColor: '#FC8019',
           },
         },

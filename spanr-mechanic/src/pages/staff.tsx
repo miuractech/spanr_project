@@ -33,6 +33,8 @@ export default function StaffPage() {
   const [isResetCredentials, setIsResetCredentials] = useState(false);
   const [actionError, setActionError] = useState('');
 
+  const mechanics = staff.filter((m) => isStaffAuthEmail(m.email));
+
   const getWorkload = (staffId: string) =>
     workload.find((w) => w.staff_id === staffId);
 
@@ -122,9 +124,9 @@ export default function StaffPage() {
 
       {loading ? (
         <StaffTableSkeleton />
-      ) : staff.length === 0 ? (
+      ) : mechanics.length === 0 ? (
         <Alert icon={<IconAlertCircle size={16} />} color="blue">
-          <Text>No staff members found. Add your first mechanic to get started.</Text>
+          <Text>No mechanics yet. Add your first mechanic to assign jobs.</Text>
         </Alert>
       ) : (
         <Table>
@@ -140,10 +142,9 @@ export default function StaffPage() {
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {staff.map((member) => {
+            {mechanics.map((member) => {
               const wl = getWorkload(member.id);
               const phone = member.phone ?? member.profile?.phone;
-              const isMechanic = isStaffAuthEmail(member.email);
               return (
                 <Table.Tr key={member.id}>
                   <Table.Td>{member.name}</Table.Td>
@@ -172,7 +173,7 @@ export default function StaffPage() {
                   </Table.Td>
                   <Table.Td>
                     <Group gap="xs">
-                      {isMechanic && phone && (
+                      {phone && (
                         <ActionIcon
                           variant="light"
                           color="blue"

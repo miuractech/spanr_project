@@ -91,15 +91,20 @@ class JobsService {
     int quantity = 1,
     double? cost,
     int? kmReading,
+    String? beforePhotoPath,
+    String? afterPhotoPath,
     String? photoPath,
   }) async {
-    String? photoUrl;
-    if (photoPath != null) {
-      final file = File(photoPath);
-      final ext = photoPath.split('.').last;
-      final path = '$orderId/parts/${DateTime.now().millisecondsSinceEpoch}.$ext';
-      await _client.storage.from('inspection-images').upload(path, file);
-      photoUrl = _client.storage.from('inspection-images').getPublicUrl(path);
+    String? beforePhotoUrl;
+    String? afterPhotoUrl;
+
+    if (beforePhotoPath != null) {
+      beforePhotoUrl = await _uploadPartPhoto(orderId, beforePhotoPath, 'before');
+    }
+    if (afterPhotoPath != null) {
+      afterPhotoUrl = await _uploadPartPhoto(orderId, afterPhotoPath, 'after');
+    } else if (photoPath != null) {
+      afterPhotoUrl = await _uploadPartPhoto(orderId, photoPath, 'after');
     }
 
     await _client.from('parts_replaced').insert({
@@ -110,9 +115,18 @@ class JobsService {
       'quantity': quantity,
       'cost': cost,
       'km_reading': kmReading,
-      'photo_url': photoUrl,
+      'before_photo_url': beforePhotoUrl,
+      'photo_url': afterPhotoUrl,
       'created_by': staffId,
     });
+  }
+
+  Future<String> _uploadPartPhoto(String orderId, String localPath, String label) async {
+    final file = File(localPath);
+    final ext = localPath.split('.').last;
+    final path = '$orderId/parts/$label/${DateTime.now().millisecondsSinceEpoch}.$ext';
+    await _client.storage.from('inspection-images').upload(path, file);
+    return _client.storage.from('inspection-images').getPublicUrl(path);
   }
 
   Future<void> saveServiceNotes(

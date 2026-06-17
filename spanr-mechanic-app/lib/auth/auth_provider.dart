@@ -1,14 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'auth_service.dart';
+import 'attendance_service.dart';
 import 'models/staff_user.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
+  final AttendanceService _attendanceService;
   StaffUser? _staff;
   bool _loading = true;
   String? _error;
 
-  AuthProvider(this._authService);
+  AuthProvider(this._authService, this._attendanceService);
 
   StaffUser? get staff => _staff;
   bool get isAuthenticated => _staff != null;
@@ -16,12 +18,24 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _loading;
   String? get error => _error;
 
+  Future<void> _markAttendanceIfNeeded() async {
+    final staff = _staff;
+    if (staff == null) return;
+    try {
+      await _attendanceService.markAttendance(
+        staffId: staff.id,
+        companyId: staff.companyId,
+      );
+    } catch (_) {}
+  }
+
   Future<void> init() async {
     _loading = true;
     notifyListeners();
     try {
       if (_authService.isAuthenticated) {
         _staff = await _authService.resolveStaff();
+        await _markAttendanceIfNeeded();
       }
     } catch (e) {
       _staff = null;
@@ -37,6 +51,7 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     try {
       _staff = await _authService.signInWithPhone(phone, password);
+      await _markAttendanceIfNeeded();
       return true;
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');

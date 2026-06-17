@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -50,14 +51,41 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final staff = auth.staff;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(title: const Text('Change Password')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomInset),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (staff != null) ...[
+              Center(
+                child: CircleAvatar(
+                  radius: 48,
+                  backgroundColor: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                  backgroundImage: staff.photoUrl != null
+                      ? CachedNetworkImageProvider(staff.photoUrl!)
+                      : null,
+                  child: staff.photoUrl == null
+                      ? Text(
+                          staff.name.isNotEmpty ? staff.name[0].toUpperCase() : '?',
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w600),
+                        )
+                      : null,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                staff.name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 24),
+            ],
             const Text(
               'You must set a new password before continuing.',
               style: TextStyle(color: AppTheme.textBody),
@@ -74,7 +102,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               obscureText: true,
               decoration: const InputDecoration(labelText: 'Confirm Password'),
             ),
-            const Spacer(),
+            const SizedBox(height: 32),
             ElevatedButton(
               onPressed: auth.isLoading ? null : _submit,
               child: auth.isLoading

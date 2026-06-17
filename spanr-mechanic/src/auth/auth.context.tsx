@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState } from 'react';
-import { authService, type AuthUser } from './auth.service';
+import { authService, authUsersEqual, type AuthUser } from './auth.service';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -19,53 +19,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-    let authSubscription: ReturnType<typeof authService.onAuthStateChange> | null = null;
-
-    // Initialize auth state
-    const initAuth = async () => {
-      try {
-        // Check for existing session
-        const session = await authService.getSession();
-        
-        if (!mounted) return;
-
-        if (session) {
-          // Get user details
-          const currentUser = await authService.getCurrentUser();
-          if (mounted) {
-            setUser(currentUser);
-          }
-        } else {
-          if (mounted) {
-            setUser(null);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to initialize auth:', error);
-        if (mounted) {
-          setUser(null);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-
-          authSubscription = authService.onAuthStateChange((newUser) => {
-            if (mounted) {
-              setUser(newUser);
-              setLoading(false);
-            }
-          });
-        }
-      }
-    };
-
-    initAuth();
+    const authSubscription = authService.onAuthStateChange((newUser) => {
+      if (!mounted) return;
+      setUser((prev) => (authUsersEqual(prev, newUser) ? prev : newUser));
+      setLoading(false);
+    });
 
     return () => {
       mounted = false;
-      if (authSubscription) {
-        authSubscription.data.subscription.unsubscribe();
-      }
+      authSubscription.data.subscription.unsubscribe();
     };
   }, []);
 
@@ -73,7 +35,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await authService.signUp({ email, password, name });
-      // loading cleared by onAuthStateChange
     } catch (err) {
       setLoading(false);
       throw err;
@@ -84,7 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await authService.login({ email, password });
-      // loading cleared by onAuthStateChange
     } catch (err) {
       setLoading(false);
       throw err;
@@ -99,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshUser = async () => {
     try {
       const currentUser = await authService.getCurrentUser();
-      setUser(currentUser);
+      setUser((prev) => (authUsersEqual(prev, currentUser) ? prev : currentUser));
     } catch (error) {
       console.error('Failed to refresh user:', error);
     }
@@ -113,4 +73,3 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </AuthContext.Provider>
   );
 };
-

@@ -1,13 +1,12 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../auth/auth_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../jobs_service.dart';
 import '../../core/offline/connectivity_service.dart';
 import '../../core/offline/sync_service.dart';
+import '../widgets/part_photo_picker.dart';
 
 class PartsReplacementScreen extends StatefulWidget {
   final String orderId;
@@ -25,7 +24,8 @@ class _PartsReplacementScreenState extends State<PartsReplacementScreen> {
   final _qtyController = TextEditingController(text: '1');
   final _costController = TextEditingController();
   final _kmController = TextEditingController();
-  String? _photoPath;
+  String? _beforePhotoPath;
+  String? _afterPhotoPath;
   bool _saving = false;
 
   @override
@@ -37,11 +37,6 @@ class _PartsReplacementScreenState extends State<PartsReplacementScreen> {
     _costController.dispose();
     _kmController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickPhoto() async {
-    final image = await ImagePicker().pickImage(source: ImageSource.camera);
-    if (image != null) setState(() => _photoPath = image.path);
   }
 
   Future<void> _save() async {
@@ -60,7 +55,8 @@ class _PartsReplacementScreenState extends State<PartsReplacementScreen> {
       'quantity': int.tryParse(_qtyController.text) ?? 1,
       'cost': double.tryParse(_costController.text),
       'km_reading': int.tryParse(_kmController.text),
-      'photo_path': _photoPath,
+      'before_photo_path': _beforePhotoPath,
+      'after_photo_path': _afterPhotoPath,
     };
 
     try {
@@ -74,7 +70,8 @@ class _PartsReplacementScreenState extends State<PartsReplacementScreen> {
           quantity: payload['quantity'] as int,
           cost: payload['cost'] as double?,
           kmReading: payload['km_reading'] as int?,
-          photoPath: _photoPath,
+          beforePhotoPath: _beforePhotoPath,
+          afterPhotoPath: _afterPhotoPath,
         );
       } else {
         await sync.enqueue('add_part', payload);
@@ -144,22 +141,24 @@ class _PartsReplacementScreenState extends State<PartsReplacementScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Part Photo', style: TextStyle(fontWeight: FontWeight.w600)),
+                  const Text('Part Photos', style: TextStyle(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
-                  const Text('Optional — capture the installed part', style: TextStyle(fontSize: 12, color: AppTheme.textBody)),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: _pickPhoto,
-                    icon: const Icon(Icons.camera_alt_outlined),
-                    label: Text(_photoPath != null ? 'Retake Photo' : 'Add Part Photo'),
+                  const Text(
+                    'Optional — capture old and new part',
+                    style: TextStyle(fontSize: 12, color: AppTheme.textBody),
                   ),
-                  if (_photoPath != null) ...[
-                    const SizedBox(height: 12),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.file(File(_photoPath!), height: 140, width: double.infinity, fit: BoxFit.cover),
-                    ),
-                  ],
+                  const SizedBox(height: 16),
+                  PartPhotoPicker(
+                    label: 'Before (Old Part)',
+                    photoPath: _beforePhotoPath,
+                    onPhotoSelected: (path) => setState(() => _beforePhotoPath = path),
+                  ),
+                  const SizedBox(height: 20),
+                  PartPhotoPicker(
+                    label: 'After (New Part)',
+                    photoPath: _afterPhotoPath,
+                    onPhotoSelected: (path) => setState(() => _afterPhotoPath = path),
+                  ),
                 ],
               ),
             ),

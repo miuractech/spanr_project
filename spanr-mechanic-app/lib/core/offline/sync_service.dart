@@ -80,7 +80,8 @@ class SyncService {
           quantity: item.payload['quantity'] as int? ?? 1,
           cost: (item.payload['cost'] as num?)?.toDouble(),
           kmReading: item.payload['km_reading'] as int?,
-          photoPath: item.payload['photo_path'] as String?,
+          beforePhotoPath: item.payload['before_photo_path'] as String?,
+          afterPhotoPath: item.payload['after_photo_path'] as String? ?? item.payload['photo_path'] as String?,
         );
       case 'save_notes':
         await _jobsService.saveServiceNotes(

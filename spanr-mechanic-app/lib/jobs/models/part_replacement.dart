@@ -5,6 +5,7 @@ class PartReplacement {
   final String? brand;
   final int quantity;
   final double? cost;
+  final String? beforePhotoUrl;
   final String? photoUrl;
   final int? kmReading;
 
@@ -15,6 +16,7 @@ class PartReplacement {
     this.brand,
     this.quantity = 1,
     this.cost,
+    this.beforePhotoUrl,
     this.photoUrl,
     this.kmReading,
   });
@@ -26,6 +28,7 @@ class PartReplacement {
     'brand': brand,
     'quantity': quantity,
     'cost': cost,
+    'before_photo_url': beforePhotoUrl,
     'photo_url': photoUrl,
     'km_reading': kmReading,
   };

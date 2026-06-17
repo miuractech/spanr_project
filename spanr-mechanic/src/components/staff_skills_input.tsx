@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Group, TextInput, Button, Badge, Stack, Text } from '@mantine/core';
+import { Group, TextInput, Button, Badge, Stack } from '@mantine/core';
 import { IconPlus, IconX } from '@tabler/icons-react';
+import { staffAddButtonProps } from './staff_form_section';
 
 interface StaffSkillsInputProps {
   skills: string[];
@@ -18,38 +19,47 @@ export const StaffSkillsInput: React.FC<StaffSkillsInputProps> = ({ skills, onCh
   };
 
   return (
-    <Stack gap="xs">
-      <Text size="sm" fw={500}>Skills</Text>
-      <Group gap="xs">
+    <Stack gap="sm">
+      <Group align="flex-end" gap="sm" wrap="nowrap">
         <TextInput
+          label="Skill"
           placeholder="e.g. Brake Repair"
           value={newSkill}
           onChange={(e) => setNewSkill(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
           style={{ flex: 1 }}
         />
-        <Button leftSection={<IconPlus size={14} />} onClick={addSkill} color="orange" variant="light">
+        <Button
+          {...staffAddButtonProps}
+          leftSection={<IconPlus size={16} />}
+          onClick={addSkill}
+          disabled={!newSkill.trim()}
+        >
           Add
         </Button>
       </Group>
-      <Group gap="xs">
-        {skills.map((skill) => (
-          <Badge
-            key={skill}
-            rightSection={
-              <IconX
-                size={12}
-                style={{ cursor: 'pointer' }}
-                onClick={() => onChange(skills.filter((s) => s !== skill))}
-              />
-            }
-            color="orange"
-            variant="light"
-          >
-            {skill}
-          </Badge>
-        ))}
-      </Group>
+      {skills.length > 0 && (
+        <Group gap="xs">
+          {skills.map((skill) => (
+            <Badge
+              key={skill}
+              rightSection={
+                <IconX
+                  size={12}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => onChange(skills.filter((s) => s !== skill))}
+                />
+              }
+              color="orange"
+              variant="light"
+              size="lg"
+              radius="md"
+            >
+              {skill}
+            </Badge>
+          ))}
+        </Group>
+      )}
     </Stack>
   );
 };

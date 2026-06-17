@@ -5,6 +5,7 @@ class StaffUser {
   final String name;
   final bool enabled;
   final String? phone;
+  final String? photoUrl;
   final String availability;
   final bool mustChangePassword;
 
@@ -15,6 +16,7 @@ class StaffUser {
     required this.name,
     required this.enabled,
     this.phone,
+    this.photoUrl,
     this.availability = 'available',
     this.mustChangePassword = false,
   });
@@ -32,6 +34,7 @@ class StaffUser {
       name: json['name'] as String,
       enabled: json['enabled'] as bool? ?? true,
       phone: json['phone'] as String? ?? profileMap?['phone'] as String?,
+      photoUrl: profileMap?['photo_url'] as String?,
       availability: profileMap?['availability'] as String? ?? 'available',
       mustChangePassword: profileMap?['must_change_password'] as bool? ?? false,
     );

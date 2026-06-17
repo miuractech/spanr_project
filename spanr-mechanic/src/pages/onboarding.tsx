@@ -15,7 +15,6 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle, IconTool, IconLogout, IconUser } from '@tabler/icons-react';
 import { useAuth } from '../auth/auth.hook';
-import { authService } from '../auth/auth.service';
 import { companyService, type CompanyFormData } from '../company/company.service';
 import { CompanyProfileStepper } from '../components/company_profile_stepper';
 import type { DocumentFiles } from '../components/company_documents_form';
@@ -31,14 +30,14 @@ function submitErrorMessage(err: unknown): string {
 
 export default function OnboardingPage() {
   const [error, setError] = useState('');
-  const { user, logout, refreshUser, hasCompany } = useAuth();
+  const { user, logout, refreshUser, hasCompany, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (hasCompany) {
+    if (!loading && hasCompany) {
       navigate('/dashboard', { replace: true });
     }
-  }, [hasCompany, navigate]);
+  }, [loading, hasCompany, navigate]);
 
   const handleSubmit = async (
     data: CompanyFormData,
@@ -100,26 +99,6 @@ export default function OnboardingPage() {
       ]);
 
       await refreshUser();
-
-      let resolved = await authService.getCurrentUser();
-      for (let i = 0; i < 10 && resolved && !resolved.companyId; i++) {
-        await new Promise((r) => setTimeout(r, 300));
-        resolved = await authService.getCurrentUser();
-      }
-
-      if (!resolved?.companyId) {
-        await refreshUser();
-        const again = await authService.getCurrentUser();
-        if (again?.companyId) {
-          navigate('/dashboard', { replace: true });
-          return;
-        }
-        setError(
-          'Your company profile was saved. Open the dashboard from the menu or refresh this page.'
-        );
-        return;
-      }
-
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(submitErrorMessage(err));

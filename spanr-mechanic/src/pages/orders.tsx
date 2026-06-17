@@ -97,7 +97,7 @@ export default function OrdersPage() {
             label="Search orders"
             placeholder="Customer name, email, or phone"
             leftSection={<IconSearch size={18} stroke={1.5} />}
-            leftSectionWidth={40}
+            leftSectionWidth={36}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);

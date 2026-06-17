@@ -18,6 +18,7 @@ export default function VehicleHistoryPage() {
         <TextInput
           placeholder="Search by license plate..."
           leftSection={<IconSearch size={16} />}
+          leftSectionWidth={36}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && setQuery(search)}

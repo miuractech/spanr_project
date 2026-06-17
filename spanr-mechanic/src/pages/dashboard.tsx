@@ -14,6 +14,7 @@ import { useOrderStats } from '../orders/orders.hook';
 import { useServices } from '../services/services.hook';
 import { usePlans } from '../plans/plans.hook';
 import { useStaff } from '../staff/staff.hook';
+import { isStaffAuthEmail } from '../core/phone.util';
 
 export default function DashboardPage() {
   const { company } = useCompany();
@@ -45,8 +46,8 @@ export default function DashboardPage() {
       iconColor: '#1976D2',
     },
     {
-      title: 'Staff Members',
-      value: staff.filter(s => s.enabled).length,
+      title: 'Mechanics',
+      value: staff.filter((s) => s.enabled && isStaffAuthEmail(s.email)).length,
       icon: IconUsers,
       bg: '#F3E5F5',
       iconColor: '#7B1FA2',

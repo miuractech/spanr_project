@@ -52,3 +52,21 @@ export interface DbStaffSkill {
   created_at: string;
 }
 
+export interface DbStaffCertificate {
+  id: string;
+  staff_id: string;
+  name: string;
+  file_url: string;
+  expiry_date?: string;
+  created_at: string;
+}
+
+export interface DbStaffCourse {
+  id: string;
+  staff_id: string;
+  course_name: string;
+  institution?: string;
+  completed_date?: string;
+  created_at: string;
+}
+

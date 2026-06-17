@@ -52,6 +52,8 @@ export type {
   DbStaffAccess,
   DbStaffProfile,
   DbStaffSkill,
+  DbStaffCertificate,
+  DbStaffCourse,
   StaffAvailability,
 } from './employee.types';
 

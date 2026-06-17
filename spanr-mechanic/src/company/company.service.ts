@@ -39,6 +39,16 @@ export interface CompanyProfile extends DbMechanicCompany {
   specializations: string[];
 }
 
+const DOCUMENTS_BUCKET = 'company-documents';
+
+function documentStoragePath(fileUrlOrPath: string): string {
+  const marker = `/${DOCUMENTS_BUCKET}/`;
+  if (fileUrlOrPath.includes(marker)) {
+    return fileUrlOrPath.split(marker)[1]?.split('?')[0] ?? fileUrlOrPath;
+  }
+  return fileUrlOrPath;
+}
+
 export const companyService = {
   async createCompany(data: CompanyFormData, userEmail: string, userName: string) {
     // Create company
@@ -81,37 +91,42 @@ export const companyService = {
   },
 
   async getCompanyByStaffEmail(email: string): Promise<CompanyProfile | null> {
-    const { data: staff } = await supabase
+    const { data, error } = await supabase
       .from('staff')
-      .select('company_id')
+      .select(`
+        company_id,
+        mechanic_companies (
+          *,
+          company_certifications (certification_name),
+          company_specializations (specialization_name)
+        )
+      `)
       .eq('email', email)
       .eq('enabled', true)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (!staff) return null;
+    if (error) throw error;
+    if (!data?.mechanic_companies) return null;
 
-    const { data: company } = await supabase
-      .from('mechanic_companies')
-      .select('*')
-      .eq('id', staff.company_id)
-      .single();
+    const nested = data.mechanic_companies as DbMechanicCompany & {
+      company_certifications?: { certification_name: string }[];
+      company_specializations?: { specialization_name: string }[];
+    };
 
-    if (!company) return null;
-
-    const { data: certs } = await supabase
-      .from('company_certifications')
-      .select('certification_name')
-      .eq('company_id', company.id);
-
-    const { data: specs } = await supabase
-      .from('company_specializations')
-      .select('specialization_name')
-      .eq('company_id', company.id);
+    const {
+      company_certifications,
+      company_specializations,
+      ...company
+    } = nested;
 
     return {
       ...company,
-      certifications: certs?.map(c => c.certification_name) || [],
-      specializations: specs?.map(s => s.specialization_name) || [],
+      certifications:
+        company_certifications?.map((c) => c.certification_name) ?? [],
+      specializations:
+        company_specializations?.map((s) => s.specialization_name) ?? [],
     };
   },
 
@@ -228,22 +243,28 @@ export const companyService = {
     const fileName = `${companyId}/${docType}-${Date.now()}.${fileExt}`;
 
     const { error } = await supabase.storage
-      .from('company-documents')
+      .from(DOCUMENTS_BUCKET)
       .upload(fileName, file, { upsert: true });
 
     if (error) throw error;
 
-    const { data } = supabase.storage
-      .from('company-documents')
-      .getPublicUrl(fileName);
+    return fileName;
+  },
 
-    return data.publicUrl;
+  async getDocumentSignedUrl(fileUrlOrPath: string): Promise<string> {
+    const path = documentStoragePath(fileUrlOrPath);
+    const { data, error } = await supabase.storage
+      .from(DOCUMENTS_BUCKET)
+      .createSignedUrl(path, 3600);
+
+    if (error) throw error;
+    return data.signedUrl;
   },
 
   async saveDocument(
     companyId: string,
     docType: DocumentType,
-    fileUrl: string,
+    storagePath: string,
     fileName: string
   ): Promise<void> {
     const { error } = await supabase
@@ -252,7 +273,7 @@ export const companyService = {
         {
           company_id: companyId,
           document_type: docType,
-          file_url: fileUrl,
+          file_url: storagePath,
           file_name: fileName,
           verified: 'pending',
         },
@@ -269,8 +290,8 @@ export const companyService = {
     const uploads: Promise<void>[] = [];
 
     const handle = async (file: File, type: DocumentType) => {
-      const url = await this.uploadDocument(file, companyId, type);
-      await this.saveDocument(companyId, type, url, file.name);
+      const path = await this.uploadDocument(file, companyId, type);
+      await this.saveDocument(companyId, type, path, file.name);
     };
 
     if (documents.gst) uploads.push(handle(documents.gst, 'gst_certificate'));
@@ -287,7 +308,18 @@ export const companyService = {
       .eq('company_id', companyId);
 
     if (error) throw error;
-    return data || [];
+    if (!data?.length) return [];
+
+    return Promise.all(
+      data.map(async (doc) => {
+        try {
+          const signedUrl = await this.getDocumentSignedUrl(doc.file_url);
+          return { ...doc, file_url: signedUrl };
+        } catch {
+          return doc;
+        }
+      })
+    );
   },
 
   async deleteDocument(companyId: string, docType: DocumentType): Promise<void> {

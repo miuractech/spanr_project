@@ -1,0 +1,2 @@
+-- Staff certificates, courses, attendance, and part before/after photos
+-- Run migration 036 from spanr-mechanic/sql/migrations/036_staff_certificates_courses_attendance.sql
