@@ -8,6 +8,7 @@ import '../jobs/screens/job_detail_screen.dart';
 import '../jobs/screens/before_inspection_screen.dart';
 import '../jobs/screens/after_inspection_screen.dart';
 import '../jobs/screens/parts_replacement_screen.dart';
+import '../jobs/screens/part_replacement_detail_screen.dart';
 import '../jobs/screens/service_notes_screen.dart';
 import '../jobs/screens/complete_job_screen.dart';
 
@@ -61,6 +62,14 @@ class AppRouter {
             GoRoute(
               path: 'parts',
               builder: (_, state) => PartsReplacementScreen(orderId: state.pathParameters['orderId']!),
+              routes: [
+                GoRoute(
+                  path: ':partId',
+                  builder: (_, state) => PartReplacementDetailScreen(
+                    partId: state.pathParameters['partId']!,
+                  ),
+                ),
+              ],
             ),
             GoRoute(
               path: 'notes',

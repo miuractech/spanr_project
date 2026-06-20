@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import 'models/assigned_job.dart';
+import 'models/part_replacement.dart';
 class JobsService {
   final SupabaseClient _client = SupabaseConfig.client;
 
@@ -80,6 +81,29 @@ class JobsService {
     });
 
     return url;
+  }
+
+  Future<List<PartReplacement>> getPartsReplaced(String orderId) async {
+    final response = await _client
+        .from('parts_replaced')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('created_at', ascending: true);
+
+    return (response as List)
+        .map((e) => PartReplacement.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<PartReplacement?> getPartReplacementById(String partId) async {
+    final response = await _client
+        .from('parts_replaced')
+        .select('*')
+        .eq('id', partId)
+        .maybeSingle();
+
+    if (response == null) return null;
+    return PartReplacement.fromJson(response);
   }
 
   Future<void> addPart({

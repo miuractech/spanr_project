@@ -21,6 +21,20 @@ class PartReplacement {
     this.kmReading,
   });
 
+  factory PartReplacement.fromJson(Map<String, dynamic> json) {
+    return PartReplacement(
+      id: json['id'] as String?,
+      partName: json['part_name'] as String,
+      partNumber: json['part_number'] as String?,
+      brand: json['brand'] as String?,
+      quantity: json['quantity'] as int? ?? 1,
+      cost: (json['cost'] as num?)?.toDouble(),
+      beforePhotoUrl: json['before_photo_url'] as String?,
+      photoUrl: json['photo_url'] as String?,
+      kmReading: json['km_reading'] as int?,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     if (id != null) 'id': id,
     'part_name': partName,
