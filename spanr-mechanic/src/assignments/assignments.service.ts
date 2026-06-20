@@ -1,4 +1,5 @@
 import supabase from '../supabaseconfig';
+import { isStaffAuthEmail } from '../core/phone.util';
 import type { OrderAssignment, StaffWorkload } from './assignments.types';
 
 export const assignmentsService = {
@@ -52,10 +53,12 @@ export const assignmentsService = {
       skillsMap.set(s.staff_id, list);
     });
 
-    return (workload ?? []).map((w) => ({
-      ...w,
-      skills: skillsMap.get(w.staff_id) ?? [],
-    }));
+    return (workload ?? [])
+      .filter((w) => isStaffAuthEmail(w.email))
+      .map((w) => ({
+        ...w,
+        skills: skillsMap.get(w.staff_id) ?? [],
+      }));
   },
 
   async getAssignmentHistory(orderId: string): Promise<OrderAssignment[]> {

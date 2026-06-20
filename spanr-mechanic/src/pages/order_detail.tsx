@@ -30,6 +30,7 @@ import {
   IconInfoCircle,
   IconUserCheck,
   IconClipboardList,
+  IconSettings,
 } from '@tabler/icons-react';
 import { ordersService } from '../orders/orders.service';
 import type { OrderDetails, OrderStatus } from '../orders/orders.types';
@@ -38,6 +39,7 @@ import { OrderImagesManager } from '../components/order_images_manager';
 import { OrderServiceDetailsForm } from '../components/order_service_details_form';
 import { OrderHistoryTimeline } from '../components/order_history_timeline';
 import { OrderJobCard } from '../components/order_job_card';
+import { OrderPartsReplaced } from '../components/order_parts_replaced';
 import { OrderDetailSkeleton } from '../components/dashboard_page_loading';
 
 const getStatusColor = (status: OrderStatus) => {
@@ -163,6 +165,9 @@ export default function OrderDetailPage() {
           <Tabs.Tab value="service" leftSection={<IconTool size={16} />}>
             Service Details
           </Tabs.Tab>
+          <Tabs.Tab value="parts" leftSection={<IconSettings size={16} />}>
+            Parts Replacement
+          </Tabs.Tab>
           <Tabs.Tab value="history" leftSection={<IconHistory size={16} />}>
             History
           </Tabs.Tab>
@@ -275,6 +280,11 @@ export default function OrderDetailPage() {
         {/* ── Service Details ── */}
         <Tabs.Panel value="service" pt="md">
           <OrderServiceDetailsForm orderId={orderId!} />
+        </Tabs.Panel>
+
+        {/* ── Parts Replacement ── */}
+        <Tabs.Panel value="parts" pt="md">
+          <OrderPartsReplaced orderId={orderId!} />
         </Tabs.Panel>
 
         {/* ── History ── */}

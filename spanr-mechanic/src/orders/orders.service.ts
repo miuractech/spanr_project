@@ -8,6 +8,7 @@ import type {
   OrderServiceDetail,
   OrderHistory,
   OrderAssignmentInfo,
+  PartReplacement,
 } from './orders.types';
 
 async function fetchAssignment(orderId: string): Promise<OrderAssignmentInfo | undefined> {
@@ -362,6 +363,29 @@ export const ordersService = {
 
     if (error) throw error;
     return data || [];
+  },
+
+  // Parts replaced
+  async getPartsReplaced(orderId: string): Promise<PartReplacement[]> {
+    const { data, error } = await supabase
+      .from('parts_replaced')
+      .select('*')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  async getPartReplacementById(partId: string): Promise<PartReplacement | null> {
+    const { data, error } = await supabase
+      .from('parts_replaced')
+      .select('*')
+      .eq('id', partId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
   },
 };
 

@@ -102,3 +102,18 @@ export interface OrderHistory {
   created_at: string;
 }
 
+export interface PartReplacement {
+  id: string;
+  order_id: string;
+  part_name: string;
+  part_number?: string;
+  brand?: string;
+  quantity: number;
+  cost?: number;
+  before_photo_url?: string;
+  photo_url?: string;
+  km_reading?: number;
+  replacement_date?: string;
+  created_at: string;
+}
+

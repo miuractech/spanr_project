@@ -15,6 +15,7 @@ import {
 } from '@tabler/icons-react';
 import { ordersService } from '../orders/orders.service';
 import type { OrderHistory, OrderStatus } from '../orders/orders.types';
+import { formatOrderHistoryNotes, formatOrderStatusLabel } from '../core/order_status.util';
 
 interface OrderHistoryTimelineProps {
   orderId: string;
@@ -90,12 +91,12 @@ export const OrderHistoryTimeline: React.FC<OrderHistoryTimelineProps> = ({ orde
             bullet={getStatusIcon(item.status)}
             title={
               <Badge color={getStatusColor(item.status)}>
-                {item.status.replace('_', ' ').toUpperCase()}
+                {formatOrderStatusLabel(item.status)}
               </Badge>
             }
           >
             <Text size="sm" mt={4}>
-              {item.notes}
+              {formatOrderHistoryNotes(item.notes)}
             </Text>
             <Text size="xs" c="dimmed" mt="xs">
               {new Date(item.created_at).toLocaleString()}
