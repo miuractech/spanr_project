@@ -1,5 +1,6 @@
 import supabase from '../supabaseconfig';
 import type { DbStaff } from '../types';
+import { authCallbackUrl, resetPasswordUrl, isEmailVerified } from './auth.util';
 
 export interface SignUpData {
   email: string;
@@ -10,6 +11,10 @@ export interface SignUpData {
 export interface LoginData {
   email: string;
   password: string;
+}
+
+export interface SignUpResult {
+  requiresVerification: boolean;
 }
 
 export interface AuthUser {
@@ -41,22 +46,62 @@ const staffByEmailQuery = (email: string) =>
     .maybeSingle();
 
 export const authService = {
-  async signUp(data: SignUpData) {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          name: data.name,
-        },
-        emailRedirectTo: undefined,
+  async signUp(data: SignUpData): Promise<SignUpResult> {
+    const { data: result, error } = await supabase.functions.invoke('signup-owner', {
+      body: {
+        email: data.email.trim().toLowerCase(),
+        password: data.password,
+        name: data.name.trim(),
+        redirectTo: authCallbackUrl(),
       },
     });
 
-    if (authError) throw authError;
-    if (!authData.user) throw new Error('User creation failed');
+    const payload = result as { error?: string; code?: string; success?: boolean } | null;
+    if (payload?.error) {
+      throw new Error(payload.error);
+    }
 
-    return authData;
+    if (error) {
+      const httpContext = (error as { context?: Response }).context;
+      if (httpContext instanceof Response) {
+        try {
+          const body = await httpContext.clone().json() as { error?: string };
+          if (body?.error) throw new Error(body.error);
+        } catch (parseError) {
+          if (parseError instanceof Error && parseError.message !== error.message) {
+            throw parseError;
+          }
+        }
+      }
+      throw new Error(error.message || 'Signup failed');
+    }
+
+    await supabase.auth.signOut();
+
+    return { requiresVerification: true };
+  },
+
+  async resetPasswordForEmail(email: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: resetPasswordUrl(),
+    });
+    if (error) throw error;
+  },
+
+  async updatePassword(password: string) {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  },
+
+  async resendVerificationEmail(email: string) {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: authCallbackUrl(),
+      },
+    });
+    if (error) throw error;
   },
 
   async login(data: LoginData) {
@@ -66,6 +111,12 @@ export const authService = {
     });
 
     if (error) throw error;
+
+    if (!isEmailVerified(authData.user)) {
+      await supabase.auth.signOut();
+      throw new Error('Email not confirmed');
+    }
+
     return authData;
   },
 
@@ -78,6 +129,10 @@ export const authService = {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) return null;
+
+    if (!isEmailVerified(user)) {
+      return null;
+    }
 
     const { data: staffData, error: staffError } = await staffByEmailQuery(user.email!);
 

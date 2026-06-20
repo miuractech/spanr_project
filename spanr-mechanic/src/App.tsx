@@ -2,12 +2,16 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { AuthProvider } from './auth/auth.context';
+import { AuthHashRedirect } from './components/auth_hash_redirect';
 import { ProtectedRoute } from './components/protected_route';
 import { DashboardLayout } from './layouts/dashboard_layout';
 import { theme } from './core/theme';
 
 import LoginPage from './pages/login';
 import SignupPage from './pages/signup';
+import ForgotPasswordPage from './pages/forgot_password';
+import ResetPasswordPage from './pages/reset_password';
+import AuthCallbackPage from './pages/auth_callback';
 import OnboardingPage from './pages/onboarding';
 import DashboardPage from './pages/dashboard';
 import CompanyProfilePage from './pages/company_profile';
@@ -29,9 +33,13 @@ function App() {
       <Notifications position="top-right" />
       <AuthProvider>
         <BrowserRouter>
+          <AuthHashRedirect />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
             
             <Route
               path="/onboarding"

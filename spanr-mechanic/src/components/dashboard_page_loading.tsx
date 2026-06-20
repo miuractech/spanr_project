@@ -124,24 +124,50 @@ export function CompanyProfileFormSkeleton() {
 
 export function ServicesPlansSkeleton() {
   return (
-    <Stack gap="lg" mt="md">
-      <Group gap="xs">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} height={40} width={120} radius="md" />
-        ))}
-      </Group>
-      <Paper p="lg" radius="lg" style={{ border: '1px solid #E0E0E0' }}>
-        <Skeleton height={20} width={200} mb="lg" />
-        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
-          {[1, 2, 3].map((i) => (
-            <Paper key={i} p="md" radius="lg" style={{ border: '1px solid #E8E8E8' }}>
-              <Skeleton height={18} width="70%" mb="sm" />
-              <Skeleton height={14} width="40%" mb="md" />
-              <Skeleton height={36} width="100%" radius="md" />
+    <Stack gap="lg">
+      <Box>
+        <Group justify="space-between" mb="md">
+          <Skeleton height={32} width={180} radius="sm" />
+          <Skeleton height={36} width={130} radius="md" />
+        </Group>
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
+          {[1, 2, 3, 4].map((i) => (
+            <Paper key={i} p="lg" radius="lg" style={{ border: '1px solid #E8E8E8' }}>
+              <Group gap="sm" mb="sm">
+                <Skeleton height={40} width={40} radius="md" />
+                <Stack gap={6} style={{ flex: 1 }}>
+                  <Skeleton height={16} width="70%" />
+                  <Skeleton height={12} width="40%" />
+                </Stack>
+              </Group>
+              <Skeleton height={22} width={56} radius="xl" />
             </Paper>
           ))}
         </SimpleGrid>
-      </Paper>
+      </Box>
+      <Skeleton height={1} width="100%" />
+      <Box>
+        <Group justify="space-between" mb="md">
+          <Skeleton height={32} width={140} radius="sm" />
+          <Skeleton height={36} width={120} radius="md" />
+        </Group>
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }}>
+          {[1, 2, 3].map((i) => (
+            <Paper key={i} p="lg" radius="lg" style={{ border: '1px solid #E8E8E8', borderTop: '3px solid #FC8019' }}>
+              <Skeleton height={20} width="65%" mb="sm" />
+              <Skeleton height={14} width="50%" mb="md" />
+              <Group gap={6} mb="md">
+                <Skeleton height={22} width={48} radius="xl" />
+                <Skeleton height={22} width={72} radius="xl" />
+              </Group>
+              <Group justify="space-between" pt="sm" style={{ borderTop: '1px solid #F0F0F0' }}>
+                <Skeleton height={16} width={64} />
+                <Skeleton height={20} width={56} />
+              </Group>
+            </Paper>
+          ))}
+        </SimpleGrid>
+      </Box>
     </Stack>
   );
 }

@@ -1,4 +1,4 @@
-import { Card, Group, Text, Badge, ActionIcon, Stack } from '@mantine/core';
+import { Card, Group, Text, Badge, ActionIcon, Stack, Box } from '@mantine/core';
 import { IconEdit, IconTrash, IconClock, IconCoin } from '@tabler/icons-react';
 import type { DbPlan } from '../types';
 
@@ -11,59 +11,62 @@ interface PlanCardProps {
 
 export const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete, onView }) => {
   return (
-    <Card 
-      shadow="xs" 
-      padding="lg" 
+    <Card
+      padding="lg"
       radius="lg"
-      style={{ 
+      withBorder
+      style={{
         cursor: 'pointer',
         border: '1px solid #E0E0E0',
-        transition: 'box-shadow 0.15s ease',
+        borderTop: '3px solid #FC8019',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'box-shadow 0.2s ease, transform 0.15s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 6px 20px rgba(252, 128, 25, 0.14)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = 'none';
+        e.currentTarget.style.transform = 'translateY(0)';
       }}
     >
-      <div onClick={() => onView(plan.id)}>
-        <Group justify="space-between" mb="xs">
-          <Text fw={600} size="lg" c="#1C1C1C">{plan.name}</Text>
-          <Group gap="xs" onClick={(e) => e.stopPropagation()}>
-            <ActionIcon variant="light" color="orange" onClick={() => onEdit(plan)}>
-              <IconEdit size={16} />
+      <Box onClick={() => onView(plan.id)} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <Group justify="space-between" align="flex-start" wrap="nowrap" mb="sm">
+          <Text fw={700} size="lg" c="#1C1C1C" lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+            {plan.name}
+          </Text>
+          <Group gap={4} onClick={(e) => e.stopPropagation()}>
+            <ActionIcon variant="light" color="orange" size="sm" onClick={() => onEdit(plan)}>
+              <IconEdit size={15} />
             </ActionIcon>
-            <ActionIcon variant="light" color="red" onClick={() => onDelete(plan.id)}>
-              <IconTrash size={16} />
+            <ActionIcon variant="light" color="red" size="sm" onClick={() => onDelete(plan.id)}>
+              <IconTrash size={15} />
             </ActionIcon>
           </Group>
         </Group>
 
-        <Stack gap="xs">
+        <Stack gap="xs" style={{ flex: 1 }}>
           {plan.services && (
             <Text size="sm" c="#696969">
               Service: {plan.services.name}
             </Text>
           )}
-          
-          <Group gap="xs">
+
+          <Group gap={6}>
             <Badge size="sm" variant="light" color="orange">
-              {plan.vehicle_type}
+              {plan.vehicle_type === 'car' ? 'Car' : 'Bike'}
             </Badge>
-            <Badge size="sm" variant="light" color="orange">
-              {plan.location_type}
+            <Badge size="sm" variant="light" color="gray">
+              {plan.location_type.replace('_', ' ')}
             </Badge>
             {plan.badge && (
-              <Badge size="sm" color="green">
+              <Badge size="sm" color="green" variant="light">
                 {plan.badge}
               </Badge>
             )}
-          </Group>
-
-          <Group gap="md" pt={4} style={{ borderTop: '1px solid #F2F2F2' }}>
-            <Group gap={5}>
-              <IconClock size={16} color="#696969" />
-              <Text size="sm" c="#696969">{plan.duration} min</Text>
-            </Group>
-            <Group gap={5}>
-              <IconCoin size={16} color="#FC8019" />
-              <Text size="sm" fw={600} c="#FC8019">₹{plan.base_price}</Text>
-            </Group>
           </Group>
 
           {plan.warranty && (
@@ -72,7 +75,28 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete, onVi
             </Text>
           )}
         </Stack>
-      </div>
+
+        <Group
+          gap="md"
+          mt="md"
+          pt="sm"
+          wrap="nowrap"
+          style={{ borderTop: '1px solid #F0F0F0' }}
+        >
+          <Group gap={6}>
+            <IconClock size={18} color="#696969" />
+            <Text size="sm" fw={600} c="#1C1C1C">
+              {plan.duration} min
+            </Text>
+          </Group>
+          <Group gap={6} ml="auto">
+            <IconCoin size={18} color="#FC8019" />
+            <Text size="md" fw={700} c="#FC8019">
+              ₹{plan.base_price}
+            </Text>
+          </Group>
+        </Group>
+      </Box>
     </Card>
   );
 };

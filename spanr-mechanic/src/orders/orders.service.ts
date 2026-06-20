@@ -217,6 +217,37 @@ export const ordersService = {
     return stats;
   },
 
+  async countOrdersByPlanId(planId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('plan_id', planId);
+
+    if (error) throw error;
+    return count ?? 0;
+  },
+
+  async countOrdersByServiceId(serviceId: string): Promise<number> {
+    const { data: servicePlans, error: plansError } = await supabase
+      .from('plans')
+      .select('id')
+      .eq('service_id', serviceId);
+
+    if (plansError) throw plansError;
+    if (!servicePlans?.length) return 0;
+
+    const { count, error } = await supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .in(
+        'plan_id',
+        servicePlans.map((p) => p.id)
+      );
+
+    if (error) throw error;
+    return count ?? 0;
+  },
+
   // Image management
   async getOrderAfterImages(orderId: string): Promise<OrderImage[]> {
     const { data, error } = await supabase

@@ -7,27 +7,43 @@ import {
   Alert,
   SimpleGrid,
   Group,
-  Tabs,
   LoadingOverlay,
   Text,
-  Menu,
-  ActionIcon,
-  Card,
-  Badge,
   Stack,
+  Box,
+  Divider,
+  ThemeIcon,
 } from '@mantine/core';
-import { IconPlus, IconAlertCircle, IconDots, IconEdit, IconTrash } from '@tabler/icons-react';
+import {
+  IconPlus,
+  IconAlertCircle,
+  IconTools,
+  IconClipboardList,
+} from '@tabler/icons-react';
 import { useCompany } from '../company/company.hook';
 import { useServices } from '../services/services.hook';
 import { usePlans } from '../plans/plans.hook';
 import { servicesService, type ServiceFormData } from '../services/services.service';
 import { plansService, type PlanFormData, type PlanDetails } from '../plans/plans.service';
+import { ordersService } from '../orders/orders.service';
 import { ServiceForm } from '../components/service_form';
+import { ServiceCard } from '../components/service_card';
 import { PlanCard } from '../components/plan_card';
 import { PlanForm } from '../components/plan_form';
 import { ServicesPlansSkeleton } from '../components/dashboard_page_loading';
 import { useNotification } from '../core/notification.hook';
 import type { DbService, DbPlan } from '../types';
+
+const GRID_COLS = { base: 1, sm: 2, md: 3, lg: 4 } as const;
+
+function bookingLabel(count: number): string {
+  return count === 1 ? '1 customer booking' : `${count} customer bookings`;
+}
+
+function isOrderLinkedDeleteError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return message.includes('orders_plan_id_fkey');
+}
 
 export default function ServicesAndPlansPage() {
   const navigate = useNavigate();
@@ -44,14 +60,18 @@ export default function ServicesAndPlansPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [planDetailsLoading, setPlanDetailsLoading] = useState(false);
 
-  // Set first service as active when services load
   useEffect(() => {
     if (services.length > 0 && !activeServiceId) {
       setActiveServiceId(services[0].id);
     }
+    if (services.length > 0 && activeServiceId && !services.some((s) => s.id === activeServiceId)) {
+      setActiveServiceId(services[0].id);
+    }
+    if (services.length === 0) {
+      setActiveServiceId(null);
+    }
   }, [services, activeServiceId]);
 
-  // Service handlers
   const handleCreateService = async (data: ServiceFormData, iconFile?: File) => {
     if (!company) return;
 
@@ -100,29 +120,49 @@ export default function ServicesAndPlansPage() {
   };
 
   const handleDeleteService = async (serviceId: string) => {
-    const service = services.find(s => s.id === serviceId);
-    const planCount = plans.filter(p => p.service_id === serviceId).length;
-    
-    if (!confirm(
-      `Are you sure you want to delete "${service?.name}"?\n` +
-      `This will also delete ${planCount} plan(s) under this service.`
-    )) return;
+    const service = services.find((s) => s.id === serviceId);
+    const planCount = plans.filter((p) => p.service_id === serviceId).length;
 
     try {
       setActionLoading(true);
+      const orderCount = await ordersService.countOrdersByServiceId(serviceId);
+      if (orderCount > 0) {
+        notification.showWarning(
+          `"${service?.name ?? 'This service'}" cannot be deleted because ${bookingLabel(orderCount)} use its plans. ` +
+            'Customer order history must stay on file. You can edit the service or its plans instead.',
+          "Can't delete service"
+        );
+        return;
+      }
+
+      if (
+        !confirm(
+          `Are you sure you want to delete "${service?.name}"?\n` +
+            `This will also delete ${planCount} plan(s) under this service.`
+        )
+      )
+        return;
+
       await servicesService.deleteService(serviceId);
-      
-      // Switch to another service tab if deleting active one
+
       if (activeServiceId === serviceId) {
-        const remainingServices = services.filter(s => s.id !== serviceId);
+        const remainingServices = services.filter((s) => s.id !== serviceId);
         setActiveServiceId(remainingServices.length > 0 ? remainingServices[0].id : null);
       }
-      
+
       await refreshServices();
       await refreshPlans();
       notification.showSuccess('Service deleted successfully');
-    } catch (err: any) {
-      notification.showError(err.message || 'Failed to delete service');
+    } catch (err: unknown) {
+      if (isOrderLinkedDeleteError(err)) {
+        notification.showWarning(
+          `"${service?.name ?? 'This service'}" cannot be deleted because customer bookings are linked to its plans. ` +
+            'Keep it for your order records, or edit it instead of removing it.',
+          "Can't delete service"
+        );
+        return;
+      }
+      notification.showError(err instanceof Error ? err.message : 'Failed to delete service');
     } finally {
       setActionLoading(false);
     }
@@ -138,7 +178,6 @@ export default function ServicesAndPlansPage() {
     setEditingService(undefined);
   };
 
-  // Plan handlers
   const handleCreatePlan = async (data: PlanFormData) => {
     if (!company) return;
 
@@ -169,15 +208,35 @@ export default function ServicesAndPlansPage() {
   };
 
   const handleDeletePlan = async (planId: string) => {
-    if (!confirm('Are you sure you want to delete this plan?')) return;
+    const plan = plans.find((p) => p.id === planId);
 
     try {
       setActionLoading(true);
+      const orderCount = await ordersService.countOrdersByPlanId(planId);
+      if (orderCount > 0) {
+        notification.showWarning(
+          `"${plan?.name ?? 'This plan'}" cannot be deleted because ${bookingLabel(orderCount)} use it. ` +
+            'Customer order history must stay on file. You can edit the plan details instead.',
+          "Can't delete plan"
+        );
+        return;
+      }
+
+      if (!confirm(`Are you sure you want to delete "${plan?.name ?? 'this plan'}"?`)) return;
+
       await plansService.deletePlan(planId);
       await refreshPlans();
       notification.showSuccess('Plan deleted successfully');
-    } catch (err: any) {
-      notification.showError(err.message || 'Failed to delete plan');
+    } catch (err: unknown) {
+      if (isOrderLinkedDeleteError(err)) {
+        notification.showWarning(
+          `"${plan?.name ?? 'This plan'}" cannot be deleted because customer bookings are linked to it. ` +
+            'Keep it for your order records, or edit it instead of removing it.',
+          "Can't delete plan"
+        );
+        return;
+      }
+      notification.showError(err instanceof Error ? err.message : 'Failed to delete plan');
     } finally {
       setActionLoading(false);
     }
@@ -215,8 +274,8 @@ export default function ServicesAndPlansPage() {
     }
   };
 
-  // Get plans for active service
-  const activePlans = plans.filter(p => p.service_id === activeServiceId);
+  const activePlans = plans.filter((p) => p.service_id === activeServiceId);
+  const activeService = services.find((s) => s.id === activeServiceId);
 
   if (!company) return <Alert color="yellow">No company profile found</Alert>;
 
@@ -226,16 +285,9 @@ export default function ServicesAndPlansPage() {
     <Container size="xl" my={40} pos="relative">
       <LoadingOverlay visible={actionLoading && !planFormOpened && !serviceFormOpened} />
 
-      <Group justify="space-between" mb="xl">
-        <Title c="#1C1C1C">Services & Plans</Title>
-        <Button 
-          leftSection={<IconPlus size={16} />} 
-          onClick={() => setServiceFormOpened(true)}
-          variant="light"
-        >
-          Add Service
-        </Button>
-      </Group>
+      <Title order={2} c="#1C1C1C" mb="xl">
+        Services & Plans
+      </Title>
 
       {servicesError && (
         <Alert color="red" icon={<IconAlertCircle size={16} />} mb="md">
@@ -251,100 +303,86 @@ export default function ServicesAndPlansPage() {
 
       {isLoading ? (
         <ServicesPlansSkeleton />
-      ) : services.length === 0 ? (
-        <Alert icon={<IconAlertCircle size={16} />} color="blue">
-          <Stack gap="sm">
-            <Text>No services found. Create your first service to get started.</Text>
-            <Button 
-              size="sm" 
-              onClick={() => setServiceFormOpened(true)}
-              style={{ width: 'fit-content' }}
-            >
-              Create First Service
-            </Button>
-          </Stack>
-        </Alert>
       ) : (
-        <Tabs value={activeServiceId} onChange={(value) => setActiveServiceId(value)}>
-          <Tabs.List>
-            {services.map((service) => {
-              const planCount = plans.filter(p => p.service_id === service.id).length;
-              return (
-                <Tabs.Tab 
-                  key={service.id} 
-                  value={service.id}
-                  rightSection={
-                    <Group gap={4}>
-                      <Badge size="xs" variant="light" circle>
-                        {planCount}
-                      </Badge>
-                      <Menu position="bottom-end" withinPortal>
-                        <Menu.Target>
-                          <ActionIcon 
-                            size="xs" 
-                            variant="subtle" 
-                            color="gray"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <IconDots size={14} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item 
-                            leftSection={<IconEdit size={14} />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditService(service);
-                            }}
-                          >
-                            Edit Service
-                          </Menu.Item>
-                          <Menu.Item 
-                            leftSection={<IconTrash size={14} />}
-                            color="red"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteService(service.id);
-                            }}
-                          >
-                            Delete Service
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    </Group>
-                  }
-                >
-                  {service.name}
-                </Tabs.Tab>
-              );
-            })}
-          </Tabs.List>
+        <Stack gap="lg">
+          {/* Services section */}
+          <Box>
+            <Group justify="space-between" align="center" mb="md" wrap="wrap">
+              <Group gap="sm">
+                <ThemeIcon size={36} radius="md" variant="light" color="blue">
+                  <IconTools size={20} />
+                </ThemeIcon>
+                <Title order={3} c="#1C1C1C" fw={600}>
+                  Services ({services.length})
+                </Title>
+              </Group>
+              <Button
+                leftSection={<IconPlus size={16} />}
+                onClick={() => setServiceFormOpened(true)}
+                variant="light"
+                color="blue"
+              >
+                Add Service
+              </Button>
+            </Group>
 
-          {services.map((service) => (
-            <Tabs.Panel key={service.id} value={service.id} pt="xl">
-              <Stack gap="md">
-                {/* Service Info Card */}
-                {service.description && (
-                  <Card withBorder padding="md" radius="md">
-                    <Group justify="space-between" mb="xs">
-                      <Text size="sm" fw={500}>About this service</Text>
-                      <Badge color={service.category === 'car' ? 'blue' : 'green'}>
-                        {service.category}
-                      </Badge>
-                    </Group>
-                    <Text size="sm" c="dimmed">{service.description}</Text>
-                  </Card>
-                )}
-
-                {/* Plans Section */}
-                <Group justify="space-between">
-                  <Text size="lg" fw={500}>
-                    Plans ({activePlans.length})
-                  </Text>
-                  <Button 
-                    leftSection={<IconPlus size={16} />} 
-                    onClick={handleAddPlan}
+            {services.length === 0 ? (
+              <Alert icon={<IconAlertCircle size={16} />} color="blue">
+                <Stack gap="sm">
+                  <Text>No services found. Create your first service to get started.</Text>
+                  <Button
                     size="sm"
+                    color="blue"
+                    onClick={() => setServiceFormOpened(true)}
+                    style={{ width: 'fit-content' }}
+                  >
+                    Create First Service
+                  </Button>
+                </Stack>
+              </Alert>
+            ) : (
+              <SimpleGrid cols={GRID_COLS}>
+                {services.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    planCount={plans.filter((p) => p.service_id === service.id).length}
+                    selected={service.id === activeServiceId}
+                    onSelect={setActiveServiceId}
+                    onEdit={handleEditService}
+                    onDelete={handleDeleteService}
+                  />
+                ))}
+              </SimpleGrid>
+            )}
+          </Box>
+
+          {services.length > 0 && (
+            <>
+              <Divider color="#E8E8E8" />
+
+              {/* Plans section */}
+              <Box>
+                <Group justify="space-between" align="center" mb="md" wrap="wrap">
+                  <Group gap="sm">
+                    <ThemeIcon size={36} radius="md" variant="light" color="orange">
+                      <IconClipboardList size={20} />
+                    </ThemeIcon>
+                    <Stack gap={2}>
+                      <Title order={3} c="#1C1C1C" fw={600}>
+                        Plans ({activePlans.length})
+                      </Title>
+                      {activeService && services.length > 1 && (
+                        <Text size="xs" c="#696969">
+                          Showing plans for {activeService.name}
+                        </Text>
+                      )}
+                    </Stack>
+                  </Group>
+                  <Button
+                    leftSection={<IconPlus size={16} />}
+                    onClick={handleAddPlan}
+                    color="orange"
                   >
                     Add Plan
                   </Button>
@@ -354,8 +392,9 @@ export default function ServicesAndPlansPage() {
                   <Alert icon={<IconAlertCircle size={16} />} color="blue">
                     <Stack gap="sm">
                       <Text>No plans found for this service. Create your first plan.</Text>
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
+                        color="orange"
                         onClick={handleAddPlan}
                         style={{ width: 'fit-content' }}
                       >
@@ -364,7 +403,7 @@ export default function ServicesAndPlansPage() {
                     </Stack>
                   </Alert>
                 ) : (
-                  <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
+                  <SimpleGrid cols={GRID_COLS}>
                     {activePlans.map((plan) => (
                       <PlanCard
                         key={plan.id}
@@ -376,10 +415,10 @@ export default function ServicesAndPlansPage() {
                     ))}
                   </SimpleGrid>
                 )}
-              </Stack>
-            </Tabs.Panel>
-          ))}
-        </Tabs>
+              </Box>
+            </>
+          )}
+        </Stack>
       )}
 
       <ServiceForm
@@ -393,7 +432,7 @@ export default function ServicesAndPlansPage() {
         opened={planFormOpened}
         onClose={handleClosePlanForm}
         onSubmit={editingPlan ? handleUpdatePlan : handleCreatePlan}
-        services={services.map(s => ({ id: s.id, name: s.name }))}
+        services={services.map((s) => ({ id: s.id, name: s.name }))}
         initialData={editingPlan}
         defaultServiceId={activeServiceId || undefined}
         detailsLoading={planDetailsLoading}
