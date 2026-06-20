@@ -110,10 +110,14 @@ export const companyService = {
     if (error) throw error;
     if (!data?.mechanic_companies) return null;
 
-    const nested = data.mechanic_companies as DbMechanicCompany & {
+    type NestedCompany = DbMechanicCompany & {
       company_certifications?: { certification_name: string }[];
       company_specializations?: { specialization_name: string }[];
     };
+
+    const raw = data.mechanic_companies;
+    const nested = (Array.isArray(raw) ? raw[0] : raw) as NestedCompany | undefined;
+    if (!nested) return null;
 
     const {
       company_certifications,
