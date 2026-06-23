@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../core/utils/auth_error_util.dart';
 import 'auth_service.dart';
 import 'attendance_service.dart';
 import 'models/staff_user.dart';
@@ -54,7 +55,7 @@ class AuthProvider extends ChangeNotifier {
       await _markAttendanceIfNeeded();
       return true;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = formatAuthError(e);
       return false;
     } finally {
       _loading = false;
@@ -71,7 +72,7 @@ class AuthProvider extends ChangeNotifier {
       _staff = await _authService.resolveStaff();
       return true;
     } catch (e) {
-      _error = e.toString().replaceFirst('Exception: ', '');
+      _error = formatAuthError(e);
       return false;
     } finally {
       _loading = false;
