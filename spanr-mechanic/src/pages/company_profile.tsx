@@ -140,7 +140,6 @@ export default function CompanyProfilePage() {
           initialSpecializations={company.specializations}
           onSubmit={handleUpdate}
           submitLabel="Update Profile"
-          userEmail={user?.email}
         />
       </Box>
     </Container>

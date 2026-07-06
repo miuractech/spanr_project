@@ -1,4 +1,5 @@
-export const te: Partial<typeof import('./en').en> = {
+import type { en } from './en';
+export const te: Partial<Record<keyof typeof en, string>> = {
   welcomeToSpanr: 'SPANR కి స్వాగతం',
   shopDashboard: 'షాప్ డాష్‌బోర్డ్',
   mobileNumber: 'మొబైల్ నంబర్',

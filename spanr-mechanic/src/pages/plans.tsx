@@ -22,20 +22,18 @@ const BG = '#F2F2F2';
 
 type VehicleType = 'car' | 'bike';
 type PlanType = 'package' | 'custom';
-type PackageTier = 1 | 2 | 3 | 4;
+type PackageTier = 1 | 2 | 3;
 
 const TIER_LABELS: Record<PackageTier, string> = {
   1: 'Plan 1',
   2: 'Plan 2',
   3: 'Plan 3',
-  4: 'Plan 4',
 };
 
 const TIER_COLORS: Record<PackageTier, string> = {
   1: 'blue',
   2: 'teal',
   3: 'violet',
-  4: 'orange',
 };
 
 interface PlanForm {

@@ -6,6 +6,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   assigned: 'Assigned',
   in_progress: 'In Progress',
   waiting_for_parts: 'Waiting for Parts',
+  on_hold: 'On Hold',
   ready_for_delivery: 'Ready for Delivery',
   completed: 'Completed',
   dispute: 'Dispute',
