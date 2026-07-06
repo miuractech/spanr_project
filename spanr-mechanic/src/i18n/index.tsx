@@ -6,7 +6,7 @@ export type Locale = 'en' | 'te' | 'ta' | 'kn';
 
 type Strings = typeof en;
 
-const LOCALES: Record<Locale, Partial<Strings>> = { en, te, ta: {}, kn: {} };
+const LOCALES: Record<Locale, Partial<Record<keyof Strings, string>>> = { en, te, ta: {}, kn: {} };
 
 function t(locale: Locale, key: keyof Strings): string {
   return (LOCALES[locale][key] ?? LOCALES.en[key] ?? key) as string;

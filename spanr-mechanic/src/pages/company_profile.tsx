@@ -9,12 +9,10 @@ import { IconAlertCircle } from '@tabler/icons-react';
 import { useCompany } from '../company/company.hook';
 import { companyService } from '../company/company.service';
 import { CompanyProfileStepper } from '../components/company_profile_stepper';
-import { useAuth } from '../auth/auth.hook';
 import type { CompanyFormData } from '../company/company.service';
 
 export default function CompanyProfilePage() {
   const { company, error, refreshCompany } = useCompany();
-  const { user } = useAuth();
   const [updateError, setUpdateError] = useState('');
 
   const handleUpdate = async (
