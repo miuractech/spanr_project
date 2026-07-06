@@ -1,8 +1,12 @@
 import { useState, useRef } from 'react';
 import { Stepper, Button, Group, Box, Alert, Text } from '@mantine/core';
-import { useForm, yupResolver } from '@mantine/form';
-import * as yup from 'yup';
-import { IconAlertCircle, IconArrowLeft, IconArrowRight, IconCheck } from '@tabler/icons-react';
+import { useForm } from '@mantine/form';
+import {
+  IconAlertCircle,
+  IconArrowLeft,
+  IconArrowRight,
+  IconCheck,
+} from '@tabler/icons-react';
 import { CompanyGeneralForm } from './company_general_form';
 import { CompanyLocationForm } from './company_location_form';
 import { CompanyImagesForm } from './company_images_form';
@@ -23,38 +27,19 @@ interface CompanyProfileStepperProps {
     documents?: DocumentFiles
   ) => Promise<void>;
   submitLabel?: string;
-  userEmail?: string;
+  /** Phone number from auth — pre-fills primary phone, shown as read-only */
+  userPhone?: string;
   initialCertifications?: string[];
   initialSpecializations?: string[];
   /** When false (default for onboarding), steps can only be navigated via Back/Next buttons. */
   allowFreeNavigation?: boolean;
 }
 
-const generalSchema = yup.object({
-  companyName: yup.string().required('Company name is required').min(2, 'Company name must be at least 2 characters'),
-  email: yup.string().required('Email is required').email('Invalid email format'),
-  phone: yup.string().required('Primary phone is required').min(10, 'Phone must be at least 10 digits'),
-  phoneNumber: yup.string().required('Alternative phone is required').min(10, 'Phone must be at least 10 digits'),
-  certifications: yup.array().of(yup.string()).default([]),
-  specializations: yup.array().of(yup.string()).default([]),
-});
-
-const locationSchema = yup.object({
-  addressLine1: yup.string().required('Address Line 1 is required'),
-  addressLine2: yup.string(),
-  landmark: yup.string(),
-  city: yup.string().required('City is required'),
-  state: yup.string().required('State is required'),
-  pincode: yup.string().required('Pincode is required').matches(/^[0-9]{6}$/, 'Pincode must be 6 digits'),
-  latitude: yup.number().nullable().min(-90, 'Latitude must be between -90 and 90').max(90, 'Latitude must be between -90 and 90'),
-  longitude: yup.number().nullable().min(-180, 'Longitude must be between -180 and 180').max(180, 'Longitude must be between -180 and 180'),
-});
-
 export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
   initialData,
   onSubmit,
   submitLabel = 'Save',
-  userEmail,
+  userPhone,
   initialCertifications = [],
   initialSpecializations = [],
   allowFreeNavigation = true,
@@ -67,13 +52,16 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
   const generalForm = useForm({
     initialValues: {
       companyName: initialData?.companyName || '',
-      email: userEmail || initialData?.email || '',
-      phone: initialData?.phone || '',
       phoneNumber: initialData?.phoneNumber || '',
       certifications: initialCertifications,
       specializations: initialSpecializations,
     },
-    validate: yupResolver(generalSchema),
+    validate: {
+      companyName: (v) =>
+        v.trim().length >= 2
+          ? null
+          : 'Shop name must be at least 2 characters',
+    },
   });
 
   const locationForm = useForm({
@@ -87,45 +75,60 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
       latitude: initialData?.latitude ?? null,
       longitude: initialData?.longitude ?? null,
     },
-    validate: yupResolver(locationSchema),
+    validate: {
+      addressLine1: (v) => (v.trim() ? null : 'Address is required'),
+      city: (v) => (v.trim() ? null : 'City is required'),
+      state: (v) => (v.trim() ? null : 'State is required'),
+      pincode: (v) =>
+        /^[0-9]{6}$/.test(v) ? null : 'Enter a valid 6-digit pincode',
+    },
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>(initialData?.images || []);
+  const [existingImages, setExistingImages] = useState<string[]>(
+    initialData?.images || []
+  );
   const [documentFiles, setDocumentFiles] = useState<DocumentFiles>({});
 
-  const validateCurrentStep = async (): Promise<boolean> => {
+  const validateCurrentStep = (): boolean => {
     setStepError('');
     if (active === 0) {
       const validation = generalForm.validate();
       if (validation.hasErrors) {
         const errors = Object.values(validation.errors);
-        setStepError(errors.length > 0 ? String(errors[0]) : 'Please fix the errors in the form');
+        setStepError(
+          errors.length > 0
+            ? String(errors[0])
+            : 'Please fix the errors in the form'
+        );
         return false;
       }
     } else if (active === 1) {
       const validation = locationForm.validate();
       if (validation.hasErrors) {
         const errors = Object.values(validation.errors);
-        setStepError(errors.length > 0 ? String(errors[0]) : 'Please fix the errors in the form');
+        setStepError(
+          errors.length > 0
+            ? String(errors[0])
+            : 'Please fix the errors in the form'
+        );
         return false;
       }
     }
     return true;
   };
 
-  const nextStep = async () => {
-    const isValid = await validateCurrentStep();
-    if (isValid) {
+  const nextStep = () => {
+    if (validateCurrentStep()) {
       setStepError('');
-      setActive((current) => (current < TOTAL_STEPS - 1 ? current + 1 : current));
+      setActive((c) => Math.min(c + 1, TOTAL_STEPS - 1));
     }
   };
 
   const prevStep = () => {
     setStepError('');
-    setActive((current) => (current > 0 ? current - 1 : current));
+    setActive((c) => Math.max(c - 1, 0));
   };
 
   const handleSubmit = async () => {
@@ -145,15 +148,17 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
 
     if (submitInFlight.current || loading) return;
     submitInFlight.current = true;
-
     setLoading(true);
+
     try {
       setStepError('');
       const formData: CompanyFormData = {
         companyName: generalForm.values.companyName,
-        email: userEmail || generalForm.values.email,
-        phone: generalForm.values.phone,
-        phoneNumber: generalForm.values.phoneNumber,
+        email: userPhone
+          ? `${userPhone.replace(/\D/g, '')}@spanr.owner`
+          : '',
+        phone: userPhone || '',
+        phoneNumber: generalForm.values.phoneNumber || '',
         addressLine1: locationForm.values.addressLine1,
         addressLine2: locationForm.values.addressLine2 || '',
         landmark: locationForm.values.landmark || '',
@@ -174,15 +179,13 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
         documentFiles
       );
     } catch (error) {
-      setStepError(error instanceof Error ? error.message : 'Failed to submit form');
+      setStepError(
+        error instanceof Error ? error.message : 'Failed to submit form'
+      );
     } finally {
       submitInFlight.current = false;
       setLoading(false);
     }
-  };
-
-  const removeExistingImage = (imageUrl: string) => {
-    setExistingImages((prev) => prev.filter((url) => url !== imageUrl));
   };
 
   return (
@@ -212,11 +215,11 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
           stepDescription: { fontSize: 12, marginTop: 4 },
         }}
       >
-        <Stepper.Step label="General Info" description="Company details">
+        <Stepper.Step label="Shop Info" description="Shop details">
           <Box pt={24}>
             <CompanyGeneralForm
               form={generalForm}
-              userEmail={userEmail}
+              primaryPhone={userPhone}
               existingLogo={initialData?.logo}
               onLogoChange={setLogoFile}
             />
@@ -234,7 +237,9 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
             <CompanyImagesForm
               existingImages={existingImages}
               onImagesChange={setImageFiles}
-              onRemoveExisting={removeExistingImage}
+              onRemoveExisting={(url) =>
+                setExistingImages((p) => p.filter((u) => u !== url))
+              }
             />
           </Box>
         </Stepper.Step>

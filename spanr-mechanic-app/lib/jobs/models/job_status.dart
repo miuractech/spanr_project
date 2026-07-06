@@ -2,6 +2,7 @@ enum JobStatus {
   assigned,
   inProgress,
   waitingForParts,
+  onHold,
   readyForDelivery,
   completed,
   cancelled;
@@ -14,6 +15,8 @@ enum JobStatus {
         return JobStatus.inProgress;
       case 'waiting_for_parts':
         return JobStatus.waitingForParts;
+      case 'on_hold':
+        return JobStatus.onHold;
       case 'ready_for_delivery':
         return JobStatus.readyForDelivery;
       case 'completed':
@@ -33,6 +36,8 @@ enum JobStatus {
         return 'in_progress';
       case JobStatus.waitingForParts:
         return 'waiting_for_parts';
+      case JobStatus.onHold:
+        return 'on_hold';
       case JobStatus.readyForDelivery:
         return 'ready_for_delivery';
       case JobStatus.completed:
@@ -50,6 +55,8 @@ enum JobStatus {
         return 'In Progress';
       case JobStatus.waitingForParts:
         return 'Waiting for Parts';
+      case JobStatus.onHold:
+        return 'On Hold — Awaiting Approval';
       case JobStatus.readyForDelivery:
         return 'Ready for Delivery';
       case JobStatus.completed:

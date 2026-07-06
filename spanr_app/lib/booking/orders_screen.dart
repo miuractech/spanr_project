@@ -45,6 +45,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
         return const Color(0xFF9C27B0);
       case OrderStatus.completed:
         return const Color(0xFF009688);
+      case OrderStatus.onHold:
+        return const Color(0xFFFFC107);
       case OrderStatus.dispute:
         return const Color(0xFFF44336);
       case OrderStatus.cancelled:
@@ -60,6 +62,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
         return Icons.check_circle_outline;
       case OrderStatus.inProgress:
         return Icons.build_outlined;
+      case OrderStatus.onHold:
+        return Icons.pause_circle_outline;
       case OrderStatus.readyForDelivery:
         return Icons.local_shipping_outlined;
       case OrderStatus.completed:

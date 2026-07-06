@@ -174,8 +174,8 @@ class OrderService {
   }) async {
     for (int i = 0; i < maxAttempts; i++) {
       final payment = await getPaymentById(paymentId);
-      
-      if (payment.status == PaymentStatus.paid || 
+
+      if (payment.status == PaymentStatus.paid ||
           payment.status == PaymentStatus.failed) {
         return payment;
       }
@@ -433,5 +433,39 @@ class OrderService {
       'after_images': afterImages,
     };
   }
-}
 
+  // Get extra work requests for an order
+  Future<List<ExtraWorkRequest>> getExtraWorkRequests(String orderId) async {
+    final response = await _supabase
+        .from('extra_work_requests')
+        .select()
+        .eq('order_id', orderId)
+        .order('created_at', ascending: true);
+    return (response as List).map((j) => ExtraWorkRequest.fromJson(j)).toList();
+  }
+
+  // Approve an extra work request
+  Future<void> approveExtraWork(String requestId) async {
+    await _supabase
+        .from('extra_work_requests')
+        .update({
+          'status': 'approved',
+          'customer_response_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', requestId)
+        .eq('status', 'pending');
+  }
+
+  // Reject an extra work request
+  Future<void> rejectExtraWork(String requestId, {String? reason}) async {
+    await _supabase
+        .from('extra_work_requests')
+        .update({
+          'status': 'rejected',
+          'rejection_reason': reason,
+          'customer_response_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', requestId)
+        .eq('status', 'pending');
+  }
+}

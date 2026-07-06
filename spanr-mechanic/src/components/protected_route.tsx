@@ -1,29 +1,17 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/auth.hook';
 import { Loader } from '@mantine/core';
-import supabase from '../supabaseconfig';
-import { isEmailVerified } from '../auth/auth.util';
-import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireCompany?: boolean;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requireCompany = false 
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  requireCompany = false
 }) => {
   const { user, loading, hasCompany } = useAuth();
-
-  useEffect(() => {
-    if (loading || user) return;
-    supabase.auth.getUser().then(({ data: { user: authUser } }) => {
-      if (authUser && !isEmailVerified(authUser)) {
-        supabase.auth.signOut();
-      }
-    });
-  }, [loading, user]);
 
   if (loading) {
     return (

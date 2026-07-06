@@ -39,15 +39,16 @@ export interface OrderDetails extends DbOrder {
   assignment?: OrderAssignmentInfo;
 }
 
-export type OrderStatus = 
-  | 'created' 
+export type OrderStatus =
+  | 'created'
   | 'accepted'
   | 'assigned'
   | 'in_progress'
   | 'waiting_for_parts'
-  | 'ready_for_delivery' 
-  | 'completed' 
-  | 'dispute' 
+  | 'on_hold'
+  | 'ready_for_delivery'
+  | 'completed'
+  | 'dispute'
   | 'cancelled';
 
 export interface OrderAssignmentInfo {
@@ -116,4 +117,3 @@ export interface PartReplacement {
   replacement_date?: string;
   created_at: string;
 }
-

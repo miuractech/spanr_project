@@ -2,7 +2,21 @@ import supabase from '../supabaseconfig';
 import type { DbMechanicCompany } from '../types';
 import type { DocumentFiles } from '../components/company_documents_form';
 
-export type DocumentType = 'gst_certificate' | 'pan_card' | 'utility_bill';
+export type DocumentType =
+  | 'aadhaar_front'
+  | 'aadhaar_back'
+  | 'personal_pan'
+  | 'bank_passbook'
+  | 'home_address_proof'
+  | 'home_utility_bill'
+  | 'shop_utility_bill'
+  | 'gst_certificate'
+  | 'firm_pan'
+  | 'firm_registration'
+  // legacy values kept for backward compat
+  | 'pan_card'
+  | 'utility_bill';
+
 export type VerificationStatus = 'pending' | 'verified' | 'rejected';
 
 export interface DbCompanyDocument {
@@ -50,7 +64,30 @@ function documentStoragePath(fileUrlOrPath: string): string {
 }
 
 export const companyService = {
-  async createCompany(data: CompanyFormData, userEmail: string, userName: string) {
+  async createCompany(
+    data: CompanyFormData,
+    userEmail: string,
+    userName: string,
+    authUserId?: string
+  ) {
+    // Idempotency: if this auth user already completed onboarding, return existing company.
+    if (authUserId) {
+      const { data: existingStaff } = await supabase
+        .from('staff')
+        .select('company_id')
+        .eq('auth_user_id', authUserId)
+        .maybeSingle();
+      if (existingStaff?.company_id) {
+        const { data: existingCompany, error: fetchError } = await supabase
+          .from('mechanic_companies')
+          .select('*')
+          .eq('id', existingStaff.company_id)
+          .single();
+        if (fetchError) throw fetchError;
+        return existingCompany;
+      }
+    }
+
     // Create company
     const { data: company, error: companyError } = await supabase
       .from('mechanic_companies')
@@ -76,14 +113,19 @@ export const companyService = {
     if (companyError) throw companyError;
 
     // Create staff record for owner
+    const staffPayload: Record<string, unknown> = {
+      company_id: company.id,
+      email: userEmail,
+      name: userName,
+      enabled: true,
+    };
+    if (authUserId) {
+      staffPayload.auth_user_id = authUserId;
+    }
+
     const { error: staffError } = await supabase
       .from('staff')
-      .insert({
-        company_id: company.id,
-        email: userEmail,
-        name: userName,
-        enabled: true,
-      });
+      .upsert(staffPayload, { onConflict: 'company_id,email', ignoreDuplicates: true });
 
     if (staffError) throw staffError;
 
@@ -298,9 +340,29 @@ export const companyService = {
       await this.saveDocument(companyId, type, path, file.name);
     };
 
-    if (documents.gst) uploads.push(handle(documents.gst, 'gst_certificate'));
-    if (documents.pan) uploads.push(handle(documents.pan, 'pan_card'));
-    if (documents.utilityBill) uploads.push(handle(documents.utilityBill, 'utility_bill'));
+    // Mandatory KYC
+    if (documents.aadhaarFront)
+      uploads.push(handle(documents.aadhaarFront, 'aadhaar_front'));
+    if (documents.aadhaarBack)
+      uploads.push(handle(documents.aadhaarBack, 'aadhaar_back'));
+    if (documents.personalPan)
+      uploads.push(handle(documents.personalPan, 'personal_pan'));
+    if (documents.bankPassbook)
+      uploads.push(handle(documents.bankPassbook, 'bank_passbook'));
+    if (documents.homeAddressProof)
+      uploads.push(handle(documents.homeAddressProof, 'home_address_proof'));
+    if (documents.homeUtilityBill)
+      uploads.push(handle(documents.homeUtilityBill, 'home_utility_bill'));
+    if (documents.shopUtilityBill)
+      uploads.push(handle(documents.shopUtilityBill, 'shop_utility_bill'));
+
+    // Optional
+    if (documents.gstCertificate)
+      uploads.push(handle(documents.gstCertificate, 'gst_certificate'));
+    if (documents.firmPan)
+      uploads.push(handle(documents.firmPan, 'firm_pan'));
+    if (documents.firmRegistration)
+      uploads.push(handle(documents.firmRegistration, 'firm_registration'));
 
     await Promise.all(uploads);
   },
@@ -326,7 +388,10 @@ export const companyService = {
     );
   },
 
-  async deleteDocument(companyId: string, docType: DocumentType): Promise<void> {
+  async deleteDocument(
+    companyId: string,
+    docType: DocumentType
+  ): Promise<void> {
     const { error } = await supabase
       .from('company_documents')
       .delete()
@@ -336,4 +401,3 @@ export const companyService = {
     if (error) throw error;
   },
 };
-

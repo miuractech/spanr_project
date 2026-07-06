@@ -79,9 +79,7 @@ class AddressesProvider extends ChangeNotifier {
           }
         }
         _selectedAddress = newAddress;
-      } else if (_selectedAddress == null) {
-        _selectedAddress = newAddress;
-      }
+      } else _selectedAddress ??= newAddress;
     } catch (e) {
       _error = e.toString();
       rethrow;

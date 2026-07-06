@@ -1,20 +1,16 @@
 import { createContext, useEffect, useRef, useState } from 'react';
 import { authService, authUsersEqual, type AuthUser } from './auth.service';
 
-interface SignUpResult {
-  requiresVerification: boolean;
-}
-
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  signUp: (email: string, password: string, name: string) => Promise<SignUpResult>;
-  login: (email: string, password: string) => Promise<void>;
+  pendingPhone: string; // phone awaiting OTP verification
+  sendOtp: (phone: string) => Promise<void>;
+  verifyOtp: (phone: string, token: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   resetPasswordForEmail: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
-  resendVerificationEmail: (email: string) => Promise<void>;
   hasCompany: boolean;
 }
 
@@ -23,56 +19,44 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const signUpInProgress = useRef(false);
+  const [pendingPhone, setPendingPhone] = useState('');
+  const otpInProgress = useRef(false);
 
   useEffect(() => {
     let mounted = true;
     const authSubscription = authService.onAuthStateChange((newUser) => {
       if (!mounted) return;
-      if (signUpInProgress.current) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
+      if (otpInProgress.current) return; // don't update during OTP flow
       setUser((prev) => (authUsersEqual(prev, newUser) ? prev : newUser));
       setLoading(false);
     });
-
     return () => {
       mounted = false;
       authSubscription.data.subscription.unsubscribe();
     };
   }, []);
 
-  const signUp = async (email: string, password: string, name: string): Promise<SignUpResult> => {
-    signUpInProgress.current = true;
-    setLoading(true);
-    try {
-      const result = await authService.signUp({ email, password, name });
-      setUser(null);
-      setLoading(false);
-      return result;
-    } catch (err) {
-      setLoading(false);
-      throw err;
-    } finally {
-      signUpInProgress.current = false;
-    }
+  const sendOtp = async (phone: string) => {
+    await authService.sendOtp(phone);
+    setPendingPhone(phone);
   };
 
-  const login = async (email: string, password: string) => {
+  const verifyOtp = async (phone: string, token: string) => {
+    otpInProgress.current = true;
     setLoading(true);
     try {
-      await authService.login({ email, password });
-    } catch (err) {
+      const currentUser = await authService.verifyOtp(phone, token);
+      setUser((prev) => (authUsersEqual(prev, currentUser) ? prev : currentUser));
+    } finally {
+      otpInProgress.current = false;
       setLoading(false);
-      throw err;
     }
   };
 
   const logout = async () => {
     await authService.logout();
     setUser(null);
+    setPendingPhone('');
   };
 
   const refreshUser = async () => {
@@ -86,7 +70,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPasswordForEmail = (email: string) => authService.resetPasswordForEmail(email);
   const updatePassword = (password: string) => authService.updatePassword(password);
-  const resendVerificationEmail = (email: string) => authService.resendVerificationEmail(email);
 
   const hasCompany = !!user?.companyId;
 
@@ -95,13 +78,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         loading,
-        signUp,
-        login,
+        pendingPhone,
+        sendOtp,
+        verifyOtp,
         logout,
         refreshUser,
         resetPasswordForEmail,
         updatePassword,
-        resendVerificationEmail,
         hasCompany,
       }}
     >

@@ -45,6 +45,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         return const Color(0xFF4CAF50);
       case OrderStatus.inProgress:
         return const Color(0xFFFF9800);
+      case OrderStatus.onHold:
+        return const Color(0xFFFF9800);
       case OrderStatus.readyForDelivery:
         return const Color(0xFF9C27B0);
       case OrderStatus.completed:
@@ -64,6 +66,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         return Icons.check_circle_outline;
       case OrderStatus.inProgress:
         return Icons.build_outlined;
+      case OrderStatus.onHold:
+        return Icons.pause_circle_outline;
       case OrderStatus.readyForDelivery:
         return Icons.local_shipping_outlined;
       case OrderStatus.completed:
@@ -81,6 +85,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     final order = orderProvider.currentOrder;
     final payment = orderProvider.currentPayment;
     final history = orderProvider.currentOrderHistory;
+    final extraWorkRequests = orderProvider.extraWorkRequests;
 
     return Scaffold(
       backgroundColor: _kBg,
@@ -239,6 +244,174 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                     );
                                   }).toList(),
                                 ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+
+                            // Extra Work Requests
+                            if (extraWorkRequests.isNotEmpty ||
+                                order.status == OrderStatus.onHold) ...[
+                              _buildDetailCard(
+                                icon: Icons.warning_amber_outlined,
+                                title: 'Extra Work Requests',
+                                child: extraWorkRequests.isEmpty
+                                    ? const Text(
+                                        'Your order is on hold pending mechanic review.',
+                                        style: TextStyle(color: _kBody, fontSize: 13),
+                                      )
+                                    : Column(
+                                        children: extraWorkRequests
+                                            .asMap()
+                                            .entries
+                                            .map((entry) {
+                                          final i = entry.key;
+                                          final request = entry.value;
+                                          final isLast =
+                                              i == extraWorkRequests.length - 1;
+                                          return Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              // Description
+                                              Text(
+                                                request.description,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 14,
+                                                  color: _kHeading,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 6),
+                                              // Estimated cost
+                                              Text(
+                                                'Estimated cost: ₹${request.estimatedCost.toStringAsFixed(2)}',
+                                                style: const TextStyle(
+                                                  color: _kOrange,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                              // Photo thumbnail
+                                              if (request.photoUrl != null) ...[
+                                                const SizedBox(height: 10),
+                                                ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                  child: CachedNetworkImage(
+                                                    imageUrl: request.photoUrl!,
+                                                    width: 100,
+                                                    height: 100,
+                                                    fit: BoxFit.cover,
+                                                    placeholder: (_, __) =>
+                                                        Container(
+                                                      color: _kBg,
+                                                      width: 100,
+                                                      height: 100,
+                                                    ),
+                                                    errorWidget: (_, __, ___) =>
+                                                        Container(
+                                                      color: _kBg,
+                                                      width: 100,
+                                                      height: 100,
+                                                      child: const Icon(
+                                                          Icons.image_not_supported,
+                                                          color: _kBody),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                              const SizedBox(height: 10),
+                                              // Status badge
+                                              _buildStatusBadge(request.status),
+                                              // Rejection reason
+                                              if (request.isRejected &&
+                                                  request.rejectionReason != null) ...[
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  'Reason: ${request.rejectionReason}',
+                                                  style: const TextStyle(
+                                                    color: Colors.red,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
+                                              // Action buttons for pending requests
+                                              if (request.isPending) ...[
+                                                const SizedBox(height: 12),
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: ElevatedButton(
+                                                        onPressed: () =>
+                                                            _confirmApproveExtraWork(
+                                                          context,
+                                                          orderProvider,
+                                                          request,
+                                                        ),
+                                                        style: ElevatedButton.styleFrom(
+                                                          backgroundColor: _kOrange,
+                                                          foregroundColor: Colors.white,
+                                                          elevation: 0,
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(24),
+                                                          ),
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                  vertical: 12),
+                                                        ),
+                                                        child: const Text(
+                                                          'Approve',
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight.w700),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 10),
+                                                    Expanded(
+                                                      child: OutlinedButton(
+                                                        onPressed: () =>
+                                                            _promptRejectExtraWork(
+                                                          context,
+                                                          orderProvider,
+                                                          request,
+                                                        ),
+                                                        style: OutlinedButton.styleFrom(
+                                                          foregroundColor: Colors.red,
+                                                          side: const BorderSide(
+                                                              color: Colors.red,
+                                                              width: 1.5),
+                                                          shape: RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.circular(24),
+                                                          ),
+                                                          padding:
+                                                              const EdgeInsets.symmetric(
+                                                                  vertical: 12),
+                                                        ),
+                                                        child: const Text(
+                                                          'Reject',
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight.w700),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                              if (!isLast) ...[
+                                                const SizedBox(height: 16),
+                                                Divider(
+                                                    height: 1,
+                                                    color: Colors.grey.shade100),
+                                                const SizedBox(height: 16),
+                                              ],
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ),
                               ),
                               const SizedBox(height: 12),
                             ],
@@ -437,6 +610,185 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       ),
                     ),
     );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color color;
+    String label;
+    IconData icon;
+
+    switch (status) {
+      case 'approved':
+        color = Colors.green;
+        label = 'Approved';
+        icon = Icons.check_circle_outline;
+        break;
+      case 'rejected':
+        color = Colors.red;
+        label = 'Rejected';
+        icon = Icons.cancel_outlined;
+        break;
+      default:
+        color = _kOrange;
+        label = 'Pending Approval';
+        icon = Icons.hourglass_empty_outlined;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmApproveExtraWork(
+    BuildContext context,
+    OrderProvider orderProvider,
+    ExtraWorkRequest request,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Approve Extra Work', style: TextStyle(color: _kHeading)),
+        content: Text(
+          'Approve additional work for ₹${request.estimatedCost.toStringAsFixed(2)}?\n\n"${request.description}"',
+          style: const TextStyle(color: _kBody),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(foregroundColor: _kBody),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _kOrange,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            ),
+            child: const Text('Approve'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        await orderProvider.approveExtraWork(request.id, widget.orderId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Extra work approved.')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _promptRejectExtraWork(
+    BuildContext context,
+    OrderProvider orderProvider,
+    ExtraWorkRequest request,
+  ) async {
+    final reasonController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Reject Extra Work', style: TextStyle(color: _kHeading)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '"${request.description}"',
+              style: const TextStyle(color: _kBody, fontSize: 13),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: reasonController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                hintText: 'Reason for rejection (optional)',
+                hintStyle: const TextStyle(color: _kBody, fontSize: 13),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: _kOrange),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(foregroundColor: _kBody),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            ),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final reason =
+          reasonController.text.trim().isEmpty ? null : reasonController.text.trim();
+      try {
+        await orderProvider.rejectExtraWork(request.id, widget.orderId, reason: reason);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Extra work rejected.')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
+      }
+    }
+
+    reasonController.dispose();
   }
 
   Future<void> _confirmCancel(

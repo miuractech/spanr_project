@@ -1,4 +1,5 @@
 import { AppShell } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../components/sidebar';
 import { Header } from '../components/header';
@@ -7,11 +8,12 @@ import { DashboardRouteSkeleton } from '../components/dashboard_page_loading';
 
 const DashboardShell = () => {
   const { loading, company } = useCompany();
+  const [opened, { toggle, close }] = useDisclosure(false);
 
   return (
     <AppShell
       header={{ height: 60 }}
-      navbar={{ width: 250, breakpoint: 'sm' }}
+      navbar={{ width: 250, breakpoint: 'sm', collapsed: { mobile: !opened } }}
       padding="md"
       styles={{
         main: {
@@ -20,10 +22,10 @@ const DashboardShell = () => {
       }}
     >
       <AppShell.Header>
-        <Header />
+        <Header burgerOpened={opened} onBurgerToggle={toggle} />
       </AppShell.Header>
 
-      <AppShell.Navbar>
+      <AppShell.Navbar onClick={close}>
         <Sidebar />
       </AppShell.Navbar>
 

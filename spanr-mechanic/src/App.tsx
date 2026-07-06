@@ -15,13 +15,14 @@ import AuthCallbackPage from './pages/auth_callback';
 import OnboardingPage from './pages/onboarding';
 import DashboardPage from './pages/dashboard';
 import CompanyProfilePage from './pages/company_profile';
-import ServicesAndPlansPage from './pages/services_and_plans';
+import PlansPage from './pages/plans';
 import PlanDetailPage from './pages/plan_detail';
 import OrdersPage from './pages/orders';
 import OrderDetailPage from './pages/order_detail';
 import StaffPage from './pages/staff';
 import ProfilePage from './pages/profile';
 import VehicleHistoryPage from './pages/vehicle_history';
+import ServicesPage from './pages/job_catalog';
 
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
@@ -40,7 +41,7 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
-            
+
             <Route
               path="/onboarding"
               element={
@@ -61,7 +62,8 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="company-profile" element={<CompanyProfilePage />} />
-              <Route path="services" element={<ServicesAndPlansPage />} />
+              <Route path="services" element={<ServicesPage />} />
+              <Route path="plans" element={<PlansPage />} />
               <Route path="plans/:planId" element={<PlanDetailPage />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="orders/:orderId" element={<OrderDetailPage />} />

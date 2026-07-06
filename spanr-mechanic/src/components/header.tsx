@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { Group, Text, Menu, Avatar, UnstyledButton, Modal, Button } from '@mantine/core';
+import { Group, Text, Menu, Avatar, UnstyledButton, Modal, Button, Burger } from '@mantine/core';
 import { IconChevronDown, IconLogout, IconUser } from '@tabler/icons-react';
 import { useAuth } from '../auth/auth.hook';
 import { useCompany } from '../company/company.hook';
 import { useNavigate } from 'react-router-dom';
 
-export const Header = () => {
+interface HeaderProps {
+  burgerOpened: boolean;
+  onBurgerToggle: () => void;
+}
+
+export const Header = ({ burgerOpened, onBurgerToggle }: HeaderProps) => {
   const { user, logout } = useAuth();
   const { company } = useCompany();
   const navigate = useNavigate();
@@ -35,6 +40,13 @@ export const Header = () => {
         }}
       >
         <Group gap="sm">
+          <Burger
+            opened={burgerOpened}
+            onClick={onBurgerToggle}
+            hiddenFrom="sm"
+            size="sm"
+            color="#1C1C1C"
+          />
           {company?.logo && (
             <img
               src={company.logo}

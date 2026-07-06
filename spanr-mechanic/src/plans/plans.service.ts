@@ -12,6 +12,8 @@ export interface PlanFormData {
   warranty?: string;
   guarantee?: string;
   badge?: string;
+  planType: 'package' | 'custom';
+  packageTier?: 1 | 2 | 3;
   fuelTypes: ('diesel' | 'petrol')[];
   features: { feature: string; displayOrder: number }[];
   faqs: { question: string; answer: string; displayOrder: number }[];
@@ -96,6 +98,8 @@ export const plansService = {
         warranty: data.warranty,
         guarantee: data.guarantee,
         badge: data.badge,
+        plan_type: data.planType,
+        package_tier: data.planType === 'package' ? data.packageTier : null,
       })
       .select()
       .single();
@@ -129,6 +133,8 @@ export const plansService = {
         warranty: data.warranty,
         guarantee: data.guarantee,
         badge: data.badge,
+        plan_type: data.planType,
+        package_tier: data.planType === 'package' ? data.packageTier : null,
       })
       .eq('id', planId)
       .select()

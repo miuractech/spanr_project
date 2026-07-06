@@ -72,6 +72,8 @@ export interface DbPlan {
   warranty: string;
   guarantee: string;
   badge: string | null;
+  plan_type: 'package' | 'custom';
+  package_tier: 1 | 2 | 3 | null;
   created_at: string;
   updated_at: string;
 }

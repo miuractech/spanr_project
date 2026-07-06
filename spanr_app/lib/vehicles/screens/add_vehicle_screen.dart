@@ -61,12 +61,12 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   final _imagePicker = ImagePicker();
 
   bool _isLoading = false;
-  bool _isUploadingImage = false;
+  final bool _isUploadingImage = false;
   bool _isIndianLicensed = true;
   bool _isPrimary = false;
   String _vehicleType = 'car';
   int _year = DateTime.now().year;
-  List<File> _newImages = [];
+  final List<File> _newImages = [];
   List<String> _existingImages = [];
   List<String> _originalImages = [];
 
@@ -475,7 +475,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                   Switch(
                     value: _isPrimary,
                     onChanged: (value) => setState(() => _isPrimary = value),
-                    activeColor: _kOrange,
+                    activeThumbColor: _kOrange,
                   ),
                 ],
               ),

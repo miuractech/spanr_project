@@ -12,6 +12,7 @@ import {
   Button,
   Anchor,
   Alert,
+  Divider,
 } from '@mantine/core';
 import {
   IconUpload,
@@ -23,15 +24,31 @@ import {
 } from '@tabler/icons-react';
 
 export interface DocumentFiles {
-  gst?: File;
-  pan?: File;
-  utilityBill?: File;
+  // Mandatory KYC
+  aadhaarFront?: File;
+  aadhaarBack?: File;
+  personalPan?: File;
+  bankPassbook?: File;
+  homeAddressProof?: File;
+  homeUtilityBill?: File;
+  shopUtilityBill?: File;
+  // Optional
+  gstCertificate?: File;
+  firmPan?: File;
+  firmRegistration?: File;
 }
 
 export interface ExistingDocuments {
-  gst?: string;
-  pan?: string;
-  utilityBill?: string;
+  aadhaarFront?: string;
+  aadhaarBack?: string;
+  personalPan?: string;
+  bankPassbook?: string;
+  homeAddressProof?: string;
+  homeUtilityBill?: string;
+  shopUtilityBill?: string;
+  gstCertificate?: string;
+  firmPan?: string;
+  firmRegistration?: string;
 }
 
 interface DocumentSlotProps {
@@ -160,6 +177,97 @@ interface CompanyDocumentsFormProps {
   onFilesChange: (files: DocumentFiles) => void;
 }
 
+const MANDATORY_KEYS: (keyof DocumentFiles)[] = [
+  'aadhaarFront',
+  'aadhaarBack',
+  'personalPan',
+  'bankPassbook',
+  'homeAddressProof',
+  'homeUtilityBill',
+  'shopUtilityBill',
+];
+
+const MANDATORY_SLOTS: Array<{
+  key: keyof DocumentFiles;
+  label: string;
+  description: string;
+  hint: string;
+}> = [
+  {
+    key: 'aadhaarFront',
+    label: 'Aadhaar Card — Front',
+    description: 'Front side of your Aadhaar card (12-digit UID visible).',
+    hint: 'Government photo ID — required for identity verification',
+  },
+  {
+    key: 'aadhaarBack',
+    label: 'Aadhaar Card — Back',
+    description: 'Back side of your Aadhaar card (address side).',
+    hint: 'Back side required for address verification',
+  },
+  {
+    key: 'personalPan',
+    label: 'Personal PAN Card',
+    description: 'Your individual PAN card (not business PAN).',
+    hint: 'Required for tax identity verification',
+  },
+  {
+    key: 'bankPassbook',
+    label: 'Bank Passbook / Cancelled Cheque',
+    description:
+      'First page of your bank passbook or a cancelled cheque showing account details.',
+    hint: 'Required for payment disbursement setup',
+  },
+  {
+    key: 'homeAddressProof',
+    label: 'Home Address Proof',
+    description:
+      'Document proving your residential address (Aadhaar, voter ID, etc.).',
+    hint: 'Must show your current home address',
+  },
+  {
+    key: 'homeUtilityBill',
+    label: 'Home Utility Bill',
+    description:
+      'Recent electricity, water, or gas bill for your home address.',
+    hint: 'Must be within the last 3 months',
+  },
+  {
+    key: 'shopUtilityBill',
+    label: 'Shop / Garage Utility Bill',
+    description:
+      'Recent electricity or water bill for your shop/garage address.',
+    hint: 'Must be within the last 3 months — used for shop address verification',
+  },
+];
+
+const OPTIONAL_SLOTS: Array<{
+  key: keyof DocumentFiles;
+  label: string;
+  description: string;
+  hint: string;
+}> = [
+  {
+    key: 'gstCertificate',
+    label: 'GST Certificate',
+    description: 'Certificate of GST registration (if registered).',
+    hint: 'Optional — upload if you have a GSTIN',
+  },
+  {
+    key: 'firmPan',
+    label: 'Firm / Business PAN',
+    description:
+      'PAN card for your registered business entity (if applicable).',
+    hint: 'Optional — required only for registered firms',
+  },
+  {
+    key: 'firmRegistration',
+    label: 'Firm Registration Certificate',
+    description: 'Certificate of incorporation or firm registration document.',
+    hint: 'Optional — required only for registered businesses',
+  },
+];
+
 export const CompanyDocumentsForm: React.FC<CompanyDocumentsFormProps> = ({
   files,
   existingDocuments,
@@ -173,11 +281,9 @@ export const CompanyDocumentsForm: React.FC<CompanyDocumentsFormProps> = ({
     onFilesChange(next);
   };
 
-  const uploadedCount = [
-    localFiles.gst || existingDocuments?.gst,
-    localFiles.pan || existingDocuments?.pan,
-    localFiles.utilityBill || existingDocuments?.utilityBill,
-  ].filter(Boolean).length;
+  const mandatoryUploaded = MANDATORY_KEYS.filter(
+    (k) => localFiles[k] || existingDocuments?.[k]
+  ).length;
 
   return (
     <Stack gap="lg" maw={680} w="100%">
@@ -199,46 +305,56 @@ export const CompanyDocumentsForm: React.FC<CompanyDocumentsFormProps> = ({
       <Box>
         <Group justify="space-between" mb={16}>
           <Text size="lg" fw={600}>
-            Business Documents
+            Mandatory Documents
           </Text>
-          <Badge variant="light" color={uploadedCount === 3 ? 'green' : 'gray'}>
-            {uploadedCount}/3 uploaded
+          <Badge
+            variant="light"
+            color={mandatoryUploaded === MANDATORY_KEYS.length ? 'green' : 'orange'}
+          >
+            {mandatoryUploaded}/{MANDATORY_KEYS.length} uploaded
           </Badge>
         </Group>
-
         <Stack gap={12}>
-          <DocumentSlot
-            label="GST Certificate"
-            description="Certificate of GST registration issued by the Government of India."
-            hint="GSTIN registration certificate — required for invoicing"
-            file={localFiles.gst}
-            existingUrl={existingDocuments?.gst}
-            onFileChange={(f) => update('gst', f)}
-          />
-
-          <DocumentSlot
-            label="Company PAN Card"
-            description="Permanent Account Number card for your registered business entity."
-            hint="Business PAN (not personal) — required for tax compliance"
-            file={localFiles.pan}
-            existingUrl={existingDocuments?.pan}
-            onFileChange={(f) => update('pan', f)}
-          />
-
-          <DocumentSlot
-            label="Utility Bill"
-            description="Recent electricity, water, or gas bill for your registered business address."
-            hint="Must be within the last 3 months — used for address verification"
-            file={localFiles.utilityBill}
-            existingUrl={existingDocuments?.utilityBill}
-            onFileChange={(f) => update('utilityBill', f)}
-          />
+          {MANDATORY_SLOTS.map((slot) => (
+            <DocumentSlot
+              key={slot.key}
+              label={slot.label}
+              description={slot.description}
+              hint={slot.hint}
+              file={localFiles[slot.key]}
+              existingUrl={existingDocuments?.[slot.key]}
+              onFileChange={(f) => update(slot.key, f)}
+            />
+          ))}
         </Stack>
       </Box>
 
-      {uploadedCount < 3 && (
+      <Divider label="Optional Documents" labelPosition="left" />
+
+      <Box>
+        <Text size="sm" c="dimmed" mb={12}>
+          Upload if applicable. These help with faster verification for
+          registered businesses.
+        </Text>
+        <Stack gap={12}>
+          {OPTIONAL_SLOTS.map((slot) => (
+            <DocumentSlot
+              key={slot.key}
+              label={slot.label}
+              description={slot.description}
+              hint={slot.hint}
+              file={localFiles[slot.key]}
+              existingUrl={existingDocuments?.[slot.key]}
+              onFileChange={(f) => update(slot.key, f)}
+            />
+          ))}
+        </Stack>
+      </Box>
+
+      {mandatoryUploaded < MANDATORY_KEYS.length && (
         <Text size="xs" c="dimmed" ta="center">
-          You can skip this step and upload documents later from your company profile. Verification may be required to activate your account.
+          You can skip and upload documents later from your shop profile.
+          Verification may be required to activate your account.
         </Text>
       )}
     </Stack>

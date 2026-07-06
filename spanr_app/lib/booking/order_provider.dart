@@ -7,9 +7,10 @@ import 'order_types.dart';
 
 class OrderProvider extends ChangeNotifier {
   final OrderService _orderService = OrderService();
-  
+
   List<OrderWithDetails> _orders = [];
   List<OrderHistoryModel> _currentOrderHistory = [];
+  List<ExtraWorkRequest> _extraWorkRequests = [];
   bool _isLoading = false;
   String? _error;
   OrderModel? _currentOrder;
@@ -18,6 +19,7 @@ class OrderProvider extends ChangeNotifier {
 
   List<OrderWithDetails> get orders => _orders;
   List<OrderHistoryModel> get currentOrderHistory => _currentOrderHistory;
+  List<ExtraWorkRequest> get extraWorkRequests => _extraWorkRequests;
   bool get isLoading => _isLoading;
   String? get error => _error;
   OrderModel? get currentOrder => _currentOrder;
@@ -60,6 +62,7 @@ class OrderProvider extends ChangeNotifier {
       _currentOrder = await _orderService.getOrderById(orderId);
       _currentPayment = await _orderService.getOrderPayment(orderId);
       _currentOrderHistory = await _orderService.getOrderHistory(orderId);
+      _extraWorkRequests = await _orderService.getExtraWorkRequests(orderId);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -77,6 +80,22 @@ class OrderProvider extends ChangeNotifier {
       _error = e.toString();
       notifyListeners();
     }
+  }
+
+  // Approve an extra work request and reload order details
+  Future<void> approveExtraWork(String requestId, String orderId) async {
+    await _orderService.approveExtraWork(requestId);
+    await loadOrderDetails(orderId);
+  }
+
+  // Reject an extra work request and reload order details
+  Future<void> rejectExtraWork(
+    String requestId,
+    String orderId, {
+    String? reason,
+  }) async {
+    await _orderService.rejectExtraWork(requestId, reason: reason);
+    await loadOrderDetails(orderId);
   }
 
   // Create order with payment
@@ -105,7 +124,7 @@ class OrderProvider extends ChangeNotifier {
 
             // First, check current payment status (webhook might have already updated it)
             var currentPayment = await _orderService.getPaymentById(_currentPayment!.id);
-            
+
             // Only update to processing if payment is still unpaid
             // (webhook might have already marked it as paid/failed)
             if (currentPayment.status == PaymentStatus.unpaid) {
@@ -125,7 +144,7 @@ class OrderProvider extends ChangeNotifier {
             if (currentPayment.status == PaymentStatus.paid ||
                 currentPayment.status == PaymentStatus.failed) {
               _currentPayment = currentPayment;
-              
+
               if (currentPayment.status == PaymentStatus.paid) {
                 onPaymentSuccess(_currentOrder!, currentPayment);
               } else {
@@ -250,4 +269,3 @@ class OrderProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-

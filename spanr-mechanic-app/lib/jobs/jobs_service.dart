@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import 'models/assigned_job.dart';
+import 'models/extra_work_request.dart';
 import 'models/part_replacement.dart';
+
 class JobsService {
   final SupabaseClient _client = SupabaseConfig.client;
 
@@ -212,5 +214,48 @@ class JobsService {
     final email = _client.auth.currentUser?.email;
     final res = await _client.from('staff').select('id').eq('email', email!).single();
     return res['id'] as String;
+  }
+
+  Future<String> currentStaffId() async => _currentStaffId();
+
+  Future<List<ExtraWorkRequest>> getExtraWorkRequests(String orderId) async {
+    final response = await _client
+        .from('extra_work_requests')
+        .select('*')
+        .eq('order_id', orderId)
+        .order('created_at', ascending: false);
+
+    return (response as List)
+        .map((e) => ExtraWorkRequest.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> submitExtraWorkRequest({
+    required String orderId,
+    required String staffId,
+    required String description,
+    required double estimatedCost,
+    String? photoPath,
+  }) async {
+    String? photoUrl;
+    if (photoPath != null) {
+      final file = File(photoPath);
+      final ext = photoPath.split('.').last;
+      final path = '$orderId/extra-work/${DateTime.now().millisecondsSinceEpoch}.$ext';
+      await _client.storage.from('extra-work-photos').upload(path, file);
+      photoUrl = _client.storage.from('extra-work-photos').getPublicUrl(path);
+    }
+
+    await _client.from('extra_work_requests').insert({
+      'order_id': orderId,
+      'mechanic_id': staffId,
+      'description': description,
+      'estimated_cost': estimatedCost,
+      'photo_url': photoUrl,
+      'status': 'pending',
+    });
+
+    // Put order on hold
+    await _client.from('orders').update({'status': 'on_hold'}).eq('id', orderId);
   }
 }

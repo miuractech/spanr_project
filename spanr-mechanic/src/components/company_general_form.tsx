@@ -18,18 +18,17 @@ import type { UseFormReturnType } from '@mantine/form';
 import { IconPlus, IconX, IconUpload } from '@tabler/icons-react';
 import { CERTIFICATION_OPTIONS } from '../company/company.constants';
 
-interface GeneralFormData {
+// Note: email and phone (primary) removed — phone comes from auth
+export interface GeneralFormData {
   companyName: string;
-  email: string;
-  phone: string;
-  phoneNumber: string;
+  phoneNumber: string; // alt phone, optional
   certifications: string[];
   specializations: string[];
 }
 
 interface CompanyGeneralFormProps {
   form: UseFormReturnType<GeneralFormData>;
-  userEmail?: string;
+  primaryPhone?: string; // From auth (display only)
   existingLogo?: string;
   onLogoChange?: (file: File | null) => void;
 }
@@ -45,7 +44,7 @@ const addButtonProps = {
 
 export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
   form,
-  userEmail,
+  primaryPhone,
   existingLogo,
   onLogoChange,
 }) => {
@@ -81,7 +80,7 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
         </Text>
         <Stack gap="md">
           <TextInput
-            label="Company name"
+            label="Shop name"
             placeholder="Elite Auto Care"
             required
             {...form.getInputProps('companyName')}
@@ -89,7 +88,7 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
 
           <Box>
             <FileInput
-              label="Company logo"
+              label="Shop logo"
               placeholder="Choose image file"
               accept="image/*"
               leftSection={<IconUpload size={18} />}
@@ -107,7 +106,7 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
                 <Group>
                   <Image
                     src={logoFile ? URL.createObjectURL(logoFile) : existingLogo}
-                    alt="Company logo"
+                    alt="Shop logo"
                     h={100}
                     w={100}
                     fit="contain"
@@ -120,7 +119,7 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
                       size="lg"
                       radius="md"
                       onClick={() => handleLogoChange(null)}
-                      aria-label="Remove selected logo"
+                      aria-label="Remove logo"
                     >
                       <IconX size={18} />
                     </ActionIcon>
@@ -131,30 +130,21 @@ export const CompanyGeneralForm: React.FC<CompanyGeneralFormProps> = ({
           </Box>
 
           <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+            {primaryPhone && (
+              <TextInput
+                label="Primary mobile"
+                value={primaryPhone}
+                disabled
+                description="From your account registration"
+              />
+            )}
             <TextInput
-              label="Email"
-              placeholder="contact@company.com"
-              type="email"
-              required
-              value={userEmail || form.values.email}
-              disabled
-              // description="From your account"
-            />
-
-            <TextInput
-              label="Primary phone"
+              label="Alternative phone"
               placeholder="+91 98765 43210"
-              required
-              {...form.getInputProps('phone')}
+              description="Optional"
+              {...form.getInputProps('phoneNumber')}
             />
           </SimpleGrid>
-
-          <TextInput
-            label="Alternative phone"
-            placeholder="+91 98765 43210"
-            required
-            {...form.getInputProps('phoneNumber')}
-          />
         </Stack>
       </Box>
 

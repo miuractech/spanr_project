@@ -3,6 +3,7 @@ import { useCompany } from '../company/company.hook';
 import { AssignMechanicModal } from '../components/assign_mechanic_modal';
 import { AssignmentBadge } from '../components/assignment_badge';
 import { VehicleHistoryTimeline } from '../components/vehicle_history_timeline';
+import { ExtraWorkTab } from '../components/extra_work_tab';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -31,6 +32,7 @@ import {
   IconUserCheck,
   IconClipboardList,
   IconSettings,
+  IconAlertTriangle,
 } from '@tabler/icons-react';
 import { ordersService } from '../orders/orders.service';
 import type { OrderDetails, OrderStatus } from '../orders/orders.types';
@@ -49,6 +51,7 @@ const getStatusColor = (status: OrderStatus) => {
     case 'accepted': return 'blue';
     case 'assigned': return 'indigo';
     case 'waiting_for_parts': return 'yellow';
+    case 'on_hold': return 'yellow';
     case 'ready_for_delivery': return 'grape';
     case 'cancelled': return 'red';
     case 'dispute': return 'orange';
@@ -171,6 +174,9 @@ export default function OrderDetailPage() {
           <Tabs.Tab value="history" leftSection={<IconHistory size={16} />}>
             History
           </Tabs.Tab>
+          <Tabs.Tab value="extrawork" leftSection={<IconAlertTriangle size={16} />}>
+            Extra Work
+          </Tabs.Tab>
           {order.status === 'completed' && (
             <Tabs.Tab value="record" leftSection={<IconClipboardList size={16} />}>
               Service Record
@@ -290,6 +296,11 @@ export default function OrderDetailPage() {
         {/* ── History ── */}
         <Tabs.Panel value="history" pt="md">
           <OrderHistoryTimeline orderId={orderId!} />
+        </Tabs.Panel>
+
+        {/* ── Extra Work ── */}
+        <Tabs.Panel value="extrawork" pt="md">
+          <ExtraWorkTab orderId={orderId!} orderStatus={order.status} />
         </Tabs.Panel>
 
         {order.status === 'completed' && company && (

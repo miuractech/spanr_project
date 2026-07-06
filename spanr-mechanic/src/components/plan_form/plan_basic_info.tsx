@@ -103,6 +103,36 @@ export const PlanBasicInfo: React.FC<PlanBasicInfoProps> = ({ formData, services
         value={formData.badge}
         onChange={(e) => onChange('badge', e.target.value)}
       />
+
+      <SimpleGrid cols={2}>
+        <Select
+          label="Plan Type"
+          required
+          data={[
+            { value: 'package', label: 'Package (Fixed tier)' },
+            { value: 'custom', label: 'Custom (Job catalog)' },
+          ]}
+          value={formData.planType}
+          onChange={(value) => {
+            onChange('planType', value);
+            if (value === 'custom') onChange('packageTier', undefined);
+          }}
+        />
+
+        {formData.planType === 'package' && (
+          <Select
+            label="Package Tier"
+            required
+            data={[
+              { value: '1', label: 'Plan 1 (Basic)' },
+              { value: '2', label: 'Plan 2 (Standard)' },
+              { value: '3', label: 'Plan 3 (Premium)' },
+            ]}
+            value={formData.packageTier?.toString() ?? null}
+            onChange={(value) => onChange('packageTier', value ? Number(value) : undefined)}
+          />
+        )}
+      </SimpleGrid>
     </>
   );
 };

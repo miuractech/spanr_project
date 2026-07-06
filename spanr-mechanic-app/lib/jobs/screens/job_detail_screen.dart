@@ -63,7 +63,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             icon: Icons.directions_car_outlined,
             title: 'Vehicle',
             value: job.vehicleDisplay,
-            subtitle: job.licensePlate.isNotEmpty && job.vehicleDisplay != job.licensePlate ? job.licensePlate : null,
+            subtitle: job.licensePlate.isNotEmpty && job.vehicleDisplay != job.licensePlate
+                ? job.licensePlate
+                : null,
           ),
           JobInfoTile(
             icon: Icons.build_outlined,
@@ -77,9 +79,15 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               value: job.specialInstructions!,
             ),
           const SizedBox(height: 8),
-          const Text('Workflow', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textHeading)),
+          const Text(
+            'Workflow',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textHeading),
+          ),
           const SizedBox(height: 4),
-          const Text('Complete each step before finishing the job', style: TextStyle(fontSize: 13, color: AppTheme.textBody)),
+          const Text(
+            'Complete each step before finishing the job',
+            style: TextStyle(fontSize: 13, color: AppTheme.textBody),
+          ),
           const SizedBox(height: 12),
           Card(
             child: Padding(
@@ -124,6 +132,12 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       icon: Icons.photo_camera_back_outlined,
                       onPressed: () => context.push('/jobs/${widget.orderId}/after'),
                     ),
+                    const SizedBox(height: 10),
+                    WorkflowActionButton(
+                      label: 'Request Extra Work',
+                      icon: Icons.warning_amber_outlined,
+                      onPressed: () => context.push('/jobs/${widget.orderId}/extra-work'),
+                    ),
                     const SizedBox(height: 16),
                     const Divider(height: 1),
                     const SizedBox(height: 16),
@@ -141,6 +155,35 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       icon: Icons.play_arrow_rounded,
                       onPressed: () => _updateStatus('in_progress'),
                     ),
+                  if (job.status == JobStatus.onHold) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.shade300),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.hourglass_top_rounded,
+                              color: Colors.amber.shade700, size: 20),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'Order on hold — waiting for customer approval.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppTheme.textBody,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

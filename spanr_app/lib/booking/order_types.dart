@@ -2,6 +2,7 @@ enum OrderStatus {
   created,
   accepted,
   inProgress,
+  onHold,
   readyForDelivery,
   completed,
   dispute,
@@ -15,6 +16,8 @@ enum OrderStatus {
         return 'Accepted';
       case OrderStatus.inProgress:
         return 'In Progress';
+      case OrderStatus.onHold:
+        return 'On Hold — Awaiting Approval';
       case OrderStatus.readyForDelivery:
         return 'Ready for Delivery';
       case OrderStatus.completed:
@@ -34,6 +37,8 @@ enum OrderStatus {
         return 'accepted';
       case OrderStatus.inProgress:
         return 'in_progress';
+      case OrderStatus.onHold:
+        return 'on_hold';
       case OrderStatus.readyForDelivery:
         return 'ready_for_delivery';
       case OrderStatus.completed:
@@ -53,6 +58,8 @@ enum OrderStatus {
         return OrderStatus.accepted;
       case 'in_progress':
         return OrderStatus.inProgress;
+      case 'on_hold':
+        return OrderStatus.onHold;
       case 'ready_for_delivery':
         return OrderStatus.readyForDelivery;
       case 'completed':
@@ -62,7 +69,7 @@ enum OrderStatus {
       case 'cancelled':
         return OrderStatus.cancelled;
       default:
-        throw ArgumentError('Unknown order status: $value');
+        return OrderStatus.created;
     }
   }
 }
@@ -150,3 +157,49 @@ enum PaymentStatus {
   }
 }
 
+class ExtraWorkRequest {
+  final String id;
+  final String orderId;
+  final String? mechanicId;
+  final String description;
+  final String? photoUrl;
+  final double estimatedCost;
+  final String status; // 'pending' | 'approved' | 'rejected'
+  final String? rejectionReason;
+  final DateTime? customerResponseAt;
+  final DateTime createdAt;
+
+  const ExtraWorkRequest({
+    required this.id,
+    required this.orderId,
+    this.mechanicId,
+    required this.description,
+    this.photoUrl,
+    required this.estimatedCost,
+    required this.status,
+    this.rejectionReason,
+    this.customerResponseAt,
+    required this.createdAt,
+  });
+
+  factory ExtraWorkRequest.fromJson(Map<String, dynamic> json) {
+    return ExtraWorkRequest(
+      id: json['id'] as String,
+      orderId: json['order_id'] as String,
+      mechanicId: json['mechanic_id'] as String?,
+      description: json['description'] as String,
+      photoUrl: json['photo_url'] as String?,
+      estimatedCost: (json['estimated_cost'] as num).toDouble(),
+      status: json['status'] as String,
+      rejectionReason: json['rejection_reason'] as String?,
+      customerResponseAt: json['customer_response_at'] != null
+          ? DateTime.parse(json['customer_response_at'] as String)
+          : null,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  bool get isPending => status == 'pending';
+  bool get isApproved => status == 'approved';
+  bool get isRejected => status == 'rejected';
+}

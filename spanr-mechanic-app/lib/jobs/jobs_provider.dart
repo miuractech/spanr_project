@@ -93,6 +93,45 @@ class JobsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> submitExtraWorkRequest({
+    required String orderId,
+    required String description,
+    required double estimatedCost,
+    String? photoPath,
+  }) async {
+    final staffId = await _jobsService.currentStaffId();
+    await _jobsService.submitExtraWorkRequest(
+      orderId: orderId,
+      staffId: staffId,
+      description: description,
+      estimatedCost: estimatedCost,
+      photoPath: photoPath,
+    );
+    // Refresh jobs to pick up the on_hold status change
+    final idx = _jobs.indexWhere((j) => j.orderId == orderId);
+    if (idx >= 0) {
+      final job = _jobs[idx];
+      _jobs[idx] = AssignedJob(
+        orderId: job.orderId,
+        assignmentId: job.assignmentId,
+        status: JobStatus.onHold,
+        assignedAt: job.assignedAt,
+        notes: job.notes,
+        customerName: job.customerName,
+        customerPhone: job.customerPhone,
+        vehicleMake: job.vehicleMake,
+        vehicleModel: job.vehicleModel,
+        vehicleYear: job.vehicleYear,
+        licensePlate: job.licensePlate,
+        planName: job.planName,
+        specialInstructions: job.specialInstructions,
+        scheduledDate: job.scheduledDate,
+      );
+      await _cacheJobs(_jobs);
+    }
+    notifyListeners();
+  }
+
   void _subscribe(String staffId) {
     _channel?.unsubscribe();
     _channel = _jobsService.subscribeToAssignments(staffId, () {

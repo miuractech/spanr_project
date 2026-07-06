@@ -3,17 +3,19 @@ import { Stack, Text } from '@mantine/core';
 import {
   IconDashboard,
   IconBuilding,
-  IconTools,
+  IconClipboardList,
   IconShoppingCart,
   IconUsers,
   IconUser,
   IconHistory,
+  IconListDetails,
 } from '@tabler/icons-react';
 
 const links = [
   { to: '/dashboard', label: 'Dashboard', icon: IconDashboard },
-  { to: '/company-profile', label: 'Company Profile', icon: IconBuilding },
-  { to: '/services', label: 'Services & Plans', icon: IconTools },
+  { to: '/company-profile', label: 'Shop Profile', icon: IconBuilding },
+  { to: '/services', label: 'Services', icon: IconListDetails },
+  { to: '/plans', label: 'Plans', icon: IconClipboardList },
   { to: '/orders', label: 'Orders', icon: IconShoppingCart },
   { to: '/staff', label: 'Staff', icon: IconUsers },
   { to: '/vehicle-history', label: 'Vehicle History', icon: IconHistory },

@@ -111,7 +111,7 @@ class MechanicCompany {
     if (rating == null || ratingsCount == null || ratingsCount == 0) {
       return 'New';
     }
-    return '${rating!.toStringAsFixed(1)} (${ratingsCount})';
+    return '${rating!.toStringAsFixed(1)} ($ratingsCount)';
   }
   
   String get displayDistance {

@@ -18,6 +18,7 @@ import { useAuth } from '../auth/auth.hook';
 import { companyService, type CompanyFormData } from '../company/company.service';
 import { CompanyProfileStepper } from '../components/company_profile_stepper';
 import type { DocumentFiles } from '../components/company_documents_form';
+import { normalizePhone } from '../core/phone.util';
 
 function submitErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -25,7 +26,7 @@ function submitErrorMessage(err: unknown): string {
     const m = (err as { message: unknown }).message;
     if (typeof m === 'string' && m.trim()) return m;
   }
-  return 'Failed to create company profile';
+  return 'Failed to create shop profile';
 }
 
 export default function OnboardingPage() {
@@ -52,7 +53,16 @@ export default function OnboardingPage() {
     try {
       setError('');
 
-      const existing = await companyService.getCompanyByStaffEmail(user.email);
+      // Derive a stable email for staff record lookup/creation
+      const userEmail = user.phone
+        ? `${normalizePhone(user.phone)}@spanr.owner`
+        : user.email;
+
+      // Use name from sessionStorage (captured during signup) or fall back to user.name
+      const userName =
+        sessionStorage.getItem('spanr_signup_name') || user.name || userEmail;
+
+      const existing = await companyService.getCompanyByStaffEmail(userEmail);
       const company = existing
         ? await companyService.updateCompany(existing.id, {
             companyName: data.companyName,
@@ -70,7 +80,12 @@ export default function OnboardingPage() {
             longitude: data.longitude,
             images: data.images,
           })
-        : await companyService.createCompany(data, user.email, user.name);
+        : await companyService.createCompany(
+            data,
+            userEmail,
+            userName,
+            user.id // authUserId — Supabase auth UID
+          );
 
       const certList = [...new Set(certifications || [])];
       const specList = [...new Set(specializations || [])];
@@ -87,9 +102,11 @@ export default function OnboardingPage() {
 
       await Promise.all([
         logoFile
-          ? companyService.uploadLogo(logoFile, company.id).then((url) =>
-              companyService.updateCompany(company.id, { logo: url })
-            )
+          ? companyService
+              .uploadLogo(logoFile, company.id)
+              .then((url) =>
+                companyService.updateCompany(company.id, { logo: url })
+              )
           : Promise.resolve(),
         ...certPromises,
         ...specPromises,
@@ -135,7 +152,7 @@ export default function OnboardingPage() {
                 <IconUser size={14} />
               </Avatar>
               <Text size="sm" c="#696969">
-                {user?.email}
+                {user?.phone || user?.email}
               </Text>
               <Divider orientation="vertical" />
               <Button
@@ -155,10 +172,10 @@ export default function OnboardingPage() {
       <Container size={780} py={48}>
         <Stack gap="xs" mb={32} align="center">
           <Title order={2} ta="center" c="#1C1C1C">
-            Set up your business profile
+            Set up your shop profile
           </Title>
           <Text c="#696969" size="sm" ta="center" maw={480}>
-            Fill in your company details to get started. You can update everything
+            Fill in your shop details to get started. You can update everything
             later from your dashboard.
           </Text>
         </Stack>
@@ -178,7 +195,7 @@ export default function OnboardingPage() {
           <CompanyProfileStepper
             onSubmit={handleSubmit}
             submitLabel="Complete Setup"
-            userEmail={user?.email}
+            userPhone={user?.phone}
             allowFreeNavigation={false}
           />
         </Paper>

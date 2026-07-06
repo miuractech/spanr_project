@@ -32,6 +32,8 @@ const emptyFormData = (defaultServiceId?: string): PlanFormData => ({
   warranty: '',
   guarantee: '',
   badge: '',
+  planType: 'package',
+  packageTier: undefined,
   fuelTypes: [],
   features: [],
   faqs: [],
@@ -66,6 +68,8 @@ export const PlanForm: React.FC<PlanFormProps> = ({
         warranty: initialData.warranty || '',
         guarantee: initialData.guarantee || '',
         badge: initialData.badge || '',
+        planType: (initialData as any).plan_type || 'package',
+        packageTier: (initialData as any).package_tier || undefined,
         fuelTypes: (initialData.fuelTypes?.filter((f): f is 'diesel' | 'petrol' => f === 'diesel' || f === 'petrol')) || [],
         features: initialData.features?.map(f => ({
           feature: f.feature,

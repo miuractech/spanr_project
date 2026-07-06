@@ -11,6 +11,7 @@ import '../jobs/screens/parts_replacement_screen.dart';
 import '../jobs/screens/part_replacement_detail_screen.dart';
 import '../jobs/screens/service_notes_screen.dart';
 import '../jobs/screens/complete_job_screen.dart';
+import '../jobs/screens/extra_work_request_screen.dart';
 
 class AppRouter {
   static GoRouter create(AuthProvider authProvider) {
@@ -78,6 +79,12 @@ class AppRouter {
             GoRoute(
               path: 'complete',
               builder: (_, state) => CompleteJobScreen(orderId: state.pathParameters['orderId']!),
+            ),
+            GoRoute(
+              path: 'extra-work',
+              builder: (_, state) => ExtraWorkRequestScreen(
+                orderId: state.pathParameters['orderId']!,
+              ),
             ),
           ],
         ),

@@ -1,0 +1,42 @@
+export const en = {
+  // Auth
+  welcomeToSpanr: 'Welcome to SPANR',
+  shopDashboard: 'Shop Dashboard',
+  mobileNumber: 'Mobile Number',
+  sendOtp: 'Send OTP',
+  enterOtp: 'Enter OTP',
+  verifyOtp: 'Verify',
+  resendOtp: 'Resend OTP',
+  signIn: 'Sign in',
+  createAccount: 'Create Account',
+  // Nav
+  dashboard: 'Dashboard',
+  shopProfile: 'Shop Profile',
+  servicesPlans: 'Services & Plans',
+  jobCatalog: 'Job Catalog',
+  orders: 'Orders',
+  staff: 'Staff',
+  vehicleHistory: 'Vehicle History',
+  profile: 'Profile',
+  // Onboarding
+  setUpShop: 'Set up your shop',
+  shopDetails: 'Fill in your shop details to get started.',
+  shopName: 'Shop name',
+  altPhone: 'Alternative phone',
+  // Orders
+  orderDetails: 'Order Details',
+  extraWork: 'Extra Work',
+  approve: 'Approve',
+  reject: 'Reject',
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected',
+  estimatedCost: 'Estimated cost',
+  // Job catalog
+  jobCatalogTitle: 'Job Catalog',
+  addSection: 'Add Section',
+  addJob: 'Add Job',
+  sectionName: 'Section name',
+  jobName: 'Job name',
+  basePrice: 'Base price',
+} as const;

@@ -1,39 +1,38 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/auth.hook';
-import { getAuthErrorMessage, isEmailNotConfirmedError } from '../auth/auth.util';
+import { getAuthErrorMessage } from '../auth/auth.util';
 import { AuthPageShell, inputStyles } from '../components/auth_page_shell';
 import {
   TextInput,
-  PasswordInput,
   Button,
   Text,
   Stack,
   Alert,
   Loader,
-  Anchor,
+  PinInput,
+  Group,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { IconAlertCircle, IconMailCheck } from '@tabler/icons-react';
+import { IconAlertCircle, IconPhone, IconArrowLeft } from '@tabler/icons-react';
+
+type Step = 'phone' | 'otp';
 
 export default function LoginPage() {
+  const [step, setStep] = useState<Step>('phone');
+  const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [resending, setResending] = useState(false);
   const [error, setError] = useState('');
-  const [resendMessage, setResendMessage] = useState('');
-  const [unverifiedEmail, setUnverifiedEmail] = useState('');
-  const { login, user, hasCompany, loading, resendVerificationEmail } = useAuth();
+  const { sendOtp, verifyOtp, user, hasCompany, loading } = useAuth();
   const navigate = useNavigate();
 
-  const form = useForm({
-    initialValues: { email: '', password: '' },
+  const phoneForm = useForm({
+    initialValues: { phone: '' },
     validate: {
-      email: (value) => {
-        if (!value.trim()) return 'Email is required';
-        if (!/^\S+@\S+\.\S+$/.test(value)) return 'Enter a valid email address';
-        return null;
+      phone: (v) => {
+        const digits = v.replace(/\D/g, '');
+        return digits.length >= 10 ? null : 'Enter a valid 10-digit mobile number';
       },
-      password: (value) => (value ? null : 'Password is required'),
     },
   });
 
@@ -51,36 +50,32 @@ export default function LoginPage() {
     );
   }
 
-  const handleResend = async () => {
-    if (!unverifiedEmail) return;
-    setResending(true);
-    setResendMessage('');
-    try {
-      await resendVerificationEmail(unverifiedEmail);
-      setResendMessage('Verification email sent. Check your inbox.');
-    } catch (err) {
-      setResendMessage(getAuthErrorMessage(err, 'Failed to resend verification email'));
-    } finally {
-      setResending(false);
-    }
-  };
-
-  const handleSubmit = form.onSubmit(async (values) => {
+  const handleSendOtp = phoneForm.onSubmit(async (values) => {
     setError('');
-    setResendMessage('');
-    setUnverifiedEmail('');
     setSubmitting(true);
-
     try {
-      await login(values.email, values.password);
+      await sendOtp(values.phone);
+      setPhone(values.phone);
+      setStep('otp');
     } catch (err) {
-      if (isEmailNotConfirmedError(err)) {
-        setUnverifiedEmail(values.email);
-      }
-      setError(getAuthErrorMessage(err, 'Failed to login'));
+      setError(getAuthErrorMessage(err, 'Failed to send OTP. Try again.'));
+    } finally {
       setSubmitting(false);
     }
   });
+
+  const handleVerifyOtp = async (token: string) => {
+    if (token.length < 6) return;
+    setError('');
+    setSubmitting(true);
+    try {
+      await verifyOtp(phone, token);
+      // navigation handled by useEffect above
+    } catch (err) {
+      setError(getAuthErrorMessage(err, 'Invalid OTP. Please try again.'));
+      setSubmitting(false);
+    }
+  };
 
   return (
     <AuthPageShell
@@ -92,66 +87,76 @@ export default function LoginPage() {
           </Text>
         </>
       }
-      subtitle="Mechanic Dashboard"
+      subtitle="Shop Owner Dashboard"
     >
-      <form onSubmit={handleSubmit} noValidate>
-        <Stack gap={28}>
-          {error && (
-            <Alert icon={<IconAlertCircle size={22} stroke={1.5} />} color="red" radius="md" p="md">
-              {error}
-            </Alert>
-          )}
+      <Stack gap={28}>
+        {error && (
+          <Alert icon={<IconAlertCircle size={22} stroke={1.5} />} color="red" radius="md" p="md">
+            {error}
+          </Alert>
+        )}
 
-          {resendMessage && (
-            <Alert icon={<IconMailCheck size={22} stroke={1.5} />} color="green" radius="md" p="md">
-              {resendMessage}
-            </Alert>
-          )}
+        {step === 'phone' && (
+          <form onSubmit={handleSendOtp} noValidate>
+            <Stack gap={24}>
+              <TextInput
+                label="Mobile Number"
+                placeholder="98765 43210"
+                leftSection={<IconPhone size={18} />}
+                description="We'll send a one-time code to this number"
+                size="lg"
+                styles={inputStyles}
+                {...phoneForm.getInputProps('phone')}
+              />
+              <Button type="submit" fullWidth loading={submitting} color="orange" size="xl" h={56} fz={17} fw={700}>
+                Send OTP
+              </Button>
+              <Text ta="center" size="md" c="#696969">
+                New here?{' '}
+                <Link to="/signup" style={{ fontWeight: 700, color: '#FC8019', textDecoration: 'none' }}>
+                  Create account
+                </Link>
+              </Text>
+            </Stack>
+          </form>
+        )}
 
-          <TextInput
-            label="Email"
-            placeholder="your@email.com"
-            type="email"
-            withAsterisk
-            size="lg"
-            styles={inputStyles}
-            {...form.getInputProps('email')}
-          />
-
-          <Stack gap={8}>
-            <PasswordInput
-              label="Password"
-              placeholder="Your password"
-              withAsterisk
-              size="lg"
-              styles={inputStyles}
-              {...form.getInputProps('password')}
-            />
-            <Text ta="right">
-              <Anchor component={Link} to="/forgot-password" size="sm" c="#FC8019" fw={600}>
-                Forgot password?
-              </Anchor>
+        {step === 'otp' && (
+          <Stack gap={24} align="center">
+            <Text size="sm" c="#696969" ta="center">
+              Enter the 6-digit code sent to <strong>{phone}</strong>
             </Text>
+            <PinInput
+              length={6}
+              type="number"
+              size="lg"
+              onComplete={handleVerifyOtp}
+              disabled={submitting}
+              autoFocus
+            />
+            {submitting && <Loader size="sm" color="orange" />}
+            <Group gap="xs">
+              <Button
+                variant="subtle"
+                color="gray"
+                leftSection={<IconArrowLeft size={16} />}
+                onClick={() => { setStep('phone'); setError(''); }}
+                size="sm"
+              >
+                Change number
+              </Button>
+              <Button
+                variant="subtle"
+                color="orange"
+                size="sm"
+                onClick={() => { setError(''); sendOtp(phone).catch(() => {}); }}
+              >
+                Resend OTP
+              </Button>
+            </Group>
           </Stack>
-
-          {unverifiedEmail && (
-            <Button variant="light" color="orange" loading={resending} onClick={handleResend}>
-              Resend verification email
-            </Button>
-          )}
-
-          <Button type="submit" fullWidth loading={submitting} color="orange" size="xl" h={56} fz={17} fw={700} mt={4}>
-            Sign in
-          </Button>
-
-          <Text ta="center" size="md" c="#696969" pt={4}>
-            Don't have an account?{' '}
-            <Link to="/signup" style={{ fontWeight: 700, color: '#FC8019', textDecoration: 'none' }}>
-              Sign up
-            </Link>
-          </Text>
-        </Stack>
-      </form>
+        )}
+      </Stack>
     </AuthPageShell>
   );
 }
