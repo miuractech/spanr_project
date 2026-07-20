@@ -6,7 +6,7 @@ import {
 } from '@mantine/core';
 import {
   IconPlus, IconEdit, IconTrash, IconClipboardList,
-  IconCar, IconMotorbike, IconCheck, IconSearch,
+  IconMotorbike, IconCheck, IconSearch,
 } from '@tabler/icons-react';
 import { useCompany } from '../company/company.hook';
 import { plansService } from '../plans/plans.service';
@@ -51,7 +51,7 @@ interface PlanForm {
 
 const emptyForm = (): PlanForm => ({
   name: '',
-  vehicleType: 'car',
+  vehicleType: 'bike',
   planType: 'package',
   packageTier: 1,
   basePrice: 0,
@@ -73,7 +73,7 @@ function PlanSkeleton() {
 export default function PlansPage() {
   const { company } = useCompany();
   const notification = useNotification();
-  const [vehicleFilter, setVehicleFilter] = useState<VehicleType>('car');
+  const [vehicleFilter] = useState<VehicleType>('bike');
   const [plans, setPlans] = useState<DbPlan[]>([]);
   const [allServices, setAllServices] = useState<JobCatalogItem[]>([]);
   const [includedIds, setIncludedIds] = useState<Set<string>>(new Set());
@@ -244,28 +244,21 @@ export default function PlansPage() {
           </Group>
 
           <Group gap="sm">
-            {/* Vehicle toggle */}
+            {/* Vehicle badge */}
             <Group gap={0} style={{ border: '1px solid #E8E8E8', borderRadius: 10, overflow: 'hidden', backgroundColor: BG }}>
-              {(['car', 'bike'] as VehicleType[]).map((v) => {
-                const active = vehicleFilter === v;
-                return (
-                  <Button
-                    key={v}
-                    size="sm"
-                    variant="filled"
-                    leftSection={v === 'car' ? <IconCar size={15} /> : <IconMotorbike size={15} />}
-                    onClick={() => setVehicleFilter(v)}
-                    style={{
-                      borderRadius: 0, border: 'none',
-                      backgroundColor: active ? ORANGE : 'transparent',
-                      color: active ? '#fff' : BODY,
-                      fontWeight: active ? 600 : 400,
-                    }}
-                  >
-                    {v === 'car' ? 'Car' : 'Bike'}
-                  </Button>
-                );
-              })}
+              <Button
+                size="sm"
+                variant="filled"
+                leftSection={<IconMotorbike size={15} />}
+                style={{
+                  borderRadius: 0, border: 'none',
+                  backgroundColor: ORANGE,
+                  color: '#fff',
+                  fontWeight: 600,
+                }}
+              >
+                Bike
+              </Button>
             </Group>
 
             <Button leftSection={<IconPlus size={16} />} color="orange" onClick={openAdd} radius="md">
@@ -409,7 +402,7 @@ export default function PlansPage() {
                 <Select
                   label="Vehicle type"
                   required
-                  data={[{ value: 'car', label: 'Car' }, { value: 'bike', label: 'Bike' }]}
+                  data={[{ value: 'bike', label: 'Bike' }]}
                   value={form.vehicleType}
                   onChange={(v) => set('vehicleType', v)}
                   radius="md"

@@ -71,10 +71,10 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
         <Badge
           size="sm"
           variant="light"
-          color={service.category === 'car' ? 'blue' : 'teal'}
+          color="teal"
           w="fit-content"
         >
-          {service.category === 'car' ? 'Car' : 'Bike'}
+          Bike
         </Badge>
         {service.description && (
           <Text size="sm" c="#696969" lineClamp={2}>

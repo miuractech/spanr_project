@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter run:*)",
+      "Bash(./gradlew --stop)",
+      "Bash(rm -f hs_err_pid*.log)",
+      "Bash(tasklist /FI \"MEMUSAGE gt 100000\" /FO CSV /NH)",
+      "Bash(sort -t',' -k5 -rn)",
+      "Bash(wmic OS:*)",
+      "Bash(systeminfo)"
+    ]
+  }
+}

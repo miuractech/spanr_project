@@ -31,7 +31,6 @@ export const PlanBasicInfo: React.FC<PlanBasicInfoProps> = ({ formData, services
           label="Vehicle Type"
           required
           data={[
-            { value: 'car', label: 'Car' },
             { value: 'bike', label: 'Bike' },
           ]}
           value={formData.vehicleType}

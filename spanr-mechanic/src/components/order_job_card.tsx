@@ -131,7 +131,7 @@ export const OrderJobCard: React.FC<OrderJobCardProps> = ({ orderId, order }) =>
   const [saving, setSaving] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
-  const inferredVehicleType = order.plan.vehicle_type === 'bike' ? 'Motorbike' : order.plan.vehicle_type === 'car' ? 'Car' : '';
+  const inferredVehicleType = 'Motorbike';
 
   useEffect(() => {
     loadJobCardData();

@@ -24,7 +24,6 @@ import {
   IconEdit,
   IconTrash,
   IconUpload,
-  IconCar,
   IconMotorbike,
   IconChevronRight,
   IconListDetails,
@@ -62,7 +61,7 @@ function JobSkeleton() {
 export default function JobCatalogPage() {
   const { company } = useCompany();
   const notification = useNotification();
-  const [vehicleFilter, setVehicleFilter] = useState<VehicleType>('car');
+  const [vehicleFilter] = useState<VehicleType>('bike');
   const [sections, setSections] = useState<JobSection[]>([]);
   const [jobs, setJobs] = useState<JobCatalogItem[]>([]);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
@@ -252,28 +251,20 @@ export default function JobCatalogPage() {
               backgroundColor: BG,
             }}
           >
-            {(['car', 'bike'] as VehicleType[]).map((v) => {
-              const active = vehicleFilter === v;
-              return (
-                <Button
-                  key={v}
-                  size="sm"
-                  variant="filled"
-                  leftSection={v === 'car' ? <IconCar size={15} /> : <IconMotorbike size={15} />}
-                  onClick={() => setVehicleFilter(v)}
-                  style={{
-                    borderRadius: 0,
-                    backgroundColor: active ? ORANGE : 'transparent',
-                    color: active ? '#fff' : BODY,
-                    fontWeight: active ? 600 : 400,
-                    border: 'none',
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {v === 'car' ? 'Car' : 'Bike'}
-                </Button>
-              );
-            })}
+            <Button
+              size="sm"
+              variant="filled"
+              leftSection={<IconMotorbike size={15} />}
+              style={{
+                borderRadius: 0,
+                backgroundColor: ORANGE,
+                color: '#fff',
+                fontWeight: 600,
+                border: 'none',
+              }}
+            >
+              Bike
+            </Button>
           </Group>
         </Group>
       </Box>

@@ -57,7 +57,7 @@ export const PlanCard: React.FC<PlanCardProps> = ({ plan, onEdit, onDelete, onVi
 
           <Group gap={6}>
             <Badge size="sm" variant="light" color="orange">
-              {plan.vehicle_type === 'car' ? 'Car' : 'Bike'}
+              Bike
             </Badge>
             <Badge size="sm" variant="light" color="gray">
               {plan.location_type.replace('_', ' ')}

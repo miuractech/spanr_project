@@ -30,7 +30,7 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
   const [formData, setFormData] = useState<ServiceFormData>({
     name: initialData?.name || '',
     description: initialData?.description || '',
-    category: initialData?.category || 'car',
+    category: initialData?.category || 'bike',
     iconUrl: initialData?.icon_url || '',
   });
 
@@ -43,7 +43,7 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
       await onSubmit(formData, iconFile || undefined);
       onClose();
       // Reset form
-      setFormData({ name: '', description: '', category: 'car', iconUrl: '' });
+      setFormData({ name: '', description: '', category: 'bike', iconUrl: '' });
       setIconFile(null);
     } finally {
       setLoading(false);
@@ -77,11 +77,10 @@ export const ServiceForm: React.FC<ServiceFormProps> = ({
           label="Category"
           required
           data={[
-            { value: 'car', label: 'Car' },
             { value: 'bike', label: 'Bike' },
           ]}
           value={formData.category}
-          onChange={(value) => setFormData({ ...formData, category: value as 'car' | 'bike' })}
+          onChange={(value) => setFormData({ ...formData, category: value as 'bike' })}
         />
 
         <FileInput

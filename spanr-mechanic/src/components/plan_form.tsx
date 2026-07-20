@@ -24,7 +24,7 @@ interface PlanFormProps {
 const emptyFormData = (defaultServiceId?: string): PlanFormData => ({
   serviceId: defaultServiceId || '',
   name: '',
-  vehicleType: 'car',
+  vehicleType: 'bike',
   locationType: 'in_premise',
   duration: 60,
   basePrice: 0,
