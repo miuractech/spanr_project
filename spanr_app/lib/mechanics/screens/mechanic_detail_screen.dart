@@ -142,7 +142,7 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
                         ),
                       ],
                     ),
-                    if (!cartProvider.isEmpty)
+                    if (!cartProvider.isEmpty && cartProvider.companyId == company.id)
                       _buildFloatingCartButton(cartProvider),
                   ],
                 ),
@@ -499,13 +499,38 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
                             serviceName: service.name,
                             images: company.images,
                             isInCart: isInCart,
-                            onAddToCart: () {
+                            onAddToCart: () async {
+                              if (!cartProvider.isEmpty && cartProvider.companyId != company.id) {
+                                final confirmed = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                    title: const Text('Replace cart items?'),
+                                    content: Text(
+                                      'Your cart has items from ${cartProvider.companyName}. Adding this plan will clear those items.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        style: TextButton.styleFrom(foregroundColor: _kPrimaryOrange),
+                                        child: const Text('Replace'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                if (confirmed != true) return;
+                              }
                               cartProvider.addPlan(
                                 plan,
                                 service.name,
                                 company.id,
                                 company.companyName,
                               );
+                              if (!mounted) return;
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text('${plan.name} added to cart'),
@@ -567,7 +592,7 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: _kPrimaryOrange.withOpacity(0.35),
+                color: _kPrimaryOrange.withValues(alpha: 0.35),
                 blurRadius: 16,
                 offset: const Offset(0, 6),
               ),
@@ -581,7 +606,7 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
+                  color: Colors.white.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(

@@ -26,12 +26,6 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(milliseconds: 300));
     await _locationService.requestLocationPermission();
 
-    await _updateStatus('Setting up storage...');
-    await Future.delayed(const Duration(milliseconds: 300));
-    
-    await _locationService.requestStoragePermission();
-    await _locationService.requestPhotosPermission();
-
     await _updateStatus('Loading your experience...');
     await Future.delayed(const Duration(milliseconds: 300));
 

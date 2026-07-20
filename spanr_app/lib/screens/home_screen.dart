@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../auth/auth_provider.dart';
 import '../addresses/addresses_provider.dart';
 import '../addresses/widgets/address_selector.dart';
+import '../cart/cart_provider.dart';
 import '../core/services/location_service.dart';
 import '../mechanics/mechanics_provider.dart';
 import '../mechanics/widgets/mechanic_card.dart';
@@ -19,7 +20,7 @@ const _body = Color(0xFF696969);
 
 final _cardShadow = [
   BoxShadow(
-    color: Colors.black.withOpacity(0.06),
+    color: Colors.black.withValues(alpha: 0.06),
     blurRadius: 12,
     offset: const Offset(0, 3),
   ),
@@ -59,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onDestinationSelected: (index) => setState(() => _currentIndex = index),
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.transparent,
-          indicatorColor: _orange.withOpacity(0.1),
+          indicatorColor: _orange.withValues(alpha: 0.1),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           height: 64,
           destinations: const [
@@ -224,6 +225,135 @@ class _HomePageState extends State<_HomePage> {
     _loadAddressesOnly();
   }
 
+  void _showCartSheet(BuildContext context, CartProvider cartProvider, MechanicsProvider mechanicsProvider) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Consumer<CartProvider>(
+              builder: (ctx, cart, _) {
+                if (cart.isEmpty) {
+                  Navigator.pop(ctx);
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40, height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Icon(Icons.shopping_cart, color: _orange, size: 22),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Cart (${cart.itemCount})',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: _heading),
+                          ),
+                          const Spacer(),
+                          if (cart.companyName != null)
+                            Flexible(
+                              child: Text(
+                                cart.companyName!,
+                                style: const TextStyle(fontSize: 13, color: _body),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const Divider(height: 24),
+                      ...cart.items.map((item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.plan.name,
+                                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _heading),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${item.serviceName}  •  ₹${item.total.toStringAsFixed(0)}',
+                                    style: const TextStyle(fontSize: 13, color: _body),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => cart.removePlan(item.plan.id),
+                              icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.red.withValues(alpha: 0.08),
+                                minimumSize: const Size(36, 36),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                      const Divider(height: 16),
+                      Row(
+                        children: [
+                          const Text('Total', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _heading)),
+                          const Spacer(),
+                          Text(
+                            '₹${cart.total.toStringAsFixed(0)}',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: _orange),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            final company = mechanicsProvider.mechanics.cast<dynamic>().firstWhere(
+                              (m) => m.id == cart.companyId,
+                              orElse: () => null,
+                            );
+                            if (company != null) {
+                              context.push('/select-vehicle', extra: company);
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _orange,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                          ),
+                          child: const Text('Continue to Checkout'),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
   static const _serviceCategories = [
     ('General Service', Icons.build_outlined, Color(0xFFE3F2FD)),
     ('AC Repair', Icons.ac_unit, Color(0xFFE8F5E9)),
@@ -237,6 +367,7 @@ class _HomePageState extends State<_HomePage> {
   Widget build(BuildContext context) {
     final addressProvider = context.watch<AddressesProvider>();
     final mechanicsProvider = context.watch<MechanicsProvider>();
+    final cartProvider = context.watch<CartProvider>();
 
     final currentAddressId = addressProvider.selectedAddress?.id;
     if (currentAddressId != _lastSelectedAddressId && currentAddressId != null) {
@@ -290,17 +421,63 @@ class _HomePageState extends State<_HomePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                    // Location bar
+                    // Location bar + cart icon
                     Container(
                       color: Colors.white,
-                      child: AddressSelector(
-                        locationEnabled: _isLocationEnabled,
-                        onAddressManage: () async {
-                          await context.push('/addresses');
-                          if (mounted) {
-                            await _loadAddressesOnly(preserveSelection: true);
-                          }
-                        },
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: AddressSelector(
+                              locationEnabled: _isLocationEnabled,
+                              onAddressManage: () async {
+                                await context.push('/addresses');
+                                if (mounted) {
+                                  await _loadAddressesOnly(preserveSelection: true);
+                                }
+                              },
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: GestureDetector(
+                              onTap: cartProvider.isEmpty ? null : () {
+                                _showCartSheet(context, cartProvider, mechanicsProvider);
+                              },
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Icon(
+                                    Icons.shopping_cart_outlined,
+                                    color: cartProvider.isEmpty ? _body : _orange,
+                                    size: 26,
+                                  ),
+                                  if (!cartProvider.isEmpty)
+                                    Positioned(
+                                      right: -6,
+                                      top: -6,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: _orange,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                                        child: Text(
+                                          '${cartProvider.itemCount}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
 
@@ -624,7 +801,7 @@ class _ProfilePageState extends State<_ProfilePage> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: _orange.withOpacity(0.3),
+                              color: _orange.withValues(alpha: 0.3),
                               blurRadius: 16,
                               offset: const Offset(0, 6),
                             ),
@@ -660,7 +837,7 @@ class _ProfilePageState extends State<_ProfilePage> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: _orange.withOpacity(0.08),
+                          color: _orange.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Row(
@@ -752,7 +929,7 @@ class _ProfilePageState extends State<_ProfilePage> {
           ),
           if (_isLoggingOut)
             Container(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.all(24),
@@ -826,8 +1003,8 @@ class _ProfilePageState extends State<_ProfilePage> {
         height: 36,
         decoration: BoxDecoration(
           color: item.isDestructive
-              ? Colors.red.withOpacity(0.1)
-              : item.color.withOpacity(0.1),
+              ? Colors.red.withValues(alpha: 0.1)
+              : item.color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(item.icon,
