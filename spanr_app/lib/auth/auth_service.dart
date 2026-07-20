@@ -136,6 +136,24 @@ class AuthService {
     }
   }
 
+  Future<UserModel> updateProfile({
+    required String userId,
+    required String name,
+    required String phone,
+  }) async {
+    await _client.from('users').update({
+      'name': name.trim(),
+      'phone': phone.trim(),
+    }).eq('id', userId);
+    final profile = await _fetchUserProfile(userId);
+    if (profile == null) throw Exception('Failed to load updated profile');
+    return profile;
+  }
+
+  Future<void> resetPassword(String email) async {
+    await _client.auth.resetPasswordForEmail(email);
+  }
+
   Future<void> signOut() async {
     await _client.auth.signOut();
   }

@@ -93,7 +93,8 @@ class _SignupScreenState extends State<SignupScreen> {
       }
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        final message = e.toString().replaceFirst('Exception: ', '').trim();
+        _error = message.isEmpty ? 'Google sign-in failed. Please try again.' : message;
       });
     } finally {
       setState(() {
@@ -144,7 +145,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       decoration: BoxDecoration(
                         color: Colors.red[50],
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.red.withOpacity(0.15)),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.15)),
                       ),
                       child: Row(
                         children: [
@@ -176,9 +177,12 @@ class _SignupScreenState extends State<SignupScreen> {
                     hint: 'Phone Number',
                     icon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
-                    validator: (v) => v == null || v.isEmpty
-                        ? 'Please enter your phone number'
-                        : null,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Please enter your phone number';
+                      final digits = v.replaceAll(RegExp(r'[^0-9]'), '');
+                      if (digits.length != 10) return 'Please enter a valid 10-digit phone number';
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 14),
                   _buildInputField(
@@ -186,8 +190,13 @@ class _SignupScreenState extends State<SignupScreen> {
                     hint: 'Email address',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Please enter your email' : null,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Please enter your email';
+                      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v)) {
+                        return 'Please enter a valid email address';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 14),
                   _buildInputField(

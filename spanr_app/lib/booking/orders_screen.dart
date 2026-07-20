@@ -191,7 +191,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: _kOrange.withOpacity(0.08),
+                color: _kOrange.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.receipt_long_outlined, size: 48, color: _kOrange),
@@ -245,7 +245,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 12,
                   offset: const Offset(0, 3),
                 ),
@@ -270,7 +270,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.08),
+                          color: statusColor.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -435,7 +435,7 @@ class _VehicleThumb extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: _kOrange.withOpacity(0.08),
+        color: _kOrange.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(icon, size: 28, color: _kOrange),

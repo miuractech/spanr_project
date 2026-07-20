@@ -86,6 +86,20 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> updateProfile({required String name, required String phone}) async {
+    if (_user == null) throw Exception('Not logged in');
+    _user = await _authService.updateProfile(
+      userId: _user!.id,
+      name: name,
+      phone: phone,
+    );
+    notifyListeners();
+  }
+
+  Future<void> resetPassword(String email) async {
+    await _authService.resetPassword(email);
+  }
+
   Future<void> signOut() async {
     await _authService.signOut();
     _user = null;

@@ -48,18 +48,45 @@ class _SelectVehiclePhotosScreenState extends State<SelectVehiclePhotosScreen> {
   bool get _allSidesCaptured =>
       _VehicleAngle.values.every((a) => _angles[a] != null);
 
-  Future<void> _takePhoto(_VehicleAngle angle) async {
+  Future<void> _capturePhoto(_VehicleAngle angle) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined, color: _kOrange),
+              title: const Text('Take Photo'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: _kOrange),
+              title: const Text('Choose from Gallery'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
     try {
-      final status = await Permission.camera.request();
-      if (!status.isGranted) {
-        if (mounted) {
-          final openSettings = await _showPermissionDeniedDialog();
-          if (openSettings) await openAppSettings();
+      if (source == ImageSource.camera) {
+        final status = await Permission.camera.request();
+        if (!status.isGranted) {
+          if (mounted) {
+            final openSettings = await _showPermissionDeniedDialog();
+            if (openSettings) await openAppSettings();
+          }
+          return;
         }
-        return;
       }
       final XFile? image = await _picker.pickImage(
-        source: ImageSource.camera,
+        source: source,
         imageQuality: 80,
       );
       if (image != null) {
@@ -68,7 +95,7 @@ class _SelectVehiclePhotosScreenState extends State<SelectVehiclePhotosScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to capture photo: $e')),
+          SnackBar(content: Text('Failed to pick photo: $e')),
         );
       }
     }
@@ -247,7 +274,7 @@ class _SelectVehiclePhotosScreenState extends State<SelectVehiclePhotosScreen> {
           child: Material(
             type: MaterialType.transparency,
             child: InkWell(
-              onTap: () => _takePhoto(angle),
+              onTap: () => _capturePhoto(angle),
               borderRadius: BorderRadius.circular(4),
               child: CustomPaint(
                 painter: DashedRectPainter(

@@ -20,6 +20,8 @@ import '../booking/order_details_screen.dart';
 import '../booking/order_confirmation_screen.dart';
 import '../booking/payment_processing_screen.dart';
 import '../booking/order_model.dart';
+import '../booking/notifications_screen.dart';
+import '../auth/screens/edit_profile_screen.dart';
 
 class AppRouter {
   static GoRouter createRouter(AuthProvider authProvider) {
@@ -70,6 +72,13 @@ class AppRouter {
         GoRoute(
           path: '/vehicles/add',
           builder: (context, state) => const AddVehicleScreen(),
+        ),
+        GoRoute(
+          path: '/vehicles/edit',
+          builder: (context, state) {
+            final vehicle = state.extra as VehicleModel;
+            return AddVehicleScreen(vehicle: vehicle);
+          },
         ),
         GoRoute(
           path: '/addresses',
@@ -123,6 +132,14 @@ class AppRouter {
               beforeImages: data['beforeImages'] as List<File>,
             );
           },
+        ),
+        GoRoute(
+          path: '/profile/edit',
+          builder: (context, state) => const EditProfileScreen(),
+        ),
+        GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationsScreen(),
         ),
         GoRoute(
           path: '/orders',

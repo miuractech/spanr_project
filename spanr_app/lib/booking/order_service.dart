@@ -67,8 +67,7 @@ class OrderService {
         uploadedUrls.add(publicUrl);
       } catch (e) {
         if (_isRlsViolationError(e)) {
-          // Do not block checkout when photo bucket policies are stricter.
-          continue;
+          throw Exception('Unable to upload vehicle photos. Please check app permissions and try again.');
         }
         rethrow;
       }
@@ -238,7 +237,7 @@ class OrderService {
         'name': name,
       },
       'theme': {
-        'color': '#2196F3',
+        'color': '#FC8019',
       },
     };
 

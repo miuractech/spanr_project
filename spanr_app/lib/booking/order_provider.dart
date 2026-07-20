@@ -245,7 +245,9 @@ class OrderProvider extends ChangeNotifier {
 
     try {
       await _orderService.cancelOrder(orderId);
-      await loadUserOrders(_currentOrder!.userId);
+      if (_currentOrder != null) {
+        await loadUserOrders(_currentOrder!.userId);
+      }
     } catch (e) {
       _error = e.toString();
     } finally {

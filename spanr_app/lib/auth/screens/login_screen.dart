@@ -21,7 +21,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   bool _obscurePassword = true;
-  bool _rememberMe = false;
   String? _error;
 
   @override
@@ -72,12 +71,59 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       setState(() {
-        _error = e.toString();
+        final message = e.toString().replaceFirst('Exception: ', '').trim();
+        _error = message.isEmpty ? 'Google sign-in failed. Please try again.' : message;
       });
     } finally {
       setState(() {
         _isGoogleLoading = false;
       });
+    }
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final emailController = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Reset Password'),
+        content: TextField(
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            hintText: 'Enter your email address',
+            prefixIcon: Icon(Icons.email_outlined, size: 20),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, emailController.text.trim()),
+            style: TextButton.styleFrom(foregroundColor: _amber),
+            child: const Text('Send Reset Link'),
+          ),
+        ],
+      ),
+    );
+    if (result != null && result.isNotEmpty && mounted) {
+      try {
+        await context.read<AuthProvider>().resetPassword(result);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Password reset link sent to your email.')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to send reset link: ${e.toString().replaceFirst('Exception: ', '')}')),
+          );
+        }
+      }
     }
   }
 
@@ -123,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       decoration: BoxDecoration(
                         color: Colors.red[50],
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.red.withOpacity(0.15)),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.15)),
                       ),
                       child: Row(
                         children: [
@@ -147,8 +193,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     hint: 'Email address',
                     icon: Icons.email_outlined,
                     keyboardType: TextInputType.emailAddress,
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Please enter your email' : null,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Please enter your email';
+                      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v)) {
+                        return 'Please enter a valid email address';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 14),
                   _buildInputField(
@@ -172,44 +223,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         : null,
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          value: _rememberMe,
-                          onChanged: (v) =>
-                              setState(() => _rememberMe = v ?? false),
-                          activeColor: _amber,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          side: const BorderSide(
-                              color: AppTheme.lightGrey, width: 1.5),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Remember me',
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: _handleForgotPassword,
+                      child: const Text(
+                        'Forgot Password?',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.textBody,
+                          color: Colors.red,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Text(
-                          'Forgot Password',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.red,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 24),
                   _buildAmberButton(

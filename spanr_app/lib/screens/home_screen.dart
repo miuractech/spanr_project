@@ -237,8 +237,13 @@ class _HomePageState extends State<_HomePage> {
             return Consumer<CartProvider>(
               builder: (ctx, cart, _) {
                 if (cart.isEmpty) {
-                  Navigator.pop(ctx);
-                  return const SizedBox.shrink();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (Navigator.canPop(ctx)) Navigator.pop(ctx);
+                  });
+                  return const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Center(child: Text('Cart is empty', style: TextStyle(color: _body, fontSize: 15))),
+                  );
                 }
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -325,14 +330,19 @@ class _HomePageState extends State<_HomePage> {
                         height: 50,
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.pop(ctx);
                             final company = mechanicsProvider.mechanics.cast<dynamic>().firstWhere(
                               (m) => m.id == cart.companyId,
                               orElse: () => null,
                             );
-                            if (company != null) {
-                              context.push('/select-vehicle', extra: company);
+                            if (company == null) {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Mechanic not found. Please refresh and try again.')),
+                              );
+                              return;
                             }
+                            Navigator.pop(ctx);
+                            context.push('/select-vehicle', extra: company);
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _orange,
@@ -614,7 +624,10 @@ class _HomePageState extends State<_HomePage> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
                         children: [
-                          if (mechanicsProvider.mechanics.isEmpty &&
+                          if (mechanicsProvider.error != null &&
+                              mechanicsProvider.mechanics.isEmpty)
+                            _buildErrorState()
+                          else if (mechanicsProvider.mechanics.isEmpty &&
                               !mechanicsProvider.isLoading)
                             _buildEmptyState()
                           else
@@ -681,6 +694,39 @@ class _HomePageState extends State<_HomePage> {
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 48),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
+              child: Icon(Icons.wifi_off_outlined, size: 48, color: Colors.red[400]),
+            ),
+            const SizedBox(height: 16),
+            const Text('Failed to load mechanics',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF424242))),
+            const SizedBox(height: 6),
+            Text('Check your connection and try again',
+              style: TextStyle(color: Colors.grey[500], fontSize: 13)),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _handleRefresh,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _orange, foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -809,7 +855,7 @@ class _ProfilePageState extends State<_ProfilePage> {
                         ),
                         child: Center(
                           child: Text(
-                            user?.name[0].toUpperCase() ?? 'U',
+                            user?.name.isNotEmpty == true ? user!.name[0].toUpperCase() : 'U',
                             style: const TextStyle(
                               fontSize: 36,
                               color: Colors.white,
@@ -874,7 +920,9 @@ class _ProfilePageState extends State<_ProfilePage> {
                           icon: Icons.person_outline,
                           color: _orange,
                           title: 'Edit Profile',
-                          onTap: _isLoggingOut ? null : () {},
+                          onTap: _isLoggingOut
+                              ? null
+                              : () => context.push('/profile/edit'),
                         ),
                         _MenuItemData(
                           icon: Icons.location_on_outlined,
@@ -888,7 +936,9 @@ class _ProfilePageState extends State<_ProfilePage> {
                           icon: Icons.notifications_outlined,
                           color: _orange,
                           title: 'Notifications',
-                          onTap: _isLoggingOut ? null : () {},
+                          onTap: _isLoggingOut
+                              ? null
+                              : () => context.push('/notifications'),
                         ),
                       ]),
                       const SizedBox(height: 20),

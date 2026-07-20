@@ -54,7 +54,7 @@ class AuthIllustration extends StatelessWidget {
             child: _FloatingElement(
               icon: Icons.settings,
               size: 26,
-              color: _amber.withOpacity(0.7),
+              color: _amber.withValues(alpha: 0.7),
             ),
           ),
 
@@ -65,7 +65,7 @@ class AuthIllustration extends StatelessWidget {
             child: _FloatingElement(
               icon: Icons.build_rounded,
               size: 22,
-              color: _amber.withOpacity(0.6),
+              color: _amber.withValues(alpha: 0.6),
             ),
           ),
 
@@ -76,7 +76,7 @@ class AuthIllustration extends StatelessWidget {
             child: _FloatingElement(
               icon: isSignup ? Icons.favorite_rounded : Icons.star_rounded,
               size: 20,
-              color: _amber.withOpacity(0.5),
+              color: _amber.withValues(alpha: 0.5),
             ),
           ),
 
@@ -87,7 +87,7 @@ class AuthIllustration extends StatelessWidget {
             child: _FloatingElement(
               icon: Icons.auto_fix_high_rounded,
               size: 18,
-              color: _amber.withOpacity(0.4),
+              color: _amber.withValues(alpha: 0.4),
             ),
           ),
 
@@ -95,17 +95,17 @@ class AuthIllustration extends StatelessWidget {
           Positioned(
             top: 65,
             right: 100,
-            child: _Dot(color: _amber.withOpacity(0.3), size: 8),
+            child: _Dot(color: _amber.withValues(alpha: 0.3), size: 8),
           ),
           Positioned(
             bottom: 70,
             left: 100,
-            child: _Dot(color: _amber.withOpacity(0.25), size: 6),
+            child: _Dot(color: _amber.withValues(alpha: 0.25), size: 6),
           ),
           Positioned(
             top: 80,
             left: 95,
-            child: _Dot(color: _amber.withOpacity(0.2), size: 10),
+            child: _Dot(color: _amber.withValues(alpha: 0.2), size: 10),
           ),
         ],
       ),

@@ -144,7 +144,7 @@ class PaymentProcessingScreen extends StatelessWidget {
           width: 100,
           height: 100,
           decoration: BoxDecoration(
-            color: _kOrange.withOpacity(0.08),
+            color: _kOrange.withValues(alpha: 0.08),
             shape: BoxShape.circle,
           ),
           child: const Center(
@@ -159,7 +159,7 @@ class PaymentProcessingScreen extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: _kGreen.withOpacity(0.1),
+            color: _kGreen.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.check_circle_rounded, color: _kGreen, size: 72),
@@ -168,7 +168,7 @@ class PaymentProcessingScreen extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.1),
+            color: Colors.red.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.cancel_rounded, color: Colors.red, size: 72),

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../models/vehicle_model.dart';
 import '../vehicles_provider.dart';
 import '../../auth/auth_provider.dart';
 import '../widgets/vehicle_card.dart';
-import 'add_vehicle_screen.dart';
 
 const _kOrange = Color(0xFFFC8019);
 const _kBg = Color(0xFFF2F2F2);
@@ -33,9 +33,7 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
   }
 
   Future<void> _navigateToAddVehicle() async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const AddVehicleScreen()),
-    );
+    final result = await context.push<bool>('/vehicles/add');
     if (result == true) _loadVehicles();
   }
 
@@ -244,7 +242,7 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
             Container(
               padding: const EdgeInsets.all(28),
               decoration: BoxDecoration(
-                color: _kOrange.withOpacity(0.08),
+                color: _kOrange.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.directions_car_outlined, size: 48, color: _kOrange),
@@ -293,10 +291,9 @@ class _VehiclesScreenState extends State<VehiclesScreen> {
             onEdit: () async {
               final freshVehicle = provider.vehicles
                   .firstWhere((v) => v.id == vehicle.id, orElse: () => vehicle);
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => AddVehicleScreen(vehicle: freshVehicle),
-                ),
+              final result = await context.push<bool>(
+                '/vehicles/edit',
+                extra: freshVehicle,
               );
               if (result == true) _loadVehicles();
             },

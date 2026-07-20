@@ -116,17 +116,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(20),
                               decoration: BoxDecoration(
-                                color: _statusColor(order.status).withOpacity(0.08),
+                                color: _statusColor(order.status).withValues(alpha: 0.08),
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                    color: _statusColor(order.status).withOpacity(0.2)),
+                                    color: _statusColor(order.status).withValues(alpha: 0.2)),
                               ),
                               child: Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: _statusColor(order.status).withOpacity(0.15),
+                                      color: _statusColor(order.status).withValues(alpha: 0.15),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
@@ -183,7 +183,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                                 height: 30,
                                                 decoration: BoxDecoration(
                                                   color: _statusColor(item.status)
-                                                      .withOpacity(0.15),
+                                                      .withValues(alpha: 0.15),
                                                   shape: BoxShape.circle,
                                                   border: Border.all(
                                                     color: _statusColor(item.status),
@@ -448,6 +448,19 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
 
                             const SizedBox(height: 12),
 
+                            // Mechanic / Company
+                            _buildDetailCard(
+                              icon: Icons.store_outlined,
+                              title: 'Mechanic',
+                              child: _detailRow(
+                                Icons.info_outline,
+                                'Company',
+                                'Contact your mechanic through the app for updates.',
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
                             // Contact Details
                             _buildDetailCard(
                               icon: Icons.person_outline,
@@ -506,8 +519,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                           decoration: BoxDecoration(
                                             color: payment.status ==
                                                     PaymentStatus.paid
-                                                ? const Color(0xFF267E3E).withOpacity(0.1)
-                                                : _kOrange.withOpacity(0.1),
+                                                ? const Color(0xFF267E3E).withValues(alpha: 0.1)
+                                                : _kOrange.withValues(alpha: 0.1),
                                             borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Row(
@@ -637,7 +650,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -862,7 +875,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -878,7 +891,7 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: _kOrange.withOpacity(0.1),
+                    color: _kOrange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: _kOrange, size: 16),

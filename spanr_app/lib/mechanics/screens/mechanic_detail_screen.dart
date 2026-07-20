@@ -54,11 +54,13 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
     try {
       final services = await _service.getServicesByCompany(widget.company.id);
 
+      final planResults = await Future.wait(
+        services.map((s) => _service.getPlansByService(s.id)),
+      );
       final Map<String, List<PlanModel>> servicePlans = {};
-      for (final service in services) {
-        final plans = await _service.getPlansByService(service.id);
-        if (plans.isNotEmpty) {
-          servicePlans[service.id] = plans;
+      for (var i = 0; i < services.length; i++) {
+        if (planResults[i].isNotEmpty) {
+          servicePlans[services[i].id] = planResults[i];
         }
       }
 

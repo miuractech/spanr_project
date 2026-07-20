@@ -46,7 +46,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
+                    color: Colors.black.withValues(alpha: 0.06),
                     blurRadius: 12,
                     offset: const Offset(0, 3),
                   ),
@@ -57,7 +57,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: _kGreen.withOpacity(0.12),
+                      color: _kGreen.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.check_circle_rounded,
@@ -160,7 +160,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                         decoration: BoxDecoration(
-                          color: _kGreen.withOpacity(0.1),
+                          color: _kGreen.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Row(
@@ -197,7 +197,7 @@ class OrderConfirmationScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: const Color(0xFFFFF4E6),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _kOrange.withOpacity(0.2)),
+                border: Border.all(color: _kOrange.withValues(alpha: 0.2)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +208,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                     child: Text(
                       'The mechanic will call you to confirm the service appointment before arrival.',
                       style: TextStyle(
-                          color: _kOrange.withOpacity(0.9), fontSize: 13, height: 1.4),
+                          color: _kOrange.withValues(alpha: 0.9), fontSize: 13, height: 1.4),
                     ),
                   ),
                 ],
@@ -289,7 +289,7 @@ class _InfoCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -305,7 +305,7 @@ class _InfoCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: _kOrange.withOpacity(0.1),
+                    color: _kOrange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: _kOrange, size: 16),

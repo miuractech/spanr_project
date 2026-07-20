@@ -61,7 +61,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   final _imagePicker = ImagePicker();
 
   bool _isLoading = false;
-  final bool _isUploadingImage = false;
+  bool _isUploadingImage = false;
   bool _isIndianLicensed = true;
   bool _isPrimary = false;
   String _vehicleType = 'car';
@@ -392,7 +392,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'i have a indian licensed vehicle',
+                  'I have an Indian licensed vehicle',
                   style: TextStyle(fontSize: 14, color: _kBody),
                 ),
               ],
@@ -419,11 +419,24 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
             ),
             const SizedBox(height: 20),
 
+            _buildLabel('Make'),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _makeController,
+              decoration: _fieldDecoration('Tata'),
+              textCapitalization: TextCapitalization.words,
+              validator: (value) {
+                if (value == null || value.isEmpty) return 'Please enter the make';
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+
             _buildLabel('Model'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _modelController,
-              decoration: _fieldDecoration('2020'),
+              decoration: _fieldDecoration('Nexon'),
               textCapitalization: TextCapitalization.words,
               validator: (value) {
                 if (value == null || value.isEmpty) return 'Please enter the model';
@@ -432,16 +445,19 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
             ),
             const SizedBox(height: 20),
 
-            _buildLabel('Make'),
+            _buildLabel('Year'),
             const SizedBox(height: 8),
-            TextFormField(
-              controller: _makeController,
-              decoration: _fieldDecoration('Nexon'),
-              textCapitalization: TextCapitalization.words,
-              validator: (value) {
-                if (value == null || value.isEmpty) return 'Please enter the make';
-                return null;
-              },
+            DropdownButtonFormField<int>(
+              value: _year,
+              decoration: _fieldDecoration(''),
+              items: List.generate(
+                DateTime.now().year - 1989,
+                (i) {
+                  final y = DateTime.now().year - i;
+                  return DropdownMenuItem(value: y, child: Text('$y'));
+                },
+              ),
+              onChanged: (v) { if (v != null) setState(() => _year = v); },
             ),
             const SizedBox(height: 20),
 

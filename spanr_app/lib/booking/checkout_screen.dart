@@ -152,7 +152,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       serviceLatitude: serviceAddress.latitude,
       serviceLongitude: serviceAddress.longitude,
       serviceAddress: serviceAddress.fullAddress,
-      amount: cartProvider.total,
+      amount: cartItem.total,
       beforeImageUrls: [],
     );
 
@@ -313,7 +313,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: _kOrange.withOpacity(0.1),
+                                    color: _kOrange.withValues(alpha:0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Icon(Icons.home_outlined, color: _kOrange, size: 22),
@@ -358,7 +358,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: _kOrange.withOpacity(0.1),
+                              color: _kOrange.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.directions_car, color: _kOrange, size: 22),
@@ -403,7 +403,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: _kOrange.withOpacity(0.1),
+                              color: _kOrange.withValues(alpha:0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.event_available, color: _kOrange, size: 22),
@@ -564,7 +564,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.06),
+                            color: Colors.black.withValues(alpha:0.06),
                             blurRadius: 12,
                             offset: const Offset(0, 3),
                           ),
@@ -579,7 +579,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(7),
                                   decoration: BoxDecoration(
-                                    color: _kOrange.withOpacity(0.1),
+                                    color: _kOrange.withValues(alpha:0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(Icons.calculate_outlined,
@@ -604,12 +604,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               children: [
                                 _PriceRow(
                                   label: 'Subtotal',
-                                  value: '₹${cartProvider.subtotal.toStringAsFixed(2)}',
+                                  value: '₹${cartProvider.items.first.subtotal.toStringAsFixed(2)}',
                                 ),
                                 const SizedBox(height: 10),
                                 _PriceRow(
                                   label: 'Tax',
-                                  value: '₹${cartProvider.taxAmount.toStringAsFixed(2)}',
+                                  value: '₹${cartProvider.items.first.taxAmount.toStringAsFixed(2)}',
                                   valueColor: _kBody,
                                 ),
                                 Padding(
@@ -628,7 +628,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '₹${cartProvider.total.toStringAsFixed(2)}',
+                                      '₹${cartProvider.items.first.total.toStringAsFixed(2)}',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w800,
                                         fontSize: 20,
@@ -656,7 +656,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
+                    color: Colors.black.withValues(alpha:0.08),
                     blurRadius: 12,
                     offset: const Offset(0, -2),
                   ),
@@ -677,7 +677,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               style: TextStyle(color: _kBody, fontSize: 13),
                             ),
                             Text(
-                              '₹${cartProvider.total.toStringAsFixed(2)}',
+                              '₹${cartProvider.items.first.total.toStringAsFixed(2)}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.w800,
                                 fontSize: 20,
@@ -693,7 +693,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _kOrange,
                               foregroundColor: Colors.white,
-                              disabledBackgroundColor: _kOrange.withOpacity(0.5),
+                              disabledBackgroundColor: _kOrange.withValues(alpha:0.5),
                               minimumSize: const Size(0, 52),
                               elevation: 0,
                               shape: RoundedRectangleBorder(
@@ -762,7 +762,7 @@ class _CheckoutCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha:0.06),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -778,7 +778,7 @@ class _CheckoutCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(7),
                   decoration: BoxDecoration(
-                    color: _kOrange.withOpacity(0.1),
+                    color: _kOrange.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: _kOrange, size: 18),
@@ -822,9 +822,9 @@ class _AddAddressPrompt extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: _kOrange.withOpacity(0.08),
+          color: _kOrange.withValues(alpha:0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _kOrange.withOpacity(0.25)),
+          border: Border.all(color: _kOrange.withValues(alpha:0.25)),
         ),
         child: Row(
           children: [
@@ -833,7 +833,7 @@ class _AddAddressPrompt extends StatelessWidget {
             Expanded(
               child: Text(
                 'No address selected. Tap to add one.',
-                style: TextStyle(color: _kOrange.withOpacity(0.9), fontSize: 13),
+                style: TextStyle(color: _kOrange.withValues(alpha:0.9), fontSize: 13),
               ),
             ),
             const Icon(Icons.chevron_right, color: _kOrange),

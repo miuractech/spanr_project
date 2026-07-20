@@ -134,8 +134,8 @@ class PlanCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: _kOrange.withOpacity(0.4)),
-                            color: _kOrange.withOpacity(0.06),
+                            border: Border.all(color: _kOrange.withValues(alpha: 0.4)),
+                            color: _kOrange.withValues(alpha: 0.06),
                           ),
                           child: Text(
                             fuel.toUpperCase(),
@@ -195,12 +195,12 @@ class PlanCard extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.verified_user_rounded, size: 12, color: _kOrange.withOpacity(0.85)),
+                              Icon(Icons.verified_user_rounded, size: 12, color: _kOrange.withValues(alpha: 0.85)),
                               const SizedBox(width: 3),
                               Text(
                                 plan.warranty!,
                                 style: TextStyle(
-                                  color: _kOrange.withOpacity(0.85),
+                                  color: _kOrange.withValues(alpha: 0.85),
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                 ),
