@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Container,
   Box,
@@ -7,20 +7,34 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
 import { useCompany } from '../company/company.hook';
-import { companyService } from '../company/company.service';
+import { companyService, toExistingDocuments } from '../company/company.service';
 import { CompanyProfileStepper } from '../components/company_profile_stepper';
+import type { ExistingDocuments } from '../components/company_documents_form';
 import type { CompanyFormData } from '../company/company.service';
+import type { DocumentFiles } from '../components/company_documents_form';
+import { useNotification } from '../core/notification.hook';
 
 export default function CompanyProfilePage() {
   const { company, error, refreshCompany } = useCompany();
   const [updateError, setUpdateError] = useState('');
+  const [existingDocuments, setExistingDocuments] = useState<ExistingDocuments>({});
+  const { showSuccess } = useNotification();
+
+  useEffect(() => {
+    if (!company) return;
+    companyService
+      .getDocuments(company.id)
+      .then((docs) => setExistingDocuments(toExistingDocuments(docs)))
+      .catch((err) => console.error('Failed to load existing documents:', err));
+  }, [company]);
 
   const handleUpdate = async (
     data: CompanyFormData,
     logoFile?: File,
     imageFiles?: File[],
     certifications?: string[],
-    specializations?: string[]
+    specializations?: string[],
+    documents?: DocumentFiles
   ) => {
     if (!company) {
       console.error('No company found');
@@ -91,8 +105,16 @@ export default function CompanyProfilePage() {
         }
       }
 
+      if (documents && Object.keys(documents).length > 0) {
+        console.log('Uploading documents...');
+        await companyService.uploadAndSaveDocuments(company.id, documents);
+        const docs = await companyService.getDocuments(company.id);
+        setExistingDocuments(toExistingDocuments(docs));
+      }
+
       console.log('Update successful, refreshing...');
       await refreshCompany();
+      showSuccess('Shop profile updated successfully');
     } catch (err) {
       console.error('Update error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update company profile';
@@ -107,7 +129,7 @@ export default function CompanyProfilePage() {
   return (
     <Container size="lg" py={{ base: 32, md: 48 }} maw={960}>
       <Title order={2} mb="xl" fz={28} fw={700} c="#1C1C1C">
-        Company profile
+        Shop profile
       </Title>
 
       {updateError && (
@@ -136,6 +158,7 @@ export default function CompanyProfilePage() {
           }}
           initialCertifications={company.certifications}
           initialSpecializations={company.specializations}
+          existingDocuments={existingDocuments}
           onSubmit={handleUpdate}
           submitLabel="Update Profile"
         />

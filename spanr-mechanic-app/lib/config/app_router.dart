@@ -19,7 +19,12 @@ class AppRouter {
       initialLocation: '/splash',
       refreshListenable: authProvider,
       redirect: (context, state) {
-        if (authProvider.isLoading) {
+        // Only force the splash screen during the initial cold-boot check
+        // (before we know whether the user is authenticated). Once a staff
+        // session is resolved, a later in-place loading state — e.g. the
+        // login or change-password screen submitting — must NOT hijack
+        // navigation away from the screen the user is actively on.
+        if (authProvider.isLoading && !authProvider.isAuthenticated) {
           return state.matchedLocation == '/splash' ? null : '/splash';
         }
         if (state.matchedLocation == '/splash') {

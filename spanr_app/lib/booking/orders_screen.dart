@@ -12,7 +12,13 @@ const _kHeading = Color(0xFF1C1C1C);
 const _kBody = Color(0xFF696969);
 
 class OrdersScreen extends StatefulWidget {
-  const OrdersScreen({super.key});
+  /// Called when the user taps "Browse Mechanics" from the empty state.
+  /// When set (e.g. embedded as a Home tab), this should switch back to the
+  /// Home tab instead of navigating, since `/home` is already the current
+  /// route in that context. Falls back to `context.go('/home')` if unset.
+  final VoidCallback? onBrowseMechanics;
+
+  const OrdersScreen({super.key, this.onBrowseMechanics});
 
   @override
   State<OrdersScreen> createState() => _OrdersScreenState();
@@ -208,7 +214,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
             const SizedBox(height: 28),
             ElevatedButton.icon(
-              onPressed: () => context.go('/home'),
+              onPressed: widget.onBrowseMechanics ?? () => context.go('/home'),
               icon: const Icon(Icons.search_rounded, size: 18),
               label: const Text('Browse Mechanics'),
               style: ElevatedButton.styleFrom(

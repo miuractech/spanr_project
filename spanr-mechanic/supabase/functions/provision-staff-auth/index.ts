@@ -77,10 +77,11 @@ serve(async (req) => {
       });
       if (createError) throw createError;
 
-      await adminClient
+      const { error: linkError } = await adminClient
         .from('staff')
         .update({ auth_user_id: authUser.user.id, email: authEmail, phone: normalizedPhone })
         .eq('id', staff_id);
+      if (linkError) throw linkError;
     }
 
     await adminClient

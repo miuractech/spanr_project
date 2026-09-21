@@ -22,6 +22,7 @@ import {
   IconAlertCircle,
   IconExternalLink,
 } from '@tabler/icons-react';
+import { MANDATORY_DOC_FILE_KEYS } from '../kyc/kyc.constants';
 
 export interface DocumentFiles {
   // Mandatory KYC
@@ -177,15 +178,6 @@ interface CompanyDocumentsFormProps {
   onFilesChange: (files: DocumentFiles) => void;
 }
 
-const MANDATORY_KEYS: (keyof DocumentFiles)[] = [
-  'aadhaarFront',
-  'aadhaarBack',
-  'personalPan',
-  'bankPassbook',
-  'homeAddressProof',
-  'homeUtilityBill',
-  'shopUtilityBill',
-];
 
 const MANDATORY_SLOTS: Array<{
   key: keyof DocumentFiles;
@@ -281,7 +273,7 @@ export const CompanyDocumentsForm: React.FC<CompanyDocumentsFormProps> = ({
     onFilesChange(next);
   };
 
-  const mandatoryUploaded = MANDATORY_KEYS.filter(
+  const mandatoryUploaded = MANDATORY_DOC_FILE_KEYS.filter(
     (k) => localFiles[k] || existingDocuments?.[k]
   ).length;
 
@@ -309,9 +301,9 @@ export const CompanyDocumentsForm: React.FC<CompanyDocumentsFormProps> = ({
           </Text>
           <Badge
             variant="light"
-            color={mandatoryUploaded === MANDATORY_KEYS.length ? 'green' : 'orange'}
+            color={mandatoryUploaded === MANDATORY_DOC_FILE_KEYS.length ? 'green' : 'orange'}
           >
-            {mandatoryUploaded}/{MANDATORY_KEYS.length} uploaded
+            {mandatoryUploaded}/{MANDATORY_DOC_FILE_KEYS.length} uploaded
           </Badge>
         </Group>
         <Stack gap={12}>
@@ -351,10 +343,10 @@ export const CompanyDocumentsForm: React.FC<CompanyDocumentsFormProps> = ({
         </Stack>
       </Box>
 
-      {mandatoryUploaded < MANDATORY_KEYS.length && (
-        <Text size="xs" c="dimmed" ta="center">
-          You can skip and upload documents later from your shop profile.
-          Verification may be required to activate your account.
+      {mandatoryUploaded < MANDATORY_DOC_FILE_KEYS.length && (
+        <Text size="xs" c="orange" ta="center">
+          All mandatory documents are required. SPANR will not list your shop
+          for customers until these files are uploaded and approved.
         </Text>
       )}
     </Stack>

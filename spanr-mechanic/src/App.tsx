@@ -23,6 +23,11 @@ import StaffPage from './pages/staff';
 import ProfilePage from './pages/profile';
 import VehicleHistoryPage from './pages/vehicle_history';
 import ServicesPage from './pages/job_catalog';
+import AdminLoginPage from './admin/admin_login';
+import AdminDashboardPage from './admin/admin_dashboard';
+import AdminReviewPage from './admin/admin_review';
+import { AdminLayout } from './admin/admin_layout';
+import { AdminRoute } from './admin/admin_route';
 
 import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
@@ -41,6 +46,19 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/auth/callback" element={<AuthCallbackPage />} />
+
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="shops/:companyId" element={<AdminReviewPage />} />
+            </Route>
 
             <Route
               path="/onboarding"

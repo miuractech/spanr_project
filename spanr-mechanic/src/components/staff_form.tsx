@@ -61,6 +61,7 @@ export const StaffForm: React.FC<StaffFormProps> = ({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
   useEffect(() => {
     if (initialData) {
@@ -91,8 +92,18 @@ export const StaffForm: React.FC<StaffFormProps> = ({
     }
   }, [initialData, opened]);
 
+  const validatePhone = (phone: string): string => {
+    const digits = phone.replace(/\D/g, '');
+    return digits.length === 10 ? '' : 'Enter a valid 10-digit mobile number';
+  };
+
   const handleSubmit = async () => {
-    if (!formData.phone.trim()) return;
+    const validationError = validatePhone(formData.phone);
+    if (validationError) {
+      setPhoneError(validationError);
+      return;
+    }
+    setPhoneError('');
     setLoading(true);
     try {
       await onSubmit({ ...formData, photoFile }, permissions);
@@ -136,8 +147,14 @@ export const StaffForm: React.FC<StaffFormProps> = ({
             label="Mobile Number (Login ID)"
             placeholder="9876543210"
             required
+            maxLength={10}
             value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+              setFormData({ ...formData, phone: digits });
+              if (phoneError) setPhoneError('');
+            }}
+            error={phoneError}
             disabled={!!initialData && isMechanicAccount}
             description={
               initialData && isMechanicAccount
@@ -239,7 +256,7 @@ export const StaffForm: React.FC<StaffFormProps> = ({
             onClick={handleSubmit}
             loading={loading}
             color="orange"
-            disabled={!formData.name || !formData.phone}
+            disabled={!formData.name || formData.phone.replace(/\D/g, '').length !== 10}
           >
             {initialData ? 'Update' : 'Add & Generate Password'}
           </Button>

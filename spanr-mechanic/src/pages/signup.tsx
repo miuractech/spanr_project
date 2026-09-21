@@ -32,7 +32,7 @@ export default function SignupPage() {
       name: (v) => (v.trim().length >= 2 ? null : 'Enter your full name'),
       phone: (v) => {
         const digits = v.replace(/\D/g, '');
-        return digits.length >= 10 ? null : 'Enter a valid 10-digit mobile number';
+        return digits.length === 10 ? null : 'Enter a valid 10-digit mobile number';
       },
     },
   });

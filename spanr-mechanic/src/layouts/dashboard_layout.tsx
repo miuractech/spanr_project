@@ -5,6 +5,7 @@ import { Sidebar } from '../components/sidebar';
 import { Header } from '../components/header';
 import { CompanyProvider, useCompany } from '../company/company.hook';
 import { DashboardRouteSkeleton } from '../components/dashboard_page_loading';
+import { VerificationStatusBanner } from '../components/verification_status_banner';
 
 const DashboardShell = () => {
   const { loading, company } = useCompany();
@@ -30,7 +31,14 @@ const DashboardShell = () => {
       </AppShell.Navbar>
 
       <AppShell.Main>
-        {loading && !company ? <DashboardRouteSkeleton /> : <Outlet />}
+        {loading && !company ? (
+          <DashboardRouteSkeleton />
+        ) : (
+          <>
+            {company && <VerificationStatusBanner company={company} />}
+            <Outlet />
+          </>
+        )}
       </AppShell.Main>
     </AppShell>
   );

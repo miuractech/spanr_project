@@ -36,19 +36,19 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const _HomePage(),
-    const OrdersScreen(),
-    const VehiclesScreen(),
-    const _ProfilePage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      const _HomePage(),
+      OrdersScreen(onBrowseMechanics: () => setState(() => _currentIndex = 0)),
+      const VehiclesScreen(),
+      const _ProfilePage(),
+    ];
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _pages,
+        children: pages,
       ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(

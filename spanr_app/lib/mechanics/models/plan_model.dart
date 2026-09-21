@@ -1,6 +1,6 @@
 class PlanModel {
   final String id;
-  final String serviceId;
+  final String? serviceId;
   final String companyId;
   final String name;
   final String vehicleType; // 'car' or 'bike'
@@ -18,7 +18,7 @@ class PlanModel {
 
   PlanModel({
     required this.id,
-    required this.serviceId,
+    this.serviceId,
     required this.companyId,
     required this.name,
     required this.vehicleType,
@@ -38,7 +38,7 @@ class PlanModel {
   factory PlanModel.fromJson(Map<String, dynamic> json) {
     return PlanModel(
       id: json['id'] as String,
-      serviceId: json['service_id'] as String,
+      serviceId: json['service_id'] as String?,
       companyId: json['company_id'] as String,
       name: json['name'] as String,
       vehicleType: json['vehicle_type'] as String,

@@ -53,14 +53,14 @@ class _MechanicDetailScreenState extends State<MechanicDetailScreen> {
 
     try {
       final services = await _service.getServicesByCompany(widget.company.id);
+      final allPlans = await _service.getPlansByCompany(widget.company.id);
 
-      final planResults = await Future.wait(
-        services.map((s) => _service.getPlansByService(s.id)),
-      );
       final Map<String, List<PlanModel>> servicePlans = {};
-      for (var i = 0; i < services.length; i++) {
-        if (planResults[i].isNotEmpty) {
-          servicePlans[services[i].id] = planResults[i];
+      for (final s in services) {
+        final plans =
+            allPlans.where((p) => p.vehicleType == s.category).toList();
+        if (plans.isNotEmpty) {
+          servicePlans[s.id] = plans;
         }
       }
 

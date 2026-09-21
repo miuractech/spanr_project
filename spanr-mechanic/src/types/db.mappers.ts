@@ -86,6 +86,10 @@ export function profileToDbCompany(profile: MechanicCompanyProfile): Omit<DbMech
     latitude: null,
     longitude: null,
     images: [],
+    verification_status: 'pending',
+    verification_notes: null,
+    verified_at: null,
+    verified_by: null,
   };
 }
 

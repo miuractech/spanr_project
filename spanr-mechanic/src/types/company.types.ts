@@ -50,6 +50,10 @@ export interface DbMechanicCompany {
   latitude: number | null;
   longitude: number | null;
   images: string[];
+  verification_status: 'pending' | 'verified' | 'rejected';
+  verification_notes: string | null;
+  verified_at: string | null;
+  verified_by: string | null;
   created_at: string;
   updated_at: string;
 }

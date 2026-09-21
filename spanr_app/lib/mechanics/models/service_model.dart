@@ -31,5 +31,20 @@ class ServiceModel {
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
+
+  /// Builds a service category from a `job_sections` row — the data model the
+  /// mechanic dashboard's live Services page actually writes to.
+  factory ServiceModel.fromJobSection(Map<String, dynamic> json) {
+    return ServiceModel(
+      id: json['id'] as String,
+      companyId: json['company_id'] as String,
+      name: json['name'] as String,
+      description: null,
+      category: json['vehicle_type'] as String,
+      iconUrl: json['image_url'] as String?,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+  }
 }
 

@@ -11,8 +11,9 @@ import { CompanyGeneralForm } from './company_general_form';
 import { CompanyLocationForm } from './company_location_form';
 import { CompanyImagesForm } from './company_images_form';
 import { CompanyDocumentsForm } from './company_documents_form';
-import type { DocumentFiles } from './company_documents_form';
+import type { DocumentFiles, ExistingDocuments } from './company_documents_form';
 import type { CompanyFormData } from '../company/company.service';
+import { hasMandatoryKyc } from '../kyc/kyc.constants';
 
 const TOTAL_STEPS = 4;
 
@@ -31,6 +32,8 @@ interface CompanyProfileStepperProps {
   userPhone?: string;
   initialCertifications?: string[];
   initialSpecializations?: string[];
+  /** Previously uploaded documents (edit flow) — shown as already-uploaded in the Documents step. */
+  existingDocuments?: ExistingDocuments;
   /** When false (default for onboarding), steps can only be navigated via Back/Next buttons. */
   allowFreeNavigation?: boolean;
 }
@@ -42,6 +45,7 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
   userPhone,
   initialCertifications = [],
   initialSpecializations = [],
+  existingDocuments,
   allowFreeNavigation = true,
 }) => {
   const [active, setActive] = useState(0);
@@ -81,6 +85,14 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
       state: (v) => (v.trim() ? null : 'State is required'),
       pincode: (v) =>
         /^[0-9]{6}$/.test(v) ? null : 'Enter a valid 6-digit pincode',
+      latitude: (v) =>
+        v === null || v === undefined
+          ? 'Set your shop location so customers can find you'
+          : null,
+      longitude: (v) =>
+        v === null || v === undefined
+          ? 'Set your shop location so customers can find you'
+          : null,
     },
   });
 
@@ -147,6 +159,12 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
     }
 
     if (submitInFlight.current || loading) return;
+    if (!hasMandatoryKyc(documentFiles, existingDocuments)) {
+      setStepError(
+        'Upload all mandatory KYC documents before submitting. Your shop stays hidden from customers until SPANR approves them.'
+      );
+      return;
+    }
     submitInFlight.current = true;
     setLoading(true);
 
@@ -248,6 +266,7 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
           <Box pt={24}>
             <CompanyDocumentsForm
               files={documentFiles}
+              existingDocuments={existingDocuments}
               onFilesChange={setDocumentFiles}
             />
           </Box>

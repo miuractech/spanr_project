@@ -88,11 +88,17 @@ export const CompanyLocationForm: React.FC<CompanyLocationFormProps> = ({
         <TextInput label="Pincode" placeholder="400001" required {...form.getInputProps('pincode')} />
       </SimpleGrid>
 
+      <Alert icon={<IconAlertCircle size={16} />} color="blue" variant="light">
+        Location coordinates are required so customers can find your shop nearby.
+        Click "Use current location" or enter them manually.
+      </Alert>
+
       <Group align="flex-end" gap="md" wrap="wrap">
         <NumberInput
           style={{ flex: '1 1 160px' }}
           label="Latitude"
           placeholder="19.0760"
+          required
           decimalScale={6}
           {...form.getInputProps('latitude')}
         />
@@ -101,6 +107,7 @@ export const CompanyLocationForm: React.FC<CompanyLocationFormProps> = ({
           style={{ flex: '1 1 160px' }}
           label="Longitude"
           placeholder="72.8777"
+          required
           decimalScale={6}
           {...form.getInputProps('longitude')}
         />

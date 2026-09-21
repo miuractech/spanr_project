@@ -1,6 +1,6 @@
 import supabase from '../supabaseconfig';
 import type { DbMechanicCompany } from '../types';
-import type { DocumentFiles } from '../components/company_documents_form';
+import type { DocumentFiles, ExistingDocuments } from '../components/company_documents_form';
 
 export type DocumentType =
   | 'aadhaar_front'
@@ -51,6 +51,28 @@ export interface CompanyFormData {
 export interface CompanyProfile extends DbMechanicCompany {
   certifications: string[];
   specializations: string[];
+}
+
+const DOCUMENT_TYPE_TO_KEY: Partial<Record<DocumentType, keyof ExistingDocuments>> = {
+  aadhaar_front: 'aadhaarFront',
+  aadhaar_back: 'aadhaarBack',
+  personal_pan: 'personalPan',
+  bank_passbook: 'bankPassbook',
+  home_address_proof: 'homeAddressProof',
+  home_utility_bill: 'homeUtilityBill',
+  shop_utility_bill: 'shopUtilityBill',
+  gst_certificate: 'gstCertificate',
+  firm_pan: 'firmPan',
+  firm_registration: 'firmRegistration',
+};
+
+export function toExistingDocuments(docs: DbCompanyDocument[]): ExistingDocuments {
+  const result: ExistingDocuments = {};
+  for (const doc of docs) {
+    const key = DOCUMENT_TYPE_TO_KEY[doc.document_type];
+    if (key) result[key] = doc.file_url;
+  }
+  return result;
 }
 
 const DOCUMENTS_BUCKET = 'company-documents';
