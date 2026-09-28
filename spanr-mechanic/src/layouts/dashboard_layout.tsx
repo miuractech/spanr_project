@@ -6,6 +6,7 @@ import { Header } from '../components/header';
 import { CompanyProvider, useCompany } from '../company/company.hook';
 import { DashboardRouteSkeleton } from '../components/dashboard_page_loading';
 import { VerificationStatusBanner } from '../components/verification_status_banner';
+import { KycOperationsGuard } from '../components/kyc_operations_guard';
 
 const DashboardShell = () => {
   const { loading, company } = useCompany();
@@ -36,7 +37,9 @@ const DashboardShell = () => {
         ) : (
           <>
             {company && <VerificationStatusBanner company={company} />}
-            <Outlet />
+            <KycOperationsGuard>
+              <Outlet />
+            </KycOperationsGuard>
           </>
         )}
       </AppShell.Main>

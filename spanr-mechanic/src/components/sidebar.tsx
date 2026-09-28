@@ -10,6 +10,8 @@ import {
   IconHistory,
   IconListDetails,
 } from '@tabler/icons-react';
+import { useCompany } from '../company/company.hook';
+import { isKycAllowedPath } from '../kyc/kyc.constants';
 
 const links = [
   { to: '/dashboard', label: 'Dashboard', icon: IconDashboard },
@@ -23,6 +25,8 @@ const links = [
 ];
 
 export const Sidebar = () => {
+  const { operationsLocked } = useCompany();
+
   return (
     <Stack
       gap={4}
@@ -35,10 +39,19 @@ export const Sidebar = () => {
     >
       {links.map((link) => {
         const Icon = link.icon;
+        const locked = operationsLocked && !isKycAllowedPath(link.to);
         return (
           <NavLink
             key={link.to}
             to={link.to}
+            onClick={(e) => {
+              if (locked) e.preventDefault();
+            }}
+            title={
+              locked
+                ? 'Upload required documents in Shop Profile before using this'
+                : undefined
+            }
             style={({ isActive }) => ({
               display: 'flex',
               alignItems: 'center',
@@ -46,10 +59,12 @@ export const Sidebar = () => {
               padding: '10px 14px',
               borderRadius: '12px',
               textDecoration: 'none',
-              color: isActive ? '#FC8019' : '#696969',
-              backgroundColor: isActive ? '#FFF3E0' : 'transparent',
+              color: locked ? '#B0B0B0' : isActive ? '#FC8019' : '#696969',
+              backgroundColor: !locked && isActive ? '#FFF3E0' : 'transparent',
               fontWeight: isActive ? 600 : 500,
               fontSize: '14px',
+              pointerEvents: locked ? 'none' : 'auto',
+              opacity: locked ? 0.55 : 1,
               transition: 'all 0.15s ease',
             })}
           >

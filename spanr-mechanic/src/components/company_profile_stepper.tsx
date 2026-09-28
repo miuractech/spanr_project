@@ -174,8 +174,8 @@ export const CompanyProfileStepper: React.FC<CompanyProfileStepperProps> = ({
         companyName: generalForm.values.companyName,
         email: userPhone
           ? `${userPhone.replace(/\D/g, '')}@spanr.owner`
-          : '',
-        phone: userPhone || '',
+          : initialData?.email || '',
+        phone: userPhone || initialData?.phone || '',
         phoneNumber: generalForm.values.phoneNumber || '',
         addressLine1: locationForm.values.addressLine1,
         addressLine2: locationForm.values.addressLine2 || '',

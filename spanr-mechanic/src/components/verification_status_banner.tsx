@@ -1,14 +1,42 @@
-import { Alert, List } from '@mantine/core';
+import { Alert, List, Text } from '@mantine/core';
 import { useEffect, useState } from 'react';
-import { IconClock, IconAlertTriangle } from '@tabler/icons-react';
+import { IconClock, IconAlertTriangle, IconCircleCheck } from '@tabler/icons-react';
 import type { CompanyProfile, DbCompanyDocument } from '../company/company.service';
 import { companyService } from '../company/company.service';
 import { documentLabel } from '../kyc/kyc.constants';
+import { useCompany } from '../company/company.hook';
+
+function approvedDismissKey(companyId: string, verifiedAt: string | null) {
+  return `spanr_kyc_approved_${companyId}_${verifiedAt ?? 'verified'}`;
+}
 
 export const VerificationStatusBanner: React.FC<{ company: CompanyProfile }> = ({
   company,
 }) => {
+  const { hasMandatoryDocs } = useCompany();
   const [rejectedDocs, setRejectedDocs] = useState<DbCompanyDocument[]>([]);
+  const [approvedDismissed, setApprovedDismissed] = useState(() => {
+    if (company.verification_status !== 'verified') return true;
+    try {
+      return localStorage.getItem(approvedDismissKey(company.id, company.verified_at)) === '1';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (company.verification_status !== 'verified') {
+      setApprovedDismissed(true);
+      return;
+    }
+    try {
+      setApprovedDismissed(
+        localStorage.getItem(approvedDismissKey(company.id, company.verified_at)) === '1'
+      );
+    } catch {
+      setApprovedDismissed(false);
+    }
+  }, [company.id, company.verification_status, company.verified_at]);
 
   useEffect(() => {
     if (company.verification_status === 'verified') {
@@ -21,7 +49,31 @@ export const VerificationStatusBanner: React.FC<{ company: CompanyProfile }> = (
       .catch(() => setRejectedDocs([]));
   }, [company.id, company.verification_status, company.updated_at]);
 
-  if (company.verification_status === 'verified') return null;
+  const dismissApproved = () => {
+    try {
+      localStorage.setItem(approvedDismissKey(company.id, company.verified_at), '1');
+    } catch {
+      /* ignore */
+    }
+    setApprovedDismissed(true);
+  };
+
+  if (company.verification_status === 'verified') {
+    if (approvedDismissed) return null;
+    return (
+      <Alert
+        icon={<IconCircleCheck size={16} />}
+        color="green"
+        variant="light"
+        mb="md"
+        title="Shop approved"
+        withCloseButton
+        onClose={dismissApproved}
+      >
+        SPANR approved your KYC. Customers can now find and book your shop.
+      </Alert>
+    );
+  }
 
   if (company.verification_status === 'rejected') {
     return (
@@ -33,7 +85,7 @@ export const VerificationStatusBanner: React.FC<{ company: CompanyProfile }> = (
         title="Verification rejected"
       >
         {company.verification_notes ||
-          'Your shop was not approved. Re-upload the documents below from Shop Profile.'}
+          'Your shop was not approved. Re-upload the missing documents from Shop Profile. Other dashboard actions stay locked until SPANR approves them.'}
         {rejectedDocs.length > 0 && (
           <List size="sm" mt="xs">
             {rejectedDocs.map((doc) => (
@@ -54,10 +106,13 @@ export const VerificationStatusBanner: React.FC<{ company: CompanyProfile }> = (
       color="orange"
       variant="light"
       mb="md"
-      title="Verification pending"
+      title="Under approval process"
     >
-      Your shop is hidden from customers until SPANR approves KYC. Upload all
-      mandatory documents in Shop Profile. Re-uploads return the shop to this queue.
+      <Text size="sm">
+        {hasMandatoryDocs
+          ? 'Your documents are with SPANR. You can still set up services, plans, and staff. Customers cannot see or book your shop until approval.'
+          : 'Upload all mandatory documents in Shop Profile. Services, plans, orders, and staff stay locked until those files are submitted.'}
+      </Text>
       {rejectedDocs.length > 0 && (
         <List size="sm" mt="xs">
           {rejectedDocs.map((doc) => (

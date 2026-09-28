@@ -42,6 +42,23 @@ export function hasMandatoryKyc(
   return MANDATORY_DOC_FILE_KEYS.every((key) => Boolean(files?.[key] || existing?.[key]));
 }
 
+export function operationsLocked(
+  status: 'pending' | 'verified' | 'rejected' | undefined,
+  hasMandatoryDocs: boolean
+): boolean {
+  if (status === 'verified' || !status) return false;
+  if (status === 'rejected') return true;
+  return !hasMandatoryDocs;
+}
+
+export const KYC_ALLOWED_PATHS = ['/dashboard', '/company-profile', '/profile'];
+
+export function isKycAllowedPath(pathname: string): boolean {
+  return KYC_ALLOWED_PATHS.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`)
+  );
+}
+
 export function documentLabel(type: string): string {
   return DOCUMENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ');
 }

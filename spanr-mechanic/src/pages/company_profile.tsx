@@ -69,6 +69,8 @@ export default function CompanyProfilePage() {
       console.log('Updating company data...');
       await companyService.updateCompany(company.id, {
         ...data,
+        phone: data.phone || company.phone,
+        email: data.email || company.email,
         logo: logoUrl,
         images: allImages,
       });
@@ -105,14 +107,16 @@ export default function CompanyProfilePage() {
         }
       }
 
-      if (documents && Object.keys(documents).length > 0) {
-        console.log('Uploading documents...');
+      const hasNewDocs = Boolean(
+        documents && Object.values(documents).some((file) => Boolean(file))
+      );
+      if (hasNewDocs && documents) {
         await companyService.uploadAndSaveDocuments(company.id, documents);
         const docs = await companyService.getDocuments(company.id);
         setExistingDocuments(toExistingDocuments(docs));
       }
 
-      console.log('Update successful, refreshing...');
+      await companyService.submitKycForReview();
       await refreshCompany();
       showSuccess('Shop profile updated successfully');
     } catch (err) {
@@ -159,6 +163,7 @@ export default function CompanyProfilePage() {
           initialCertifications={company.certifications}
           initialSpecializations={company.specializations}
           existingDocuments={existingDocuments}
+          userPhone={company.phone}
           onSubmit={handleUpdate}
           submitLabel="Update Profile"
         />

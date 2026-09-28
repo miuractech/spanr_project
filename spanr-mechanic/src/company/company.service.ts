@@ -199,29 +199,31 @@ export const companyService = {
   },
 
   async updateCompany(companyId: string, data: Partial<CompanyFormData>) {
+    const patch: Record<string, unknown> = {
+      company_name: data.companyName,
+      address_line_1: data.addressLine1,
+      address_line_2: data.addressLine2,
+      landmark: data.landmark,
+      city: data.city,
+      state: data.state,
+      phone_number: data.phoneNumber,
+      pincode: data.pincode,
+      logo: data.logo,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      images: data.images,
+    };
+    if (data.phone) patch.phone = data.phone;
+    if (data.email) patch.email = data.email;
+
     const { data: company, error } = await supabase
       .from('mechanic_companies')
-      .update({
-        company_name: data.companyName,
-        address_line_1: data.addressLine1,
-        address_line_2: data.addressLine2,
-        landmark: data.landmark,
-        city: data.city,
-        state: data.state,
-        phone_number: data.phoneNumber,
-        pincode: data.pincode,
-        phone: data.phone,
-        email: data.email,
-        logo: data.logo,
-        latitude: data.latitude,
-        longitude: data.longitude,
-        images: data.images,
-      })
+      .update(patch)
       .eq('id', companyId)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
     return company;
   },
 
@@ -314,7 +316,7 @@ export const companyService = {
       .from(DOCUMENTS_BUCKET)
       .upload(fileName, file, { upsert: true });
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
 
     return fileName;
   },
@@ -348,45 +350,39 @@ export const companyService = {
         { onConflict: 'company_id,document_type' }
       );
 
-    if (error) throw error;
+    if (error) throw new Error(error.message);
+  },
+
+  async submitKycForReview(): Promise<void> {
+    const { error } = await supabase.rpc('owner_submit_kyc_for_review');
+    if (error) throw new Error(error.message);
   },
 
   async uploadAndSaveDocuments(
     companyId: string,
     documents: DocumentFiles
   ): Promise<void> {
-    const uploads: Promise<void>[] = [];
+    const jobs: Array<[File, DocumentType]> = [];
 
-    const handle = async (file: File, type: DocumentType) => {
-      const path = await this.uploadDocument(file, companyId, type);
-      await this.saveDocument(companyId, type, path, file.name);
+    const add = (file: File | undefined, type: DocumentType) => {
+      if (file) jobs.push([file, type]);
     };
 
-    // Mandatory KYC
-    if (documents.aadhaarFront)
-      uploads.push(handle(documents.aadhaarFront, 'aadhaar_front'));
-    if (documents.aadhaarBack)
-      uploads.push(handle(documents.aadhaarBack, 'aadhaar_back'));
-    if (documents.personalPan)
-      uploads.push(handle(documents.personalPan, 'personal_pan'));
-    if (documents.bankPassbook)
-      uploads.push(handle(documents.bankPassbook, 'bank_passbook'));
-    if (documents.homeAddressProof)
-      uploads.push(handle(documents.homeAddressProof, 'home_address_proof'));
-    if (documents.homeUtilityBill)
-      uploads.push(handle(documents.homeUtilityBill, 'home_utility_bill'));
-    if (documents.shopUtilityBill)
-      uploads.push(handle(documents.shopUtilityBill, 'shop_utility_bill'));
+    add(documents.aadhaarFront, 'aadhaar_front');
+    add(documents.aadhaarBack, 'aadhaar_back');
+    add(documents.personalPan, 'personal_pan');
+    add(documents.bankPassbook, 'bank_passbook');
+    add(documents.homeAddressProof, 'home_address_proof');
+    add(documents.homeUtilityBill, 'home_utility_bill');
+    add(documents.shopUtilityBill, 'shop_utility_bill');
+    add(documents.gstCertificate, 'gst_certificate');
+    add(documents.firmPan, 'firm_pan');
+    add(documents.firmRegistration, 'firm_registration');
 
-    // Optional
-    if (documents.gstCertificate)
-      uploads.push(handle(documents.gstCertificate, 'gst_certificate'));
-    if (documents.firmPan)
-      uploads.push(handle(documents.firmPan, 'firm_pan'));
-    if (documents.firmRegistration)
-      uploads.push(handle(documents.firmRegistration, 'firm_registration'));
-
-    await Promise.all(uploads);
+    for (const [file, type] of jobs) {
+      const path = await this.uploadDocument(file, companyId, type);
+      await this.saveDocument(companyId, type, path, file.name);
+    }
   },
 
   async getDocuments(companyId: string): Promise<DbCompanyDocument[]> {
