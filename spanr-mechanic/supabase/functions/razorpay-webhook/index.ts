@@ -113,6 +113,19 @@ function extractPaymentIdOnly(
   return null;
 }
 
+/** Captured amount in paise: payment entity first, then order.amount_paid. */
+function extractPaidAmount(
+  payload: Record<string, unknown>,
+): { amountPaise: number; currency: string | null } | null {
+  const pay = payload.payment as { entity?: { amount?: unknown; currency?: unknown } } | undefined;
+  const ord = payload.order as { entity?: { amount_paid?: unknown; currency?: unknown } } | undefined;
+  const raw = pay?.entity?.amount ?? ord?.entity?.amount_paid;
+  const amountPaise = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(amountPaise)) return null;
+  const currency = pay?.entity?.currency ?? ord?.entity?.currency;
+  return { amountPaise, currency: typeof currency === "string" ? currency : null };
+}
+
 type PaidCaptureContext = {
   razorpayOrderId: string;
   razorpayPaymentId: string | null;
@@ -238,6 +251,36 @@ serve(async (req) => {
         processed: false,
       });
 
+      // A valid signature only proves Razorpay sent this; it does not prove the
+      // customer paid what we billed. Never mark paid on an amount mismatch.
+      const paid = extractPaidAmount(payload);
+      const expectedPaise = Math.round(Number(paymentRecord.amount) * 100);
+      if (
+        !paid ||
+        paid.amountPaise !== expectedPaise ||
+        (paid.currency !== null && paid.currency !== "INR")
+      ) {
+        console.error("Paid webhook: amount mismatch", {
+          paymentId: paymentRecord.id,
+          expectedPaise,
+          receivedPaise: paid?.amountPaise ?? null,
+          currency: paid?.currency ?? null,
+        });
+        await supabase
+          .from("payments")
+          .update({
+            status: "failed",
+            failure_reason: "Amount mismatch — payment held for manual review",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", paymentRecord.id)
+          .in("status", ["unpaid", "processing"]);
+        return new Response(
+          JSON.stringify({ success: true, held: true }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
       const paidAtSeconds = ctx.createdAtSeconds ?? Math.floor(Date.now() / 1000);
       const patch: Record<string, unknown> = {
         status: "paid",
@@ -344,7 +387,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Webhook error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Webhook processing failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

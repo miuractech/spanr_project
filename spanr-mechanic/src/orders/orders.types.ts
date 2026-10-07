@@ -25,9 +25,17 @@ export interface OrderService {
 }
 
 export interface OrderPayment {
-  status: 'paid' | 'unpaid';
+  status: 'paid' | 'unpaid' | 'processing' | 'failed';
   method: string;
   amount: number;
+  kind?: 'booking' | 'additional';
+}
+
+export interface OrderPaymentSummary {
+  booking?: OrderPayment;
+  paidTotal: number;
+  partsTotal: number;
+  extraWorkTotal: number;
 }
 
 export interface OrderDetails extends DbOrder {
@@ -36,6 +44,7 @@ export interface OrderDetails extends DbOrder {
   plan: OrderPlan;
   service: OrderService;
   payment?: OrderPayment;
+  paymentSummary?: OrderPaymentSummary;
   assignment?: OrderAssignmentInfo;
 }
 

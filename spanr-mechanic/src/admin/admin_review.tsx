@@ -268,12 +268,11 @@ export default function AdminReviewPage() {
                 label="Rejection reason"
                 placeholder="Required if you reject this document"
                 value={docReasons[selected.id] ?? ''}
-                onChange={(e) =>
-                  setDocReasons((prev) => ({
-                    ...prev,
-                    [selected.id]: e.currentTarget.value,
-                  }))
-                }
+                onChange={(e) => {
+                  // Read now: React nulls currentTarget before the updater runs.
+                  const value = e.currentTarget.value;
+                  setDocReasons((prev) => ({ ...prev, [selected.id]: value }));
+                }}
                 minRows={2}
               />
               <Group justify="flex-end" mt="md">

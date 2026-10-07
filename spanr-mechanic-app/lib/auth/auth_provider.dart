@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../core/offline/hive_boxes.dart';
 import '../core/utils/auth_error_util.dart';
 import 'auth_service.dart';
 import 'attendance_service.dart';
@@ -82,6 +83,9 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> logout() async {
     await _authService.signOut();
+    // Cached jobs hold customer names, phones and plates; don't leave them for
+    // the next person who signs in on a shared device.
+    await HiveBoxes.jobs.clear();
     _staff = null;
     notifyListeners();
   }

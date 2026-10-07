@@ -34,7 +34,7 @@ import {
   IconSettings,
   IconAlertTriangle,
 } from '@tabler/icons-react';
-import { ordersService } from '../orders/orders.service';
+import { orderTotals, ordersService } from '../orders/orders.service';
 import type { OrderDetails, OrderStatus } from '../orders/orders.types';
 import { OrderActionButtons } from '../components/order_action_buttons';
 import { OrderImagesManager } from '../components/order_images_manager';
@@ -99,7 +99,7 @@ export default function OrderDetailPage() {
   if (!order) return <Alert color="yellow">Order not found</Alert>;
 
   const scheduledDate = new Date(order.scheduled_service_date);
-  const totalAmount = Number(order.plan.base_price) * (1 + Number(order.plan.tax) / 100);
+  const totals = orderTotals(order);
 
   return (
     <Container size="xl" my={24}>
@@ -245,16 +245,28 @@ export default function OrderDetailPage() {
                 <Stack gap={4}>
                   <Text size="sm">Base Price: ₹{order.plan.base_price}</Text>
                   <Text size="sm">Tax ({order.plan.tax}%): ₹{(Number(order.plan.base_price) * Number(order.plan.tax) / 100).toFixed(2)}</Text>
-                  <Text size="sm" fw={700}>Total: ₹{totalAmount.toFixed(2)}</Text>
+                  <Text size="sm">Service total: ₹{totals.service.toFixed(2)}</Text>
+                  {totals.parts > 0 && (
+                    <Text size="sm">Parts replaced: ₹{totals.parts.toFixed(2)}</Text>
+                  )}
+                  {totals.extraWork > 0 && (
+                    <Text size="sm">Approved extra work: ₹{totals.extraWork.toFixed(2)}</Text>
+                  )}
+                  <Text size="sm" fw={700}>Order total: ₹{totals.total.toFixed(2)}</Text>
                   {order.payment && (
                     <>
                       <Divider my={4} />
                       <Badge color={order.payment.status === 'paid' ? 'green' : 'orange'} size="sm">
-                        {order.payment.status.toUpperCase()}
+                        Booking {order.payment.status.toUpperCase()} · ₹{order.payment.amount}
                       </Badge>
                       <Text size="sm">Method: {order.payment.method}</Text>
-                      <Text size="sm">Amount: ₹{order.payment.amount}</Text>
                     </>
+                  )}
+                  {totals.paid > 0 && <Text size="sm">Paid: ₹{totals.paid.toFixed(2)}</Text>}
+                  {totals.outstanding > 0 && (
+                    <Badge color="orange" size="sm">
+                      Outstanding ₹{totals.outstanding.toFixed(2)}
+                    </Badge>
                   )}
                 </Stack>
               </Paper>
@@ -300,7 +312,7 @@ export default function OrderDetailPage() {
 
         {/* ── Extra Work ── */}
         <Tabs.Panel value="extrawork" pt="md">
-          <ExtraWorkTab orderId={orderId!} orderStatus={order.status} />
+          <ExtraWorkTab orderId={orderId!} orderStatus={order.status} onChanged={loadOrder} />
         </Tabs.Panel>
 
         {order.status === 'completed' && company && (

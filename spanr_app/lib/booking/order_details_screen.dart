@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'order_provider.dart';
 import 'order_types.dart';
 
@@ -86,6 +87,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     final payment = orderProvider.currentPayment;
     final history = orderProvider.currentOrderHistory;
     final extraWorkRequests = orderProvider.extraWorkRequests;
+    final parts = orderProvider.partsReplaced;
+    final pendingAdditional = orderProvider.pendingAdditional;
 
     return Scaffold(
       backgroundColor: _kBg,
@@ -243,6 +246,47 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                       ),
                                     );
                                   }).toList(),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+
+                            if (parts.isNotEmpty) ...[
+                              _buildDetailCard(
+                                icon: Icons.settings_outlined,
+                                title: 'Parts Replaced',
+                                child: Column(
+                                  children: [
+                                    for (var i = 0; i < parts.length; i++) ...[
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              '${parts[i].partName} ×${parts[i].quantity}',
+                                              style: const TextStyle(
+                                                color: _kHeading,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            parts[i].cost != null
+                                                ? '₹${parts[i].cost!.toStringAsFixed(2)}'
+                                                : '—',
+                                            style: const TextStyle(
+                                              color: _kOrange,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      if (i < parts.length - 1) _divider(),
+                                    ],
+                                  ],
                                 ),
                               ),
                               const SizedBox(height: 12),
@@ -505,6 +549,66 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                         ),
                                       ],
                                     ),
+                                    if (parts.any((p) => p.cost != null)) ...[
+                                      _divider(),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text('Parts replaced',
+                                              style: TextStyle(
+                                                  color: _kBody, fontSize: 13)),
+                                          Text(
+                                            '₹${parts.fold<double>(0, (s, p) => s + (p.cost ?? 0)).toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              color: _kHeading,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                    if (extraWorkRequests.any((e) => e.isApproved)) ...[
+                                      _divider(),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text('Approved extra work',
+                                              style: TextStyle(
+                                                  color: _kBody, fontSize: 13)),
+                                          Text(
+                                            '₹${extraWorkRequests.where((e) => e.isApproved).fold<double>(0, (s, e) => s + e.estimatedCost).toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              color: _kHeading,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                    if (pendingAdditional != null) ...[
+                                      _divider(),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text('Pending extras',
+                                              style: TextStyle(
+                                                  color: _kOrange, fontSize: 13)),
+                                          Text(
+                                            '₹${pendingAdditional.amount.toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              color: _kOrange,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                     _divider(),
                                     Row(
                                       mainAxisAlignment:
@@ -573,6 +677,33 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                                 fontWeight: FontWeight.w500),
                                           ),
                                         ],
+                                      ),
+                                    ],
+                                    if (pendingAdditional != null) ...[
+                                      const SizedBox(height: 12),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: () => _payExtras(
+                                            context,
+                                            orderProvider,
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: _kOrange,
+                                            foregroundColor: Colors.white,
+                                            minimumSize: const Size.fromHeight(48),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(24),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'Pay extras ₹${pendingAdditional.amount.toStringAsFixed(2)}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ],
@@ -912,6 +1043,50 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           Padding(padding: const EdgeInsets.all(16), child: child),
         ],
       ),
+    );
+  }
+
+  Future<void> _payExtras(
+    BuildContext context,
+    OrderProvider orderProvider,
+  ) async {
+    await orderProvider.payPendingAdditional(
+      onPaymentInitiated: () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          final order = orderProvider.currentOrder!;
+          final payment = orderProvider.pendingAdditional ??
+              orderProvider.currentPayment!;
+          context.push(
+            '/payment-processing',
+            extra: {
+              'order': order,
+              'payment': payment,
+              'status': 'processing',
+            },
+          );
+        });
+      },
+      onPaymentSuccess: (order, payment) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          context.go(
+            '/order-confirmation',
+            extra: {
+              'order': order,
+              'payment': payment,
+            },
+          );
+        });
+      },
+      onPaymentError: (order, payment, error) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error)),
+          );
+        });
+      },
     );
   }
 

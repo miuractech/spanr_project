@@ -323,9 +323,10 @@ export const companyService = {
 
   async getDocumentSignedUrl(fileUrlOrPath: string): Promise<string> {
     const path = documentStoragePath(fileUrlOrPath);
+    // Short-lived: these are Aadhaar / PAN / bank documents.
     const { data, error } = await supabase.storage
       .from(DOCUMENTS_BUCKET)
-      .createSignedUrl(path, 3600);
+      .createSignedUrl(path, 600);
 
     if (error) throw error;
     return data.signedUrl;
@@ -400,7 +401,9 @@ export const companyService = {
           const signedUrl = await this.getDocumentSignedUrl(doc.file_url);
           return { ...doc, file_url: signedUrl };
         } catch {
-          return doc;
+          // Never fall back to the stored value: it is shop-controlled and is
+          // rendered (iframe/img/link) in the Super Admin review desk.
+          return { ...doc, file_url: '' };
         }
       })
     );

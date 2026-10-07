@@ -203,3 +203,26 @@ class ExtraWorkRequest {
   bool get isApproved => status == 'approved';
   bool get isRejected => status == 'rejected';
 }
+
+class PartReplacement {
+  final String id;
+  final String partName;
+  final int quantity;
+  final double? cost;
+
+  const PartReplacement({
+    required this.id,
+    required this.partName,
+    required this.quantity,
+    this.cost,
+  });
+
+  factory PartReplacement.fromJson(Map<String, dynamic> json) {
+    return PartReplacement(
+      id: json['id'] as String,
+      partName: json['part_name'] as String,
+      quantity: (json['quantity'] as num?)?.toInt() ?? 1,
+      cost: json['cost'] != null ? (json['cost'] as num).toDouble() : null,
+    );
+  }
+}

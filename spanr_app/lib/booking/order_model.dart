@@ -146,6 +146,7 @@ class PaymentModel {
   final DateTime? paidAt;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String kind;
 
   PaymentModel({
     required this.id,
@@ -161,6 +162,7 @@ class PaymentModel {
     this.paidAt,
     required this.createdAt,
     required this.updatedAt,
+    this.kind = 'booking',
   });
 
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
@@ -180,6 +182,7 @@ class PaymentModel {
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      kind: (json['kind'] as String?) ?? 'booking',
     );
   }
 
@@ -264,6 +267,7 @@ class OrderWithDetails {
   final PlanModel? plan;
   final ServiceModel? service;
   final PaymentModel? payment;
+  final PaymentModel? pendingAdditional;
 
   OrderWithDetails({
     required this.order,
@@ -271,26 +275,49 @@ class OrderWithDetails {
     this.plan,
     this.service,
     this.payment,
+    this.pendingAdditional,
   });
 
   factory OrderWithDetails.fromJson(Map<String, dynamic> json) {
+    final payments = _parsePayments(json['payments']);
+    PaymentModel? booking;
+    PaymentModel? extra;
+    for (final p in payments) {
+      if (p.kind == 'additional' &&
+          (p.status == PaymentStatus.unpaid ||
+              p.status == PaymentStatus.processing)) {
+        extra ??= p;
+      } else if (p.kind != 'additional') {
+        booking ??= p;
+      }
+    }
+    booking ??= payments.isNotEmpty ? payments.first : null;
     return OrderWithDetails(
       order: OrderModel.fromJson(json),
       vehicle: json['vehicles'] != null
           ? VehicleModel.fromJson(json['vehicles'])
           : null,
-      plan: json['plans'] != null 
+      plan: json['plans'] != null
           ? PlanModel.fromJson(json['plans'])
           : null,
       service: json['services'] != null
           ? ServiceModel.fromJson(json['services'])
           : null,
-      payment: json['payments'] != null && (json['payments'] is List && (json['payments'] as List).isNotEmpty)
-          ? PaymentModel.fromJson((json['payments'] as List).first)
-          : (json['payments'] != null && json['payments'] is Map)
-              ? PaymentModel.fromJson(json['payments'])
-              : null,
+      payment: booking,
+      pendingAdditional: extra,
     );
   }
+}
+
+List<PaymentModel> _parsePayments(dynamic raw) {
+  if (raw is List) {
+    return raw
+        .map((e) => PaymentModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+  if (raw is Map<String, dynamic>) {
+    return [PaymentModel.fromJson(raw)];
+  }
+  return [];
 }
 

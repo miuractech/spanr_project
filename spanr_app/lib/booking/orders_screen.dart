@@ -359,8 +359,21 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'Total',
-                                  style: TextStyle(color: Colors.grey[400], fontSize: 11),
+                                  orderWithDetails.pendingAdditional != null
+                                      ? 'Pending extras ₹${orderWithDetails.pendingAdditional!.amount.toStringAsFixed(0)}'
+                                      : 'Total',
+                                  style: TextStyle(
+                                    color: orderWithDetails.pendingAdditional !=
+                                            null
+                                        ? _kOrange
+                                        : Colors.grey[400],
+                                    fontSize: 11,
+                                    fontWeight:
+                                        orderWithDetails.pendingAdditional !=
+                                                null
+                                            ? FontWeight.w700
+                                            : FontWeight.w400,
+                                  ),
                                 ),
                               ],
                             ),

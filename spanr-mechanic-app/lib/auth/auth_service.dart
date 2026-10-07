@@ -29,20 +29,10 @@ class AuthService {
         .eq('enabled', true)
         .maybeSingle();
 
+    // Staff rows are linked to their login only by provision-staff-auth on the
+    // server. Never link by email from the client: anyone who registered that
+    // email would inherit the staff account.
     if (response == null) {
-      final email = _client.auth.currentUser?.email;
-      if (email != null) {
-        final byEmail = await _client
-            .from('staff')
-            .select('*, staff_profiles(*)')
-            .eq('email', email)
-            .eq('enabled', true)
-            .maybeSingle();
-        if (byEmail != null) {
-          await _client.from('staff').update({'auth_user_id': userId}).eq('id', byEmail['id']);
-          return StaffUser.fromJson(byEmail);
-        }
-      }
       throw Exception('No staff account found for this login');
     }
 

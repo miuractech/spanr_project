@@ -9,7 +9,74 @@ import type {
   OrderHistory,
   OrderAssignmentInfo,
   PartReplacement,
+  OrderPayment,
+  OrderPaymentSummary,
 } from './orders.types';
+
+type PaymentRow = OrderPayment & { kind?: string };
+
+function summarizePayments(
+  rows: PaymentRow[] | null | undefined,
+  partsTotal: number,
+  extraWorkTotal: number
+): { payment?: OrderPayment; paymentSummary: OrderPaymentSummary } {
+  const list = rows ?? [];
+  const booking =
+    list.find((p) => (p.kind ?? 'booking') !== 'additional') ?? list[0];
+  const paidTotal = list
+    .filter((p) => p.status === 'paid')
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+
+  return {
+    payment: booking,
+    paymentSummary: {
+      booking,
+      paidTotal,
+      partsTotal,
+      extraWorkTotal,
+    },
+  };
+}
+
+/** What the customer owes for an order (service + parts + approved extra work) and what is still unpaid. */
+export function orderTotals(order: OrderDetails) {
+  const summary = order.paymentSummary;
+  const service = order.payment
+    ? Number(order.payment.amount)
+    : Number(order.plan.base_price) * (1 + Number(order.plan.tax) / 100);
+  const parts = summary?.partsTotal ?? 0;
+  const extraWork = summary?.extraWorkTotal ?? 0;
+  const total = service + parts + extraWork;
+  const paid = summary?.paidTotal ?? 0;
+  const outstanding = Math.max(0, Math.round((total - paid) * 100) / 100);
+  return { service, parts, extraWork, total, paid, outstanding };
+}
+
+async function fetchPaymentBundle(orderId: string) {
+  const [pays, parts, extra] = await Promise.all([
+    // '*' rather than naming `kind`: that column only exists once migration 055
+    // is applied, and naming it would fail the whole query before then.
+    supabase
+      .from('payments')
+      .select('*')
+      .eq('order_id', orderId),
+    supabase.from('parts_replaced').select('cost').eq('order_id', orderId),
+    supabase
+      .from('extra_work_requests')
+      .select('estimated_cost, status')
+      .eq('order_id', orderId),
+  ]);
+
+  const partsTotal = (parts.data ?? []).reduce(
+    (sum, row) => sum + Number(row.cost ?? 0),
+    0
+  );
+  const extraWorkTotal = (extra.data ?? [])
+    .filter((row) => row.status === 'approved')
+    .reduce((sum, row) => sum + Number(row.estimated_cost ?? 0), 0);
+
+  return summarizePayments(pays.data as PaymentRow[] | null, partsTotal, extraWorkTotal);
+}
 
 async function fetchAssignment(orderId: string): Promise<OrderAssignmentInfo | undefined> {
   const { data } = await supabase
@@ -47,8 +114,9 @@ export const ordersService = {
       .eq('company_id', companyId);
 
     // Apply search filter - only on order fields
-    if (filters?.search) {
-      const searchTerm = filters.search.toLowerCase();
+    // Strip PostgREST filter syntax (, ( ) " \) so search text cannot inject extra conditions.
+    const searchTerm = filters?.search?.toLowerCase().replace(/[,()"\\]/g, ' ').trim();
+    if (searchTerm) {
       query = query.or(
         `contact_email.ilike.%${searchTerm}%,` +
         `contact_phone.ilike.%${searchTerm}%,` +
@@ -91,11 +159,11 @@ export const ordersService = {
     // Fetch related data separately
     const orders: OrderDetails[] = await Promise.all(
       ordersData.map(async (order) => {
-        const [userRes, vehicleRes, planRes, paymentRes] = await Promise.all([
+        const [userRes, vehicleRes, planRes, billing] = await Promise.all([
           supabase.from('users').select('name, email, phone').eq('id', order.user_id).single(),
           supabase.from('vehicles').select('make, model, year, license_plate').eq('id', order.vehicle_id).single(),
           supabase.from('plans').select('name, base_price, tax, service_id, vehicle_type').eq('id', order.plan_id).single(),
-          supabase.from('payments').select('status, method, amount').eq('order_id', order.id).maybeSingle(),
+          fetchPaymentBundle(order.id),
         ]);
 
         let serviceName = '';
@@ -115,7 +183,8 @@ export const ordersService = {
           vehicle: vehicleRes.data || { make: '', model: '', year: 0, license_plate: '' },
           plan: planRes.data || { name: '', base_price: 0, tax: 0 },
           service: { name: serviceName },
-          payment: paymentRes.data || undefined,
+          payment: billing.payment,
+          paymentSummary: billing.paymentSummary,
           assignment,
         };
       })
@@ -141,11 +210,11 @@ export const ordersService = {
     if (!order) return null;
 
     // Fetch related data separately
-    const [userRes, vehicleRes, planRes, paymentRes] = await Promise.all([
+    const [userRes, vehicleRes, planRes, billing] = await Promise.all([
       supabase.from('users').select('name, email, phone').eq('id', order.user_id).single(),
       supabase.from('vehicles').select('make, model, year, license_plate').eq('id', order.vehicle_id).single(),
       supabase.from('plans').select('name, base_price, tax, service_id, vehicle_type').eq('id', order.plan_id).single(),
-      supabase.from('payments').select('status, method, amount').eq('order_id', order.id).maybeSingle(),
+      fetchPaymentBundle(order.id),
     ]);
 
     let serviceName = '';
@@ -165,7 +234,8 @@ export const ordersService = {
       vehicle: vehicleRes.data || { make: '', model: '', year: 0, license_plate: '' },
       plan: planRes.data || { name: '', base_price: 0, tax: 0 },
       service: { name: serviceName },
-      payment: paymentRes.data || undefined,
+      payment: billing.payment,
+      paymentSummary: billing.paymentSummary,
       assignment,
     };
   },

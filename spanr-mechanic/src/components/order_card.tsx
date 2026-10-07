@@ -1,5 +1,6 @@
 import { Card, Group, Text, Badge, Stack } from '@mantine/core';
 import { IconCalendar, IconCar, IconUser, IconPhone } from '@tabler/icons-react';
+import { orderTotals } from '../orders/orders.service';
 import type { OrderDetails } from '../orders/orders.types';
 
 interface OrderCardProps {
@@ -19,6 +20,7 @@ const statusColors: Record<string, string> = {
 
 export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
   const scheduledDate = new Date(order.scheduled_service_date);
+  const totals = orderTotals(order);
 
   return (
     <Card
@@ -72,12 +74,19 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onClick }) => {
         </Group>
 
         <Group justify="space-between" mt="xs" pt="xs" style={{ borderTop: '1px solid #F2F2F2' }}>
-          <Text size="sm" fw={600} c="#FC8019">
-            ₹{order.payment?.amount || (Number(order.plan.base_price) * (1 + Number(order.plan.tax) / 100)).toFixed(2)}
-          </Text>
+          <div>
+            <Text size="sm" fw={600} c="#FC8019">
+              ₹{totals.total.toFixed(2)}
+            </Text>
+            {totals.paid > 0 && totals.outstanding > 0 && (
+              <Text size="xs" c="orange" fw={600}>
+                Outstanding ₹{totals.outstanding.toFixed(2)}
+              </Text>
+            )}
+          </div>
           {order.payment && (
-            <Badge size="sm" color={order.payment.status === 'paid' ? 'green' : 'orange'}>
-              {order.payment.status}
+            <Badge size="sm" color={order.payment.status === 'paid' && totals.outstanding === 0 ? 'green' : 'orange'}>
+              {order.payment.status === 'paid' && totals.outstanding > 0 ? 'extras due' : order.payment.status}
             </Badge>
           )}
         </Group>

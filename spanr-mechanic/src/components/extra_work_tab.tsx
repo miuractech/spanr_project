@@ -33,9 +33,10 @@ const STATUS_COLOR: Record<string, string> = {
 interface ExtraWorkTabProps {
   orderId: string;
   orderStatus: string;
+  onChanged?: () => void;
 }
 
-export const ExtraWorkTab: React.FC<ExtraWorkTabProps> = ({ orderId, orderStatus }) => {
+export const ExtraWorkTab: React.FC<ExtraWorkTabProps> = ({ orderId, orderStatus, onChanged }) => {
   const [requests, setRequests] = useState<ExtraWorkRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -62,6 +63,7 @@ export const ExtraWorkTab: React.FC<ExtraWorkTabProps> = ({ orderId, orderStatus
       await extraWorkService.approve(id, orderId);
       notification.showSuccess('Extra work approved');
       await load();
+      onChanged?.();
     } catch (err) {
       notification.showError(err instanceof Error ? err.message : 'Failed to approve');
     } finally {
@@ -76,6 +78,7 @@ export const ExtraWorkTab: React.FC<ExtraWorkTabProps> = ({ orderId, orderStatus
       await extraWorkService.reject(id, reason);
       notification.showSuccess('Extra work rejected');
       await load();
+      onChanged?.();
     } catch (err) {
       notification.showError(err instanceof Error ? err.message : 'Failed to reject');
     } finally {

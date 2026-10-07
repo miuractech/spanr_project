@@ -7,6 +7,8 @@
     <application
         android:label="spanr_mechanic_app"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

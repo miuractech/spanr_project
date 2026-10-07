@@ -119,12 +119,12 @@ class OrderService {
     return OrderModel.fromJson(response);
   }
 
-  // Create payment record
+  // Create payment record. The database recomputes the amount from the plan
+  // price, so `amount` here is only a placeholder for the NOT NULL column.
   Future<PaymentModel> createPayment({
     required String orderId,
     required double amount,
     required PaymentMethod method,
-    String? razorpayOrderId,
   }) async {
     final response = await _supabase
         .from('payments')
@@ -133,7 +133,7 @@ class OrderService {
           'amount': amount,
           'method': method.dbValue,
           'status': PaymentStatus.unpaid.dbValue,
-          'razorpay_order_id': razorpayOrderId,
+          'kind': 'booking',
         })
         .select()
         .single();
@@ -209,7 +209,7 @@ class OrderService {
   // Open Razorpay payment gateway
   Future<void> openRazorpay({
     required String razorpayOrderId,
-    required double amount,
+    required int amountPaise,
     required String name,
     required String email,
     required String phone,
@@ -226,7 +226,7 @@ class OrderService {
 
     var options = {
       'key': keyId,
-      'amount': (amount * 100).toInt(), // amount in paise
+      'amount': amountPaise,
       'currency': 'INR',
       'name': 'SPANR',
       'description': description,
@@ -294,16 +294,47 @@ class OrderService {
         .toList();
   }
 
-  // Get payment for order
+  // Get booking payment for order
   Future<PaymentModel?> getOrderPayment(String orderId) async {
+    final payments = await getOrderPayments(orderId);
+    for (final p in payments) {
+      if (p.kind != 'additional') return p;
+    }
+    return payments.isNotEmpty ? payments.first : null;
+  }
+
+  Future<List<PaymentModel>> getOrderPayments(String orderId) async {
     final response = await _supabase
         .from('payments')
         .select()
         .eq('order_id', orderId)
-        .maybeSingle();
+        .order('created_at', ascending: true);
+    return (response as List)
+        .map((json) => PaymentModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
 
-    if (response == null) return null;
-    return PaymentModel.fromJson(response);
+  Future<PaymentModel?> getPendingAdditionalPayment(String orderId) async {
+    final payments = await getOrderPayments(orderId);
+    for (final p in payments) {
+      if (p.kind == 'additional' &&
+          (p.status == PaymentStatus.unpaid ||
+              p.status == PaymentStatus.processing)) {
+        return p;
+      }
+    }
+    return null;
+  }
+
+  Future<List<PartReplacement>> getPartsReplaced(String orderId) async {
+    final response = await _supabase
+        .from('parts_replaced')
+        .select('id, part_name, quantity, cost')
+        .eq('order_id', orderId)
+        .order('created_at', ascending: true);
+    return (response as List)
+        .map((json) => PartReplacement.fromJson(json as Map<String, dynamic>))
+        .toList();
   }
 
   // Get before images for order
@@ -338,20 +369,15 @@ class OrderService {
         .eq('id', orderId);
   }
 
-  // Create Razorpay order via Supabase Edge Function
-  // Note: You'll need to create this Edge Function
-  Future<String> createRazorpayOrder({
-    required double amount,
-    required String orderId,
+  // Create the Razorpay order for an existing payment row. The edge function
+  // bills the amount stored on the payment and attaches the Razorpay order id
+  // server-side; the client never chooses the amount.
+  Future<({String id, int amountPaise})> createRazorpayOrder({
+    required String paymentId,
   }) async {
-    // Call Supabase Edge Function to create Razorpay order
     final response = await _supabase.functions.invoke(
       'create-razorpay-order',
-      body: {
-        'amount': (amount * 100).toInt(), // amount in paise
-        'currency': 'INR',
-        'receipt': orderId,
-      },
+      body: {'payment_id': paymentId},
     );
 
     final status = response.status;
@@ -369,11 +395,11 @@ class OrderService {
       );
     }
 
-    if (data is! Map || data['id'] == null) {
+    if (data is! Map || data['id'] == null || data['amount'] is! num) {
       throw Exception('Invalid Razorpay response from server');
     }
 
-    return data['id'] as String;
+    return (id: data['id'] as String, amountPaise: (data['amount'] as num).toInt());
   }
 
   // Complete order flow: create order, upload images, create payment, initiate Razorpay
@@ -396,25 +422,22 @@ class OrderService {
     // 3. Save image records
     await saveBeforeImageRecords(order.id, imageUrls);
 
-    // 4. Create Razorpay order
-    final razorpayOrderId = await createRazorpayOrder(
-      amount: request.amount,
-      orderId: order.id,
-    );
-
-    // 5. Create payment record
+    // 4. Create payment record (amount is set server-side from the plan)
     final payment = await createPayment(
       orderId: order.id,
       amount: request.amount,
       method: PaymentMethod.upi, // Default, can be changed
-      razorpayOrderId: razorpayOrderId,
     );
+
+    // 5. Create Razorpay order for that payment
+    final razorpayOrder = await createRazorpayOrder(paymentId: payment.id);
 
     // Return order and payment details
     return {
       'order': order,
       'payment': payment,
-      'razorpay_order_id': razorpayOrderId,
+      'razorpay_order_id': razorpayOrder.id,
+      'amount_paise': razorpayOrder.amountPaise,
     };
   }
 

@@ -279,6 +279,7 @@ cd spanr-mechanic && npm run build
 - **Never skip HMAC verification** in `razorpay-webhook` — it's the only auth mechanism
 - **Never change RLS without testing** — all multi-tenancy depends on it
 - **Never hardcode company_id** — always derive from `user_company_id()` RPC
+- **`user_company_id()` is owner/admin-only** (since 056) — use `auth_staff_company_id()` / `staff_assigned_to_order()` for mechanic access; never match staff by JWT email in new policies (see `security.md`)
 - **Don't use `WITH CHECK (true)`** for new policies — already present as tech debt in early migrations
 - **Don't add a second active assignment** — `uq_order_active_assignment` partial index enforces one; call `assign_order_to_staff()` RPC to reassign safely
 - **Don't bypass `complete_job()` RPC** — it handles denormalization atomically

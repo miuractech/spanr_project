@@ -11,6 +11,8 @@ class OrderProvider extends ChangeNotifier {
   List<OrderWithDetails> _orders = [];
   List<OrderHistoryModel> _currentOrderHistory = [];
   List<ExtraWorkRequest> _extraWorkRequests = [];
+  List<PartReplacement> _partsReplaced = [];
+  PaymentModel? _pendingAdditional;
   bool _isLoading = false;
   String? _error;
   OrderModel? _currentOrder;
@@ -20,6 +22,8 @@ class OrderProvider extends ChangeNotifier {
   List<OrderWithDetails> get orders => _orders;
   List<OrderHistoryModel> get currentOrderHistory => _currentOrderHistory;
   List<ExtraWorkRequest> get extraWorkRequests => _extraWorkRequests;
+  List<PartReplacement> get partsReplaced => _partsReplaced;
+  PaymentModel? get pendingAdditional => _pendingAdditional;
   bool get isLoading => _isLoading;
   String? get error => _error;
   OrderModel? get currentOrder => _currentOrder;
@@ -61,8 +65,11 @@ class OrderProvider extends ChangeNotifier {
     try {
       _currentOrder = await _orderService.getOrderById(orderId);
       _currentPayment = await _orderService.getOrderPayment(orderId);
+      _pendingAdditional =
+          await _orderService.getPendingAdditionalPayment(orderId);
       _currentOrderHistory = await _orderService.getOrderHistory(orderId);
       _extraWorkRequests = await _orderService.getExtraWorkRequests(orderId);
+      _partsReplaced = await _orderService.getPartsReplaced(orderId);
     } catch (e) {
       _error = e.toString();
     } finally {
@@ -84,6 +91,7 @@ class OrderProvider extends ChangeNotifier {
 
   // Approve an extra work request and reload order details
   Future<void> approveExtraWork(String requestId, String orderId) async {
+    // The database resumes the order once no request is pending (migration 057).
     await _orderService.approveExtraWork(requestId);
     await loadOrderDetails(orderId);
   }
@@ -207,6 +215,7 @@ class OrderProvider extends ChangeNotifier {
       _currentOrder = result['order'] as OrderModel;
       _currentPayment = result['payment'] as PaymentModel;
       final razorpayOrderId = result['razorpay_order_id'] as String;
+      final amountPaise = result['amount_paise'] as int;
 
       _isLoading = false;
       notifyListeners();
@@ -214,7 +223,7 @@ class OrderProvider extends ChangeNotifier {
       try {
         await _orderService.openRazorpay(
           razorpayOrderId: razorpayOrderId,
-          amount: request.amount,
+          amountPaise: amountPaise,
           name: request.contactName,
           email: request.contactEmail,
           phone: request.contactPhone,
@@ -264,6 +273,78 @@ class OrderProvider extends ChangeNotifier {
   // Get after images
   Future<List<String>> getAfterImages(String orderId) async {
     return await _orderService.getAfterImages(orderId);
+  }
+
+  Future<void> payPendingAdditional({
+    required Function() onPaymentInitiated,
+    required Function(OrderModel order, PaymentModel payment) onPaymentSuccess,
+    required Function(OrderModel order, PaymentModel payment, String error)
+        onPaymentError,
+  }) async {
+    final order = _currentOrder;
+    var extra = _pendingAdditional;
+    if (order == null || extra == null) return;
+
+    final extraPay = extra;
+    try {
+      _orderService.onPaymentSuccess = (response) async {
+        onPaymentInitiated();
+        var current = await _orderService.getPaymentById(extraPay.id);
+        if (current.status == PaymentStatus.unpaid) {
+          try {
+            current = await _orderService.updatePaymentProcessing(
+              paymentId: extraPay.id,
+              razorpayPaymentId: response.paymentId ?? '',
+              razorpaySignature: response.signature ?? '',
+            );
+          } catch (_) {
+            current = await _orderService.getPaymentById(extraPay.id);
+          }
+        }
+        if (current.status == PaymentStatus.paid) {
+          onPaymentSuccess(order, current);
+        } else if (current.status == PaymentStatus.failed) {
+          onPaymentError(
+            order,
+            current,
+            current.failureReason ?? 'Payment failed',
+          );
+        } else {
+          final resolved = await _orderService.waitForPaymentResolution(
+            paymentId: extraPay.id,
+          );
+          if (resolved.status == PaymentStatus.paid) {
+            onPaymentSuccess(order, resolved);
+          } else {
+            onPaymentError(
+              order,
+              resolved,
+              resolved.failureReason ?? 'Payment verification failed',
+            );
+          }
+        }
+        await loadOrderDetails(order.id);
+      };
+      _orderService.onPaymentError = (response) {
+        onPaymentError(order, extraPay, '${response.message}');
+      };
+
+      final razorpayOrder =
+          await _orderService.createRazorpayOrder(paymentId: extra.id);
+      extra = await _orderService.getPaymentById(extra.id);
+      _pendingAdditional = extra;
+
+      await _orderService.openRazorpay(
+        razorpayOrderId: razorpayOrder.id,
+        amountPaise: razorpayOrder.amountPaise,
+        name: order.contactName,
+        email: order.contactEmail,
+        phone: order.contactPhone,
+        description: 'Additional parts and repairs for order',
+      );
+    } catch (e) {
+      onPaymentError(order, extraPay, e.toString());
+    }
   }
 
   void clearError() {

@@ -27,6 +27,8 @@
     <application
         android:label="spanr_app"
         android:name="${applicationName}"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher">
         
         <!-- Google Maps API Key -->
