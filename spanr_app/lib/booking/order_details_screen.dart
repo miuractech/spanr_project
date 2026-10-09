@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:go_router/go_router.dart';
 import 'order_provider.dart';
 import 'order_types.dart';
 
@@ -614,51 +613,32 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceBetween,
                                       children: [
-                                        const Text('Status',
+                                        const Text('Booking',
                                             style: TextStyle(
                                                 color: _kBody, fontSize: 13)),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 5),
-                                          decoration: BoxDecoration(
-                                            color: payment.status ==
-                                                    PaymentStatus.paid
-                                                ? const Color(0xFF267E3E).withValues(alpha: 0.1)
-                                                : _kOrange.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                payment.status == PaymentStatus.paid
-                                                    ? Icons.check_circle
-                                                    : Icons.pending,
-                                                size: 14,
-                                                color: payment.status ==
-                                                        PaymentStatus.paid
-                                                    ? const Color(0xFF267E3E)
-                                                    : _kOrange,
-                                              ),
-                                              const SizedBox(width: 5),
-                                              Text(
-                                                payment.status == PaymentStatus.paid
-                                                    ? 'Paid'
-                                                    : 'Unpaid',
-                                                style: TextStyle(
-                                                  color: payment.status ==
-                                                          PaymentStatus.paid
-                                                      ? const Color(0xFF267E3E)
-                                                      : _kOrange,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 13,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                        _paymentStatusChip(
+                                          payment.status == PaymentStatus.paid
+                                              ? 'Paid'
+                                              : 'Unpaid',
+                                          paid: payment.status ==
+                                              PaymentStatus.paid,
                                         ),
                                       ],
                                     ),
+                                    if (pendingAdditional != null) ...[
+                                      _divider(),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          const Text('Extras',
+                                              style: TextStyle(
+                                                  color: _kBody, fontSize: 13)),
+                                          _paymentStatusChip('Unpaid',
+                                              paid: false),
+                                        ],
+                                      ),
+                                    ],
                                     if (payment.paidAt != null) ...[
                                       _divider(),
                                       Row(
@@ -1046,36 +1026,47 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 
+  Widget _paymentStatusChip(String label, {required bool paid}) {
+    final color = paid ? const Color(0xFF267E3E) : _kOrange;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            paid ? Icons.check_circle : Icons.pending,
+            size: 14,
+            color: color,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _payExtras(
     BuildContext context,
     OrderProvider orderProvider,
   ) async {
     await orderProvider.payPendingAdditional(
-      onPaymentInitiated: () {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!context.mounted) return;
-          final order = orderProvider.currentOrder!;
-          final payment = orderProvider.pendingAdditional ??
-              orderProvider.currentPayment!;
-          context.push(
-            '/payment-processing',
-            extra: {
-              'order': order,
-              'payment': payment,
-              'status': 'processing',
-            },
-          );
-        });
-      },
+      onPaymentInitiated: () {},
       onPaymentSuccess: (order, payment) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!context.mounted) return;
-          context.go(
-            '/order-confirmation',
-            extra: {
-              'order': order,
-              'payment': payment,
-            },
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Extra charges paid')),
           );
         });
       },
@@ -1083,7 +1074,15 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
+            SnackBar(
+              content: Text(
+                userFacingPaymentError(
+                  error,
+                  fallback:
+                      'Payment cancelled. Extra charges are still unpaid.',
+                ),
+              ),
+            ),
           );
         });
       },

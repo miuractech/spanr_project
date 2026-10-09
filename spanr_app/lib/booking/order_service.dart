@@ -142,6 +142,34 @@ class OrderService {
   }
 
   // Update payment to processing status
+  Future<PaymentModel> verifyRazorpayPayment({
+    required String paymentId,
+    required String razorpayOrderId,
+    required String razorpayPaymentId,
+    required String razorpaySignature,
+  }) async {
+    final response = await _supabase.functions.invoke(
+      'razorpay-verify-payment',
+      body: {
+        'payment_id': paymentId,
+        'razorpay_order_id': razorpayOrderId,
+        'razorpay_payment_id': razorpayPaymentId,
+        'razorpay_signature': razorpaySignature,
+      },
+    );
+
+    if (response.status != 200) {
+      String msg = 'HTTP ${response.status}';
+      final data = response.data;
+      if (data is Map && data['error'] != null) {
+        msg = '${data['error']}';
+      }
+      throw Exception(msg);
+    }
+
+    return getPaymentById(paymentId);
+  }
+
   Future<PaymentModel> updatePaymentProcessing({
     required String paymentId,
     required String razorpayPaymentId,
@@ -199,6 +227,17 @@ class OrderService {
     return PaymentModel.fromJson(response);
   }
 
+  Future<void> attachRazorpayOrder({
+    required String paymentId,
+    required String razorpayOrderId,
+  }) async {
+    await _supabase
+        .from('payments')
+        .update({'razorpay_order_id': razorpayOrderId})
+        .eq('id', paymentId)
+        .eq('status', PaymentStatus.unpaid.dbValue);
+  }
+
   // Request payment-related permissions
   Future<void> _requestPaymentPermissions() async {
     if (!Platform.isAndroid) return;
@@ -238,6 +277,9 @@ class OrderService {
       },
       'theme': {
         'color': '#FC8019',
+      },
+      'retry': {
+        'enabled': false,
       },
     };
 
@@ -369,15 +411,23 @@ class OrderService {
         .eq('id', orderId);
   }
 
-  // Create the Razorpay order for an existing payment row. The edge function
-  // bills the amount stored on the payment and attaches the Razorpay order id
-  // server-side; the client never chooses the amount.
+  // Create the Razorpay order for an existing payment row.
+  // Sends both the new payload (payment_id) and the currently deployed
+  // payload (amount, currency, receipt) so checkout works either way.
   Future<({String id, int amountPaise})> createRazorpayOrder({
     required String paymentId,
+    required double amountRupees,
+    required String receipt,
   }) async {
+    final amountPaise = (amountRupees * 100).round();
     final response = await _supabase.functions.invoke(
       'create-razorpay-order',
-      body: {'payment_id': paymentId},
+      body: {
+        'payment_id': paymentId,
+        'amount': amountPaise,
+        'currency': 'INR',
+        'receipt': receipt.length > 40 ? receipt.substring(0, 40) : receipt,
+      },
     );
 
     final status = response.status;
@@ -399,7 +449,15 @@ class OrderService {
       throw Exception('Invalid Razorpay response from server');
     }
 
-    return (id: data['id'] as String, amountPaise: (data['amount'] as num).toInt());
+    final razorpayOrderId = data['id'] as String;
+    final billedPaise = (data['amount'] as num).toInt();
+
+    await attachRazorpayOrder(
+      paymentId: paymentId,
+      razorpayOrderId: razorpayOrderId,
+    );
+
+    return (id: razorpayOrderId, amountPaise: billedPaise);
   }
 
   // Complete order flow: create order, upload images, create payment, initiate Razorpay
@@ -430,7 +488,11 @@ class OrderService {
     );
 
     // 5. Create Razorpay order for that payment
-    final razorpayOrder = await createRazorpayOrder(paymentId: payment.id);
+    final razorpayOrder = await createRazorpayOrder(
+      paymentId: payment.id,
+      amountRupees: payment.amount,
+      receipt: payment.id,
+    );
 
     // Return order and payment details
     return {

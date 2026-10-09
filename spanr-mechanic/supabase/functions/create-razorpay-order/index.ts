@@ -35,8 +35,23 @@ serve(async (req) => {
       return json({ error: 'Unauthorized' }, 401);
     }
 
-    const { payment_id } = await req.json().catch(() => ({}));
-    if (typeof payment_id !== 'string' || !UUID_RE.test(payment_id)) {
+    const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+    const payment_id = body.payment_id;
+    const legacyAmount = body.amount;
+    const legacyCurrency = body.currency;
+    const legacyReceipt = body.receipt;
+
+    const hasPaymentId = typeof payment_id === 'string' && UUID_RE.test(payment_id);
+    const hasLegacy =
+      typeof legacyAmount === 'number' &&
+      Number.isFinite(legacyAmount) &&
+      legacyAmount >= 100 &&
+      typeof legacyCurrency === 'string' &&
+      legacyCurrency.length > 0 &&
+      typeof legacyReceipt === 'string' &&
+      legacyReceipt.length > 0;
+
+    if (!hasPaymentId && !hasLegacy) {
       return json({ error: 'payment_id is required' }, 400);
     }
 
@@ -61,10 +76,33 @@ serve(async (req) => {
       return json({ error: 'Unauthorized' }, 401);
     }
 
+    const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
+
+    if (!hasPaymentId && hasLegacy) {
+      const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: legacyAmount,
+          currency: legacyCurrency,
+          receipt: String(legacyReceipt).slice(0, 40),
+        }),
+      });
+      if (!razorpayResponse.ok) {
+        console.error('Razorpay API error:', razorpayResponse.status, await razorpayResponse.text());
+        return json({ error: 'Could not start payment. Please try again.' }, 502);
+      }
+      const order = await razorpayResponse.json();
+      return json({ id: order.id, amount: order.amount, currency: order.currency });
+    }
+
     const { data: payment, error: paymentError } = await adminClient
       .from('payments')
       .select('id, order_id, amount, status, kind, razorpay_order_id, orders!inner(user_id)')
-      .eq('id', payment_id)
+      .eq('id', payment_id as string)
       .single();
     if (paymentError || !payment) {
       return json({ error: 'Payment not found' }, 404);
@@ -83,8 +121,6 @@ serve(async (req) => {
     if (!Number.isFinite(amountPaise) || amountPaise < 100) {
       return json({ error: 'Invalid payment amount' }, 400);
     }
-
-    const auth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
     // Retrying checkout must reuse the attached Razorpay order. Replacing it
     // would orphan the old one: if that one were still paid, the webhook could

@@ -5,6 +5,25 @@ import 'order_service.dart';
 import 'order_model.dart';
 import 'order_types.dart';
 
+String userFacingPaymentError(
+  Object? raw, {
+  String fallback = 'Payment cancelled. Extra charges are still unpaid.',
+}) {
+  final text = (raw ?? '').toString().trim();
+  final lower = text.toLowerCase();
+  if (text.isEmpty ||
+      lower == 'null' ||
+      lower == 'undefined' ||
+      lower == 'none' ||
+      lower == 'payment failed: null' ||
+      lower == 'payment failed: undefined' ||
+      lower.endsWith(': undefined') ||
+      lower.endsWith(': null')) {
+    return fallback;
+  }
+  return text;
+}
+
 class OrderProvider extends ChangeNotifier {
   final OrderService _orderService = OrderService();
 
@@ -18,6 +37,8 @@ class OrderProvider extends ChangeNotifier {
   OrderModel? _currentOrder;
   PaymentModel? _currentPayment;
   Map<String, dynamic>? _checkoutRouteExtra;
+  bool _checkoutBusy = false;
+  String? _handledRazorpayPaymentId;
 
   List<OrderWithDetails> get orders => _orders;
   List<OrderHistoryModel> get currentOrderHistory => _currentOrderHistory;
@@ -106,6 +127,63 @@ class OrderProvider extends ChangeNotifier {
     await loadOrderDetails(orderId);
   }
 
+  Future<PaymentModel> _confirmRazorpayCheckout({
+    required String paymentId,
+    required PaymentSuccessResponse response,
+    bool allowWebhookWait = true,
+  }) async {
+    var current = await _orderService.getPaymentById(paymentId);
+    if (current.status == PaymentStatus.paid ||
+        current.status == PaymentStatus.failed) {
+      return current;
+    }
+
+    final razorpayOrderId =
+        (response.orderId?.isNotEmpty == true)
+            ? response.orderId!
+            : (current.razorpayOrderId ?? '');
+    final razorpayPaymentId = response.paymentId ?? '';
+    final razorpaySignature = response.signature ?? '';
+
+    if (razorpayPaymentId.isEmpty || razorpaySignature.isEmpty) {
+      return current;
+    }
+
+    if (razorpayOrderId.isNotEmpty) {
+      try {
+        return await _orderService.verifyRazorpayPayment(
+          paymentId: paymentId,
+          razorpayOrderId: razorpayOrderId,
+          razorpayPaymentId: razorpayPaymentId,
+          razorpaySignature: razorpaySignature,
+        );
+      } catch (_) {}
+    }
+
+    if (!allowWebhookWait) {
+      return current;
+    }
+
+    if (current.status == PaymentStatus.unpaid) {
+      try {
+        current = await _orderService.updatePaymentProcessing(
+          paymentId: paymentId,
+          razorpayPaymentId: razorpayPaymentId,
+          razorpaySignature: razorpaySignature,
+        );
+      } catch (_) {
+        current = await _orderService.getPaymentById(paymentId);
+      }
+    }
+
+    if (current.status == PaymentStatus.paid ||
+        current.status == PaymentStatus.failed) {
+      return current;
+    }
+
+    return _orderService.waitForPaymentResolution(paymentId: paymentId);
+  }
+
   // Create order with payment
   Future<void> createOrderWithPayment({
     required CreateOrderRequest request,
@@ -130,44 +208,9 @@ class OrderProvider extends ChangeNotifier {
             // Notify that payment is initiated and start waiting
             onPaymentInitiated();
 
-            // First, check current payment status (webhook might have already updated it)
-            var currentPayment = await _orderService.getPaymentById(_currentPayment!.id);
-
-            // Only update to processing if payment is still unpaid
-            // (webhook might have already marked it as paid/failed)
-            if (currentPayment.status == PaymentStatus.unpaid) {
-              try {
-                currentPayment = await _orderService.updatePaymentProcessing(
-                  paymentId: _currentPayment!.id,
-                  razorpayPaymentId: response.paymentId ?? '',
-                  razorpaySignature: response.signature ?? '',
-                );
-              } catch (_) {
-                currentPayment =
-                    await _orderService.getPaymentById(_currentPayment!.id);
-              }
-            }
-
-            // If already paid or failed, use that status immediately
-            if (currentPayment.status == PaymentStatus.paid ||
-                currentPayment.status == PaymentStatus.failed) {
-              _currentPayment = currentPayment;
-
-              if (currentPayment.status == PaymentStatus.paid) {
-                onPaymentSuccess(_currentOrder!, currentPayment);
-              } else {
-                onPaymentError(
-                  _currentOrder!,
-                  currentPayment,
-                  currentPayment.failureReason ?? 'Payment failed',
-                );
-              }
-              return;
-            }
-
-            // Wait for webhook to update payment status
-            final finalPayment = await _orderService.waitForPaymentResolution(
+            final finalPayment = await _confirmRazorpayCheckout(
               paymentId: _currentPayment!.id,
+              response: response,
             );
 
             _currentPayment = finalPayment;
@@ -201,7 +244,13 @@ class OrderProvider extends ChangeNotifier {
           }
         },
         onError: (PaymentFailureResponse response) {
-          _error = 'Payment failed: ${response.message}';
+          final cancelled = response.code == Razorpay.PAYMENT_CANCELLED;
+          _error = userFacingPaymentError(
+            response.message,
+            fallback: cancelled
+                ? 'Payment cancelled. Your order is still unpaid.'
+                : 'Payment failed. Please try again.',
+          );
           _isLoading = false;
           notifyListeners();
           onPaymentError(
@@ -286,32 +335,21 @@ class OrderProvider extends ChangeNotifier {
     if (order == null || extra == null) return;
 
     final extraPay = extra;
+    if (_checkoutBusy) return;
+    _checkoutBusy = true;
     try {
       _orderService.onPaymentSuccess = (response) async {
-        onPaymentInitiated();
-        var current = await _orderService.getPaymentById(extraPay.id);
-        if (current.status == PaymentStatus.unpaid) {
-          try {
-            current = await _orderService.updatePaymentProcessing(
-              paymentId: extraPay.id,
-              razorpayPaymentId: response.paymentId ?? '',
-              razorpaySignature: response.signature ?? '',
-            );
-          } catch (_) {
-            current = await _orderService.getPaymentById(extraPay.id);
-          }
+        final rzpPayId = response.paymentId ?? '';
+        if (rzpPayId.isNotEmpty && _handledRazorpayPaymentId == rzpPayId) {
+          return;
         }
-        if (current.status == PaymentStatus.paid) {
-          onPaymentSuccess(order, current);
-        } else if (current.status == PaymentStatus.failed) {
-          onPaymentError(
-            order,
-            current,
-            current.failureReason ?? 'Payment failed',
-          );
-        } else {
-          final resolved = await _orderService.waitForPaymentResolution(
+        _handledRazorpayPaymentId = rzpPayId;
+        onPaymentInitiated();
+        try {
+          final resolved = await _confirmRazorpayCheckout(
             paymentId: extraPay.id,
+            response: response,
+            allowWebhookWait: false,
           );
           if (resolved.status == PaymentStatus.paid) {
             onPaymentSuccess(order, resolved);
@@ -319,18 +357,39 @@ class OrderProvider extends ChangeNotifier {
             onPaymentError(
               order,
               resolved,
-              resolved.failureReason ?? 'Payment verification failed',
+              'Payment was not completed. Please try again.',
             );
           }
+        } finally {
+          _checkoutBusy = false;
+          await loadOrderDetails(order.id);
         }
-        await loadOrderDetails(order.id);
       };
       _orderService.onPaymentError = (response) {
-        onPaymentError(order, extraPay, '${response.message}');
+        _checkoutBusy = false;
+        onPaymentError(
+          order,
+          extraPay,
+          userFacingPaymentError(
+            response.message,
+            fallback: 'Payment cancelled. Extra charges are still unpaid.',
+          ),
+        );
+      };
+      _orderService.onExternalWallet = (_) {
+        _checkoutBusy = false;
+        onPaymentError(
+          order,
+          extraPay,
+          'Payment cancelled. Extra charges are still unpaid.',
+        );
       };
 
-      final razorpayOrder =
-          await _orderService.createRazorpayOrder(paymentId: extra.id);
+      final razorpayOrder = await _orderService.createRazorpayOrder(
+        paymentId: extra.id,
+        amountRupees: extra.amount,
+        receipt: extra.id,
+      );
       extra = await _orderService.getPaymentById(extra.id);
       _pendingAdditional = extra;
 
@@ -343,7 +402,15 @@ class OrderProvider extends ChangeNotifier {
         description: 'Additional parts and repairs for order',
       );
     } catch (e) {
-      onPaymentError(order, extraPay, e.toString());
+      _checkoutBusy = false;
+      onPaymentError(
+        order,
+        extraPay,
+        userFacingPaymentError(
+          e,
+          fallback: 'Could not start payment. Please try again.',
+        ),
+      );
     }
   }
 
