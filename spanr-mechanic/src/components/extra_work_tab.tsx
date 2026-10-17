@@ -45,7 +45,16 @@ export const ExtraWorkTab: React.FC<ExtraWorkTabProps> = ({ orderId, orderStatus
   const load = async () => {
     try {
       setLoading(true);
-      setRequests(await extraWorkService.getByOrderId(orderId));
+      const rows = await extraWorkService.getByOrderId(orderId);
+      setRequests(rows);
+      if (
+        orderStatus === 'on_hold' &&
+        rows.length > 0 &&
+        rows.every((r) => r.status !== 'pending')
+      ) {
+        const resumed = await extraWorkService.resumeIfSettled(orderId);
+        if (resumed) onChanged?.();
+      }
     } catch (err) {
       notification.showError(err instanceof Error ? err.message : 'Failed to load requests');
     } finally {
@@ -75,7 +84,7 @@ export const ExtraWorkTab: React.FC<ExtraWorkTabProps> = ({ orderId, orderStatus
     const reason = window.prompt('Rejection reason (optional):') ?? undefined;
     setActionLoading(id);
     try {
-      await extraWorkService.reject(id, reason);
+      await extraWorkService.reject(id, orderId, reason);
       notification.showSuccess('Extra work rejected');
       await load();
       onChanged?.();

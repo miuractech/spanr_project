@@ -39,7 +39,9 @@ class JobsProvider extends ChangeNotifier {
 
     try {
       if (_connectivity.isOnline) {
-        _jobs = await _jobsService.getAssignedJobs(staff.id);
+        _jobs = await _jobsService.releaseSettledHolds(
+          await _jobsService.getAssignedJobs(staff.id),
+        );
         await _cacheJobs(_jobs);
         await _syncService.processQueue();
       } else {
@@ -72,22 +74,7 @@ class JobsProvider extends ChangeNotifier {
     final idx = _jobs.indexWhere((j) => j.orderId == orderId);
     if (idx >= 0) {
       final job = _jobs[idx];
-      _jobs[idx] = AssignedJob(
-        orderId: job.orderId,
-        assignmentId: job.assignmentId,
-        status: JobStatus.fromDb(status),
-        assignedAt: job.assignedAt,
-        notes: job.notes,
-        customerName: job.customerName,
-        customerPhone: job.customerPhone,
-        vehicleMake: job.vehicleMake,
-        vehicleModel: job.vehicleModel,
-        vehicleYear: job.vehicleYear,
-        licensePlate: job.licensePlate,
-        planName: job.planName,
-        specialInstructions: job.specialInstructions,
-        scheduledDate: job.scheduledDate,
-      );
+      _jobs[idx] = job.copyWith(status: JobStatus.fromDb(status));
       await _cacheJobs(_jobs);
     }
     notifyListeners();
@@ -111,22 +98,7 @@ class JobsProvider extends ChangeNotifier {
     final idx = _jobs.indexWhere((j) => j.orderId == orderId);
     if (idx >= 0) {
       final job = _jobs[idx];
-      _jobs[idx] = AssignedJob(
-        orderId: job.orderId,
-        assignmentId: job.assignmentId,
-        status: JobStatus.onHold,
-        assignedAt: job.assignedAt,
-        notes: job.notes,
-        customerName: job.customerName,
-        customerPhone: job.customerPhone,
-        vehicleMake: job.vehicleMake,
-        vehicleModel: job.vehicleModel,
-        vehicleYear: job.vehicleYear,
-        licensePlate: job.licensePlate,
-        planName: job.planName,
-        specialInstructions: job.specialInstructions,
-        scheduledDate: job.scheduledDate,
-      );
+      _jobs[idx] = job.copyWith(status: JobStatus.onHold);
       await _cacheJobs(_jobs);
     }
     notifyListeners();
@@ -135,9 +107,9 @@ class JobsProvider extends ChangeNotifier {
   void _subscribe(String staffId) {
     _channel?.unsubscribe();
     _channel = _jobsService.subscribeToAssignments(staffId, () {
-      _jobsService.getAssignedJobs(staffId).then((jobs) {
-        _jobs = jobs;
-        _cacheJobs(jobs);
+      _jobsService.getAssignedJobs(staffId).then((jobs) async {
+        _jobs = await _jobsService.releaseSettledHolds(jobs);
+        await _cacheJobs(_jobs);
         notifyListeners();
       });
     });

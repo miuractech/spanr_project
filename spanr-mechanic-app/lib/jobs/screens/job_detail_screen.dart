@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../jobs_provider.dart';
 import '../models/job_status.dart';
 import '../widgets/job_info_tile.dart';
+import '../widgets/job_plan_details.dart';
 import '../widgets/workflow_action_button.dart';
 
 class JobDetailScreen extends StatefulWidget {
@@ -72,6 +73,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             title: 'Service',
             value: job.planName,
           ),
+          JobPlanDetails(job: job),
           if (job.specialInstructions != null && job.specialInstructions!.isNotEmpty)
             JobInfoTile(
               icon: Icons.report_problem_outlined,

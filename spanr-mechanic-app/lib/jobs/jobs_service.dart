@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import 'models/assigned_job.dart';
 import 'models/extra_work_request.dart';
+import 'models/job_status.dart';
 import 'models/part_replacement.dart';
 
 class JobsService {
@@ -17,7 +18,23 @@ class JobsService {
             *,
             users (name, phone),
             vehicles (make, model, year, license_plate),
-            plans (name)
+            plans (
+              name,
+              duration,
+              location_type,
+              vehicle_type,
+              warranty,
+              guarantee,
+              plan_type,
+              plan_features (feature, display_order),
+              plan_steps (step_description, display_order),
+              plan_additional_services (service_name, display_order),
+              plan_included_jobs ( job_catalog (name) )
+            ),
+            order_selected_jobs (
+              issue_description,
+              job_catalog (name)
+            )
           )
         ''')
         .eq('staff_id', staffId)
@@ -38,7 +55,23 @@ class JobsService {
             *,
             users (name, phone),
             vehicles (make, model, year, license_plate),
-            plans (name)
+            plans (
+              name,
+              duration,
+              location_type,
+              vehicle_type,
+              warranty,
+              guarantee,
+              plan_type,
+              plan_features (feature, display_order),
+              plan_steps (step_description, display_order),
+              plan_additional_services (service_name, display_order),
+              plan_included_jobs ( job_catalog (name) )
+            ),
+            order_selected_jobs (
+              issue_description,
+              job_catalog (name)
+            )
           )
         ''')
         .eq('staff_id', staffId)
@@ -207,6 +240,12 @@ class JobsService {
           table: 'orders',
           callback: (_) => onChange(),
         )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'extra_work_requests',
+          callback: (_) => onChange(),
+        )
         .subscribe();
   }
 
@@ -217,6 +256,30 @@ class JobsService {
   }
 
   Future<String> currentStaffId() async => _currentStaffId();
+
+  /// Customer approval only updates the request. Lift on_hold here so the
+  /// job continues on the database the apps are using today.
+  Future<List<AssignedJob>> releaseSettledHolds(List<AssignedJob> jobs) async {
+    final next = <AssignedJob>[];
+    for (final job in jobs) {
+      if (job.status != JobStatus.onHold) {
+        next.add(job);
+        continue;
+      }
+      final requests = await getExtraWorkRequests(job.orderId);
+      if (requests.isEmpty || requests.any((r) => r.isPending)) {
+        next.add(job);
+        continue;
+      }
+      await _client
+          .from('orders')
+          .update({'status': 'in_progress'})
+          .eq('id', job.orderId)
+          .eq('status', 'on_hold');
+      next.add(job.copyWith(status: JobStatus.inProgress));
+    }
+    return next;
+  }
 
   Future<List<ExtraWorkRequest>> getExtraWorkRequests(String orderId) async {
     final response = await _client

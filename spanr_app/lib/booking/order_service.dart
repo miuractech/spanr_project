@@ -528,28 +528,40 @@ class OrderService {
     return (response as List).map((j) => ExtraWorkRequest.fromJson(j)).toList();
   }
 
+  Future<void> _respondToExtraWork(
+    String requestId,
+    String decision, {
+    String? reason,
+  }) async {
+    try {
+      await _supabase.rpc('respond_to_extra_work', params: {
+        'p_request_id': requestId,
+        'p_decision': decision,
+        'p_reason': reason,
+      });
+    } on PostgrestException catch (e) {
+      // Database without migration 059. The row update still records the
+      // answer; the trigger resumes the order once that migration is applied.
+      if (e.code != 'PGRST202') rethrow;
+      await _supabase
+          .from('extra_work_requests')
+          .update({
+            'status': decision,
+            'rejection_reason': decision == 'rejected' ? reason : null,
+            'customer_response_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', requestId)
+          .eq('status', 'pending');
+    }
+  }
+
   // Approve an extra work request
   Future<void> approveExtraWork(String requestId) async {
-    await _supabase
-        .from('extra_work_requests')
-        .update({
-          'status': 'approved',
-          'customer_response_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', requestId)
-        .eq('status', 'pending');
+    await _respondToExtraWork(requestId, 'approved');
   }
 
   // Reject an extra work request
   Future<void> rejectExtraWork(String requestId, {String? reason}) async {
-    await _supabase
-        .from('extra_work_requests')
-        .update({
-          'status': 'rejected',
-          'rejection_reason': reason,
-          'customer_response_at': DateTime.now().toIso8601String(),
-        })
-        .eq('id', requestId)
-        .eq('status', 'pending');
+    await _respondToExtraWork(requestId, 'rejected', reason: reason);
   }
 }

@@ -35,15 +35,10 @@ export const extraWorkService = {
       .update({ status: 'approved', customer_response_at: new Date().toISOString() })
       .eq('id', requestId);
     if (error) throw error;
-    const { error: orderError } = await supabase
-      .from('orders')
-      .update({ status: 'in_progress' })
-      .eq('id', orderId)
-      .eq('status', 'on_hold'); // only lift hold if still on_hold
-    if (orderError) throw orderError;
+    await this.resumeIfSettled(orderId);
   },
 
-  async reject(requestId: string, reason?: string): Promise<void> {
+  async reject(requestId: string, orderId: string, reason?: string): Promise<void> {
     const { error } = await supabase
       .from('extra_work_requests')
       .update({
@@ -53,5 +48,26 @@ export const extraWorkService = {
       })
       .eq('id', requestId);
     if (error) throw error;
+    await this.resumeIfSettled(orderId);
+  },
+
+  /** Back to in_progress once every extra-work request on the order has an answer. */
+  async resumeIfSettled(orderId: string): Promise<boolean> {
+    const { data, error } = await supabase
+      .from('extra_work_requests')
+      .select('id')
+      .eq('order_id', orderId)
+      .eq('status', 'pending')
+      .limit(1);
+    if (error) throw error;
+    if (data && data.length > 0) return false;
+    const { data: updated, error: orderError } = await supabase
+      .from('orders')
+      .update({ status: 'in_progress' })
+      .eq('id', orderId)
+      .eq('status', 'on_hold')
+      .select('id');
+    if (orderError) throw orderError;
+    return (updated ?? []).length > 0;
   },
 };

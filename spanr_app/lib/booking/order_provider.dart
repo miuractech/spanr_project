@@ -112,7 +112,6 @@ class OrderProvider extends ChangeNotifier {
 
   // Approve an extra work request and reload order details
   Future<void> approveExtraWork(String requestId, String orderId) async {
-    // The database resumes the order once no request is pending (migration 057).
     await _orderService.approveExtraWork(requestId);
     await loadOrderDetails(orderId);
   }
